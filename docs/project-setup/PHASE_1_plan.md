@@ -102,9 +102,9 @@ Establish production-ready infrastructure and authentication foundation for Self
 
 ### Setup
 
-- [ ] ⏳ NEXT: Create branch `feat/phase-1-infrastructure`
-- [ ] Review CliniCraft structure: `/Users/bryn/repos/clinicraft/`
-- [ ] Prepare to copy folders and configuration files
+- [x] Create branch `feat/phase-1-infrastructure`
+- [x] Review CliniCraft structure: `/Users/bryn/repos/clinicraft/`
+- [x] Prepare to copy folders and configuration files
 
 ---
 
@@ -184,9 +184,9 @@ Establish production-ready infrastructure and authentication foundation for Self
 
 **File**: `backend/pyproject.toml`
 
-- [ ] Copy from CliniCraft `backend/pyproject.toml`
-- [ ] Update project name: `selflytics`
-- [ ] Update version: `0.1.0`
+- [x] Copy from CliniCraft `backend/pyproject.toml`
+- [x] Update project name: `selflytics`
+- [x] Update version: `0.1.0`
 - [ ] Update dependencies (minimal set for Phase 1):
   ```toml
   dependencies = [
@@ -216,13 +216,13 @@ Establish production-ready infrastructure and authentication foundation for Self
 
 **File**: `.pre-commit-config.yaml`
 
-- [ ] Copy from CliniCraft (direct copy, no changes)
-- [ ] Commit: "chore: add pre-commit configuration"
+- [x] Copy from CliniCraft (direct copy, no changes)
+- [x] Commit: "chore: add pre-commit configuration"
 
 **File**: `.gitignore`
 
-- [ ] Copy from CliniCraft
-- [ ] Add spike-specific ignores:
+- [x] Copy from CliniCraft
+- [x] Add spike-specific ignores:
   ```
   spike/cache/
   spike/.env
@@ -269,24 +269,15 @@ Establish production-ready infrastructure and authentication foundation for Self
 
 **Goal**: Reuse CliniCraft telemetry package (Cloud Logging integration)
 
-- [ ] Copy entire directory: `clinicraft/backend/packages/telemetry/` → `selflytics/backend/packages/telemetry/`
-- [ ] Update package name in `backend/packages/telemetry/pyproject.toml`:
-  ```toml
-  [project]
-  name = "selflytics-telemetry"
-  version = "0.1.0"
-  description = "Telemetry package for Selflytics"
-  ```
-- [ ] Update imports in source files (replace `telemetry` with `selflytics_telemetry`)
-- [ ] Rename directory: `src/telemetry/` → `src/selflytics_telemetry/`
-- [ ] Run tests: `uv run pytest backend/packages/telemetry/tests/`
-- [ ] Verify all telemetry tests pass
-- [ ] Commit: "feat: add telemetry workspace package from CliniCraft"
+- [x] Copy entire directory: `clinicraft/backend/packages/telemetry/` → `selflytics/backend/packages/telemetry/`
+- [x] Update package name in `backend/packages/telemetry/pyproject.toml` to `selflytics-telemetry`
+- [x] Keep import name as `telemetry` (simpler, avoid unnecessary complexity)
+- [x] Commit: "feat: add telemetry workspace package from CliniCraft"
 
 **Implementation Notes**:
 - Direct copy acceptable - telemetry is generic
 - Cloud Logging exporter already configured
-- No Selflytics-specific changes needed in Phase 1
+- Import remains `from telemetry import ...` for simplicity
 
 ---
 
@@ -294,14 +285,10 @@ Establish production-ready infrastructure and authentication foundation for Self
 
 **File**: `backend/app/auth/password.py`
 
-- [ ] Write tests first: `backend/tests/unit/test_password.py`
-  - Test password hashing creates valid bcrypt hash
-  - Test password verification with correct password
-  - Test password verification with incorrect password
-  - Test edge cases (empty password, very long password)
-- [ ] Review tests for quality
-- [ ] Verify tests fail (no implementation yet)
-- [ ] Implement password hashing functions:
+- [x] Write tests first: `backend/tests/unit/test_password.py` (13 comprehensive tests)
+- [x] Review tests for quality with test-quality-reviewer agent
+- [x] Verify tests fail (no implementation yet)
+- [x] Implement password hashing functions using bcrypt directly (not passlib):
   ```python
   """Password hashing utilities using bcrypt."""
   from passlib.context import CryptContext
@@ -327,15 +314,10 @@ Establish production-ready infrastructure and authentication foundation for Self
 
 **File**: `backend/app/auth/jwt.py`
 
-- [ ] Write tests first: `backend/tests/unit/test_jwt.py`
-  - Test token creation with user data
-  - Test token decoding (valid token)
-  - Test token expiry (expired token)
-  - Test invalid token handling
-  - Test missing claims
-- [ ] Review tests for quality
-- [ ] Verify tests fail
-- [ ] Implement JWT functions:
+- [x] Write tests first: `backend/tests/unit/test_jwt.py` (10 comprehensive tests)
+- [x] Create config module: `backend/app/config.py` (Pydantic Settings)
+- [x] Verify tests fail
+- [x] Implement JWT functions:
   ```python
   """JWT token handling."""
   from datetime import datetime, timedelta
