@@ -750,8 +750,6 @@ Establish production-ready infrastructure and authentication foundation for Self
 
 **Phase 1 Status**: 🔄 IN PROGRESS - Core infrastructure complete, deployment tasks remaining
 
-**Token Budget**: 52% used (104K/200K)
-
 ---
 
 ### Step 11: Terraform Infrastructure ✅ DONE
@@ -966,19 +964,41 @@ Establish production-ready infrastructure and authentication foundation for Self
 
 ---
 
-### Step 14: Telemetry Middleware Integration
+### Step 14: Telemetry Middleware Integration ✅ DONE
 
-**Status**: ⏳ TODO - Required before Phase 1 completion
+**Status**: ✅ DONE
 
 **File**: `backend/app/telemetry_config.py`
-- [ ] Copy from CliniCraft
-- [ ] Update for Selflytics configuration
+- [x] Copy from CliniCraft
+- [x] Update for Selflytics configuration
+- [x] Imports telemetry package, configures based on app settings
+- [x] Supports console, jsonl, cloudlogging, disabled backends
 
 **File**: `backend/app/middleware/telemetry.py`
-- [ ] Copy from CliniCraft
-- [ ] Integrate with FastAPI app in main.py
+- [x] Copy from CliniCraft
+- [x] OpenTelemetry integration for request tracing
+- [x] Logs request start, completion, errors with trace_id/span_id
+- [x] Measures request duration
+
+**File**: `backend/app/main.py`
+- [x] Added lifespan manager for telemetry setup/teardown
+- [x] Integrated TelemetryMiddleware with skip_paths for /health
+- [x] JWT secret validation for production environments
+
+**File**: `backend/app/config.py`
+- [x] Enhanced with telemetry settings (backend, log_path, log_level, verbose)
+- [x] Added allowed_origins for CORS configuration
+- [x] Added field validation for log_level
+- [x] Renamed jwt_secret_key to jwt_secret (CliniCraft alignment)
+
+**File**: `backend/app/auth/jwt.py`
+- [x] Updated to use jwt_secret instead of jwt_secret_key
 
 **Note**: Telemetry workspace package already complete (Step 3). This step adds the middleware to enable Cloud Logging in production.
+
+**Testing**: All 87 tests passing, quality checks clean (ruff ✅, bandit ✅)
+
+**Completed**: 2025-11-12 (Commit: addcf5e)
 
 ---
 
@@ -993,7 +1013,7 @@ Establish production-ready infrastructure and authentication foundation for Self
 
 **⏳ NEXT: Remaining Phase 1 tasks (must complete before marking phase done)**
 
-- [ ] **Add telemetry middleware** (Step 14) - Required for Cloud Logging in production
+- [x] **Add telemetry middleware** (Step 14) ✅ DONE - Cloud Logging enabled
 - [ ] **Manual testing**:
   - Start server: `uv run --directory backend uvicorn app.main:app --reload --host 0.0.0.0 --port ${PORT:-8000}`
   - Test registration: POST to /auth/register
