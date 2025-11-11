@@ -1,11 +1,11 @@
 """Unit tests for UserService."""
 
 from datetime import UTC, datetime
-from unittest.mock import MagicMock, Mock
+from unittest.mock import Mock
 
 import pytest
 
-from app.models.user import User, UserCreate, UserProfile
+from app.models.user import UserCreate
 from app.services.user_service import UserService
 
 
@@ -21,15 +21,12 @@ def mock_firestore_db():
 @pytest.fixture
 def user_service(mock_firestore_db, monkeypatch):
     """Provide a UserService instance with mocked Firestore."""
-    mock_db, mock_collection = mock_firestore_db
+    mock_db, _mock_collection = mock_firestore_db
 
     # Mock get_firestore_client to return our mock
-    monkeypatch.setattr(
-        "app.services.user_service.get_firestore_client", lambda: mock_db
-    )
+    monkeypatch.setattr("app.services.user_service.get_firestore_client", lambda: mock_db)
 
-    service = UserService()
-    return service
+    return UserService()
 
 
 class TestUserServiceCreate:
@@ -62,7 +59,7 @@ class TestUserServiceCreate:
         assert len(user.user_id) > 0
 
         # Verify password was hashed (not plain text)
-        assert user.hashed_password != "securepassword123"
+        assert user.hashed_password != "securepassword123"  # noqa: S105
         assert user.hashed_password.startswith("$2b$")
 
         # Verify timestamps were set
@@ -74,9 +71,7 @@ class TestUserServiceCreate:
         mock_collection.document.assert_called_once_with(user.user_id)
         mock_doc_ref.set.assert_called_once()
 
-    async def test_create_user_generates_unique_user_id(
-        self, user_service, mock_firestore_db
-    ):
+    async def test_create_user_generates_unique_user_id(self, user_service, mock_firestore_db):
         """Test that each created user gets a unique user_id."""
         _, mock_collection = mock_firestore_db
 
@@ -134,7 +129,7 @@ class TestUserServiceGetByEmail:
         mock_doc.to_dict.return_value = {
             "user_id": "user123",
             "email": "existing@example.com",
-            "hashed_password": "$2b$12$hashedhashed",  # noqa: S106
+            "hashed_password": "$2b$12$hashedhashed",
             "created_at": datetime.now(UTC),
             "updated_at": datetime.now(UTC),
             "profile": {
@@ -178,9 +173,7 @@ class TestUserServiceGetByEmail:
         # Verify None is returned for non-existent user
         assert user is None
 
-    async def test_get_user_by_email_with_garmin_linked(
-        self, user_service, mock_firestore_db
-    ):
+    async def test_get_user_by_email_with_garmin_linked(self, user_service, mock_firestore_db):
         """Test retrieving user with Garmin account linked."""
         _, mock_collection = mock_firestore_db
 
@@ -189,7 +182,7 @@ class TestUserServiceGetByEmail:
         mock_doc.to_dict.return_value = {
             "user_id": "user123",
             "email": "garmin_user@example.com",
-            "hashed_password": "$2b$12$hashedhashed",  # noqa: S106
+            "hashed_password": "$2b$12$hashedhashed",
             "created_at": datetime.now(UTC),
             "updated_at": datetime.now(UTC),
             "profile": {
@@ -226,7 +219,7 @@ class TestUserServiceGetById:
         mock_doc.to_dict.return_value = {
             "user_id": "user123",
             "email": "test@example.com",
-            "hashed_password": "$2b$12$hashedhashed",  # noqa: S106
+            "hashed_password": "$2b$12$hashedhashed",
             "created_at": datetime.now(UTC),
             "updated_at": datetime.now(UTC),
             "profile": {
