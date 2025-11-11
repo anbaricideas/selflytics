@@ -710,17 +710,26 @@ Establish production-ready infrastructure and authentication foundation for Self
 
 ## Session Progress Summary (2025-11-12)
 
-**Completed in This Session**:
+**Session 1 - Completed**:
 - ✅ Frontend templates (base, login, register, dashboard) with TailwindCSS + Alpine.js + HTMX
 - ✅ Main app configuration (dependencies.py, dashboard routes, auth dependencies)
 - ✅ Template rendering routes (GET /login, GET /register, /dashboard)
 - ✅ Backend .env file for local development
 - ✅ Quality checks: ruff passes cleanly
 - ✅ Unit tests: 72/72 passing (password, JWT, models, services, Firestore client)
-- ⏳ Integration tests: Need investigation (hanging on test_get_me_with_valid_token)
+- ⏳ Integration tests: Hanging on test_get_me_with_valid_token (deferred for investigation)
+
+**Session 2 - Integration Test Fix (2025-11-12)**:
+- ✅ Investigated integration test hang using debug-investigator agent
+- ✅ Root cause: Tests mocked `app.routes.auth.UserService` but `/auth/me` uses `get_current_user()` dependency which instantiated unmocked UserService, attempting real Firestore connection
+- ✅ Solution: Added `get_user_service()` dependency function (FastAPI best practice)
+- ✅ Updated routes to use dependency injection pattern
+- ✅ Refactored tests to use `app.dependency_overrides` (CliniCraft pattern)
+- ✅ All 87 tests passing (72 unit + 15 integration) in 9.50 seconds
+- ✅ **96% test coverage** (exceeds 80% requirement)
+- ✅ Committed: refactor(auth): fix integration tests via dependency injection (311e82d)
 
 **Remaining for Phase 1**:
-- [ ] Fix integration test hang (likely auth/Firestore mock issue)
 - [ ] Terraform infrastructure modules (copy from CliniCraft)
 - [ ] CI/CD workflows (copy from CliniCraft)
 - [ ] Telemetry middleware (deferred, can add before deployment)
@@ -728,12 +737,12 @@ Establish production-ready infrastructure and authentication foundation for Self
 - [ ] Terraform deployment to dev environment
 
 **Notes**:
-- Core auth functionality is solid (all unit tests pass)
-- Templates and routing configured correctly
-- Integration test hang needs debugging (auth token or Firestore client)
-- Terraform and CI/CD deferred to maintain focus on working auth system
+- Core auth functionality is complete and well-tested
+- Dependency injection pattern follows FastAPI and CliniCraft best practices
+- Integration tests now reliable and fast (1.68s for 15 tests)
+- Test suite provides excellent coverage and confidence in auth system
 
-**Token Budget**: 48% used (97K/200K)
+**Token Budget**: 36% used (73K/200K)
 
 ---
 
