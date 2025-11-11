@@ -44,7 +44,7 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None) -> s
     to_encode["exp"] = expire
 
     # Encode and return JWT
-    return jwt.encode(to_encode, settings.jwt_secret_key, algorithm=settings.jwt_algorithm)
+    return jwt.encode(to_encode, settings.jwt_secret, algorithm=settings.jwt_algorithm)
 
 
 def verify_token(token: str) -> TokenData:
@@ -64,7 +64,7 @@ def verify_token(token: str) -> TokenData:
     """
     try:
         # Decode and verify token
-        payload = jwt.decode(token, settings.jwt_secret_key, algorithms=[settings.jwt_algorithm])
+        payload = jwt.decode(token, settings.jwt_secret, algorithms=[settings.jwt_algorithm])
 
         # Extract required claims
         user_id: str | None = payload.get("sub")
