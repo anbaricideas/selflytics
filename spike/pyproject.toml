@@ -1,0 +1,22 @@
+[project]
+name = "selflytics-spike"
+version = "0.1.0"
+description = "Technical validation spike for Selflytics"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi",
+    "uvicorn[standard]",
+    "pydantic",
+    "pydantic-ai",
+    "garth",
+    "matplotlib",
+    "pillow",
+    "python-dotenv",
+]
+
+[dependency-groups]
+dev = [
+    "pytest",
+    "pytest-asyncio",
+    "httpx",
+]
