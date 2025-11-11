@@ -4,6 +4,8 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
+from spike.chat_agent import run_chat
+
 app = FastAPI(title="Selflytics Spike")
 
 # CORS for local testing
@@ -32,10 +34,11 @@ async def health_check():
     return {"status": "healthy", "service": "selflytics-spike"}
 
 
-@app.post("/chat", response_model=ChatResponse)
+@app.post("/chat")
 async def chat(request: ChatRequest):
-    """Chat endpoint - will integrate agent in Step 2."""
-    return ChatResponse(response="Spike endpoint - agent not yet connected", sources=[])
+    """Chat endpoint with Pydantic-AI agent."""
+    response = await run_chat(request.message, request.user_id)
+    return response
 
 
 @app.get("/auth/garmin")
