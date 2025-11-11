@@ -27,7 +27,7 @@ dependencies = [
     "opentelemetry-api>=1.38.0",
     "opentelemetry-sdk>=1.38.0",
     "opentelemetry-instrumentation-logging>=0.59b0",
-    "selflytics-telemetry",
+    "selflytics-telemetry",  # workspace package
 ]
 
 [project.optional-dependencies]
