@@ -96,6 +96,7 @@ secrets/
 *.tmp
 *.temp
 .cache/
+cache/
 
 # Database
 *.db
