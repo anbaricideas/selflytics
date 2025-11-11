@@ -502,18 +502,19 @@ Establish production-ready infrastructure and authentication foundation for Self
 
 ---
 
-### Step 8: Authentication Routes
+### Step 8: Authentication Routes ✅ DONE
 
 **File**: `backend/app/routes/auth.py`
 
-- [ ] Write tests first: `backend/tests/integration/test_auth_flow.py`
+- [x] Write tests first: `backend/tests/integration/test_auth_routes.py` (15 comprehensive tests)
   - Test POST /auth/register (success)
   - Test POST /auth/register (duplicate email)
   - Test POST /auth/login (success)
   - Test POST /auth/login (invalid credentials)
   - Test GET /auth/me (with valid token)
   - Test GET /auth/me (with invalid token)
-- [ ] Implement auth routes:
+  - Test complete auth flow (register → login → access protected route)
+- [x] Implement auth routes:
   ```python
   """Authentication routes."""
   from fastapi import APIRouter, Depends, HTTPException, status
@@ -603,10 +604,12 @@ Establish production-ready infrastructure and authentication foundation for Self
       """Get current user info."""
       return current_user
   ```
-- [ ] Verify tests pass
-- [ ] Commit: "feat: add authentication routes (register, login, me)"
+- [x] Verify tests pass (15 tests, 100% coverage on auth.py)
+- [x] Commit: "feat(auth): implement authentication routes with comprehensive integration tests"
 
 **Implementation Reference**: `clinicraft/backend/app/routes/auth.py`
+
+**Completed**: 2025-11-11 (Commit: 8fd4a3d)
 
 ---
 
