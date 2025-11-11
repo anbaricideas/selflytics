@@ -17,6 +17,7 @@ class Settings(BaseSettings):
     app_name: str = "Selflytics"
     environment: str = "dev"
     debug: bool = False
+    port: int = 8000
 
     # Database
     firestore_database: str = "(default)"
