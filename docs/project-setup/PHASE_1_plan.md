@@ -968,28 +968,50 @@ Establish production-ready infrastructure and authentication foundation for Self
 
 ---
 
-### Final Steps
+### Step 14: Telemetry Middleware Integration (Optional for MVP)
 
-- [ ] Run full test suite: `uv run pytest backend/tests/ -v --cov=app`
-- [ ] Verify 80%+ coverage
-- [ ] Run quality checks:
-  - `uv run ruff check .`
-  - `uv run ruff format .`
-  - `uv run bandit -c backend/pyproject.toml -r backend/app/ -ll`
-- [ ] Manual testing:
-  - Start server: `uv run --directory backend uvicorn app.main:app --reload`
+**Status**: ⏳ DEFERRED - Can be added before production deployment
+
+**File**: `backend/app/telemetry_config.py`
+- [ ] Copy from CliniCraft
+- [ ] Update for Selflytics configuration
+
+**File**: `backend/app/middleware/telemetry.py`
+- [ ] Copy from CliniCraft
+- [ ] Integrate with FastAPI app in main.py
+
+**Note**: Telemetry workspace package already complete (Step 3). This step adds the middleware to enable Cloud Logging in production.
+
+---
+
+### Final Steps (Before Phase 1 Completion)
+
+- [x] Run full test suite: `uv run pytest backend/tests/ -v --cov=app` ✅ 96% coverage
+- [x] Verify 80%+ coverage ✅ 96% achieved
+- [x] Run quality checks:
+  - `uv run ruff check .` ✅ Passed
+  - `uv run ruff format .` ✅ Passed
+  - `uv run bandit -c backend/pyproject.toml -r backend/app/ -ll` ✅ Passed (0 issues)
+
+**⏳ NEXT: Remaining tasks before Phase 1 completion**
+
+- [ ] **Add telemetry middleware** (Step 14) - Optional for MVP, recommended before production
+- [ ] **Manual testing**:
+  - Start server: `uv run --directory backend uvicorn app.main:app --reload --host 0.0.0.0 --port ${PORT:-8000}`
   - Test registration: POST to /auth/register
   - Test login: POST to /auth/login
   - Test protected route: GET /auth/me with token
   - Visit login page: http://localhost:8000/login
   - Visit dashboard: http://localhost:8000/dashboard (after login)
-- [ ] Terraform plan: `terraform -chdir=infra/environments/dev plan`
-- [ ] Deploy to GCP: `terraform -chdir=infra/environments/dev apply`
-- [ ] Validate deployment: `./scripts/validate-deployment.sh <deployed-url>`
-- [ ] Final commit: "feat: complete Phase 1 - Infrastructure Foundation"
-- [ ] Update this plan: mark all steps ✅ DONE
-- [ ] Update `docs/project-setup/ROADMAP.md`: Phase 1 status → ✅ DONE
-- [ ] Create PR: `feat/phase-1-infrastructure` → `main`
+- [ ] **Terraform deployment** (requires GCP secret setup):
+  - Initialize: `terraform -chdir=infra/environments/dev init -backend-config="bucket=selflytics-infra-terraform-state"`
+  - Plan: `terraform -chdir=infra/environments/dev plan`
+  - Apply: `terraform -chdir=infra/environments/dev apply`
+  - Populate secrets in GCP Secret Manager (JWT_SECRET_KEY, OPENAI_API_KEY)
+- [ ] **Validate deployment**: Test deployed Cloud Run service
+- [ ] **Final commit**: "feat: complete Phase 1 - Infrastructure Foundation"
+- [ ] **Update docs**: Mark Phase 1 complete in ROADMAP.md
+- [ ] **Create PR**: `feat/phase-1-infrastructure` → `main`
 
 ---
 
