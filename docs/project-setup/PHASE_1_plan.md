@@ -730,6 +730,8 @@ Establish production-ready infrastructure and authentication foundation for Self
 - ✅ Committed: refactor(auth): fix integration tests via dependency injection (311e82d)
 
 **Session 3 - Infrastructure & CI/CD (2025-11-12)**:
+
+**Completed in this session**:
 - ✅ Copied Terraform modules from CliniCraft (cloud_run, cloud_run_preview, secrets)
 - ✅ Created Terraform dev environment configuration (main.tf, variables.tf, outputs.tf)
 - ✅ Copied all CI/CD workflows (ci.yml, cd.yml, preview.yml, preview-cleanup.yml)
@@ -741,18 +743,14 @@ Establish production-ready infrastructure and authentication foundation for Self
 - ✅ Committed: feat(config): add configurable PORT setting (ad8d9ac)
 - ✅ All quality gates passing: ruff ✅, tests ✅ (87/87), coverage 96%, bandit ✅
 
-**Remaining for Phase 1**:
-- [ ] Telemetry middleware (deferred, can add before deployment)
-- [ ] Terraform deployment to dev environment (requires GCP setup)
-- [ ] Manual end-to-end testing
+**Still TODO in Phase 1** (see "⏳ NEXT" section below):
+- [ ] Step 14: Telemetry middleware integration (telemetry_config.py, middleware/telemetry.py)
+- [ ] Manual end-to-end testing (registration, login, dashboard flows)
+- [ ] Terraform deployment to dev environment (init, plan, apply, populate secrets)
 
-**Notes**:
-- Infrastructure and CI/CD complete - ready for deployment
-- All tests passing with excellent coverage (96%)
-- Terraform configuration validated (requires init for full check)
-- CI workflows will run on PR creation
+**Phase 1 Status**: 🔄 IN PROGRESS - Core infrastructure complete, deployment tasks remaining
 
-**Token Budget**: 47% used (94K/200K)
+**Token Budget**: 52% used (104K/200K)
 
 ---
 
@@ -968,9 +966,9 @@ Establish production-ready infrastructure and authentication foundation for Self
 
 ---
 
-### Step 14: Telemetry Middleware Integration (Optional for MVP)
+### Step 14: Telemetry Middleware Integration
 
-**Status**: ⏳ DEFERRED - Can be added before production deployment
+**Status**: ⏳ TODO - Required before Phase 1 completion
 
 **File**: `backend/app/telemetry_config.py`
 - [ ] Copy from CliniCraft
@@ -993,9 +991,9 @@ Establish production-ready infrastructure and authentication foundation for Self
   - `uv run ruff format .` ✅ Passed
   - `uv run bandit -c backend/pyproject.toml -r backend/app/ -ll` ✅ Passed (0 issues)
 
-**⏳ NEXT: Remaining tasks before Phase 1 completion**
+**⏳ NEXT: Remaining Phase 1 tasks (must complete before marking phase done)**
 
-- [ ] **Add telemetry middleware** (Step 14) - Optional for MVP, recommended before production
+- [ ] **Add telemetry middleware** (Step 14) - Required for Cloud Logging in production
 - [ ] **Manual testing**:
   - Start server: `uv run --directory backend uvicorn app.main:app --reload --host 0.0.0.0 --port ${PORT:-8000}`
   - Test registration: POST to /auth/register
