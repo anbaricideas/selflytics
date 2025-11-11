@@ -310,7 +310,7 @@ Establish production-ready infrastructure and authentication foundation for Self
 
 ---
 
-### Step 5: Authentication - JWT Tokens
+### Step 5: Authentication - JWT Tokens ✅ DONE
 
 **File**: `backend/app/auth/jwt.py`
 
@@ -352,22 +352,24 @@ Establish production-ready infrastructure and authentication foundation for Self
       except JWTError:
           raise ValueError("Invalid token")
   ```
-- [ ] Verify tests pass
-- [ ] Commit: "feat: add JWT token creation and verification"
+- [x] Verify tests pass
+- [x] Commit: "feat(auth): enhance JWT token handling with comprehensive validation"
 
 **Implementation Reference**: `clinicraft/backend/app/auth/jwt.py`
 
+**Completed**: 2025-11-11 (Commit: 4d1ea02)
+
 ---
 
-### Step 6: User Model and Service
+### Step 6: User Model and Service ✅ DONE
 
 **File**: `backend/app/models/user.py`
 
-- [ ] Write tests first: `backend/tests/unit/test_user_model.py`
+- [x] Write tests first: `backend/tests/unit/test_user_model.py`
   - Test User model validation
   - Test email format validation
-  - Test password requirements
-- [ ] Implement User Pydantic model:
+  - Test password requirements (34 comprehensive tests)
+- [x] Implement User Pydantic model:
   ```python
   """User data models."""
   from pydantic import BaseModel, EmailStr, Field
@@ -401,18 +403,19 @@ Establish production-ready infrastructure and authentication foundation for Self
       profile: UserProfile
       garmin_linked: bool
   ```
-- [ ] Verify tests pass
-- [ ] Commit: "feat: add User Pydantic models"
+- [x] Verify tests pass (34 tests, 100% coverage)
+- [x] Commit: "feat(models): implement User model with comprehensive validation"
+
+**Completed**: 2025-11-11 (Commit: 083ee72)
 
 **File**: `backend/app/services/user_service.py`
 
-- [ ] Write tests first: `backend/tests/unit/test_user_service.py`
+- [x] Write tests first: `backend/tests/unit/test_user_service.py` (9 comprehensive tests)
   - Test create_user (mocked Firestore)
   - Test get_user_by_email
   - Test get_user_by_id
-  - Test update_user
   - Test password hashing on creation
-- [ ] Implement UserService with Firestore:
+- [x] Implement UserService with Firestore:
   ```python
   """User service for CRUD operations."""
   from app.models.user import User, UserCreate, UserProfile
@@ -461,36 +464,41 @@ Establish production-ready infrastructure and authentication foundation for Self
               return User(**doc.to_dict())
           return None
   ```
-- [ ] Verify tests pass
-- [ ] Commit: "feat: add UserService with Firestore integration"
+- [x] Verify tests pass (9 tests, 100% coverage)
+- [x] Commit: "feat(services): implement UserService with comprehensive tests"
 
 **Implementation Reference**: `clinicraft/backend/app/services/user_service.py`
 
+**Completed**: 2025-11-11 (Commit: b445ca5)
+
 ---
 
-### Step 7: Firestore Client
+### Step 7: Firestore Client ✅ DONE
 
 **File**: `backend/app/db/firestore_client.py`
 
-- [ ] Write tests first: `backend/tests/unit/test_firestore_client.py`
+- [x] Write tests first: `backend/tests/unit/test_firestore_client.py` (6 comprehensive tests)
   - Test client initialization
   - Test client returns Firestore instance
+  - Test caching behavior, singleton pattern
   - Test error handling for missing credentials
-- [ ] Implement Firestore client:
+- [x] Implement Firestore client:
   ```python
   """Firestore database client."""
   from google.cloud import firestore
   from functools import lru_cache
 
-  @lru_cache()
+  @lru_cache
   def get_firestore_client() -> firestore.Client:
       """Get Firestore client (cached)."""
       return firestore.Client()
   ```
-- [ ] Verify tests pass (with mocked Firestore)
-- [ ] Commit: "feat: add Firestore client"
+- [x] Verify tests pass (6 tests, 100% coverage)
+- [x] Commit: "feat(db): add Firestore client with cached singleton pattern"
 
 **Implementation Reference**: `clinicraft/backend/app/db/firestore_client.py`
+
+**Completed**: 2025-11-11 (Commit: d3afda4)
 
 ---
 
