@@ -791,9 +791,11 @@ async def send_message(message: str, conversation_id: str, current_user: User):
 
 ### 6.1 GCP Resources (Terraform Managed)
 
-**Project:** `selflytics-prod` (to be created)
+**Project ID:** `selflytics-infra`
+**Project Number:** `174666459313`
 **Region:** `australia-southeast1` (Sydney)
 **Production Domain:** `selflytics.anbaricideas.com`
+**Terraform State Bucket:** `gs://selflytics-infra-terraform-state/`
 
 | Resource | Type | Configuration | Cost Estimate |
 |----------|------|---------------|---------------|
@@ -1336,7 +1338,7 @@ uv pip list --outdated  # Check for outdated packages
 **Goal:** Establish production-ready infrastructure and authentication
 
 **Deliverables:**
-- [ ] GCP project setup (`selflytics-prod`)
+- [x] GCP project setup (`selflytics-infra`)
 - [ ] Terraform modules (Cloud Run, Firestore, Secret Manager, GCS, Cloud Logging)
 - [ ] GitHub Actions CI/CD pipeline (ci.yml, cd.yml)
 - [ ] Complete project structure (copy from CliniCraft, all folders from day one)
@@ -1754,8 +1756,8 @@ selflytics/
 
 **Immediate Actions:**
 1. ✅ Specification reviewed and clarified (domain, region, telemetry, structure, beta size)
-2. Create GitHub repository for the project
-3. Set up GCP project (`selflytics-prod`) and billing
+2. ✅ GitHub repository created (https://github.com/anbaricideas/selflytics)
+3. ✅ GCP project setup (`selflytics-infra`) with billing and APIs enabled
 4. Set up complete project structure (following CliniCraft organization)
 5. Begin spike implementation (1 week)
 6. Decision meeting after spike: Proceed to Phase 1 or pivot?
