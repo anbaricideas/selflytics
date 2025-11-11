@@ -1,0 +1,363 @@
+name: CD
+
+on:
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy to'
+        required: true
+        default: 'dev'
+        type: choice
+        options:
+          - dev
+          # staging and prod disabled pending Terraform configuration
+          # See docs/operations/DEPLOYMENT.md - "Setting Up Staging and Production Environments"
+          # - staging
+          # - prod
+
+env:
+  PYTHON_VERSION: "3.12"
+  REGION: "australia-southeast1"
+  REPO_NAME: "selflytics"
+  IMAGE_NAME: "backend"
+
+jobs:
+  build-and-push:
+    name: Build & Push Docker Image
+    runs-on: ubuntu-latest
+    # Only run if CI succeeded (or workflow_dispatch)
+    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' }}
+    outputs:
+      # Only pass non-sensitive data - construct image in deploy job to avoid masking
+      environment: ${{ steps.set-env.outputs.environment }}
+
+    # Set up authentication to GCP
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+
+      - name: Set environment (manual trigger)
+        if: github.event_name == 'workflow_dispatch'
+        run: echo "ENVIRONMENT=${{ github.event.inputs.environment }}" >> $GITHUB_ENV
+
+      - name: Set environment (workflow_run trigger)
+        if: github.event_name == 'workflow_run'
+        run: echo "ENVIRONMENT=dev" >> $GITHUB_ENV
+
+      - name: Output environment for deploy job
+        id: set-env
+        run: |
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            echo "environment=${{ github.event.inputs.environment }}" >> $GITHUB_OUTPUT
+          else
+            echo "environment=dev" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Build and tag image
+        run: |
+          SHA="${{ github.event.workflow_run.head_sha || github.sha }}"
+          TAG="${SHA:0:7}"
+          IMAGE="${{ env.REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ env.REPO_NAME }}/${{ env.IMAGE_NAME }}:${TAG}"
+          echo "Building image: ${IMAGE}"
+
+      # Authenticate to Google Cloud using Workload Identity Federation
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.WIF_PROVIDER }}
+          service_account: ${{ secrets.WIF_SERVICE_ACCOUNT }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Configure Docker for Artifact Registry
+        run: gcloud auth configure-docker ${{ env.REGION }}-docker.pkg.dev
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Prepare image tag
+        id: meta
+        run: |
+          SHA="${{ github.event.workflow_run.head_sha || github.sha }}"
+          TAG="${SHA:0:7}"
+          IMAGE="${{ env.REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ env.REPO_NAME }}/${{ env.IMAGE_NAME }}:${TAG}"
+          echo "IMAGE=${IMAGE}" >> $GITHUB_ENV
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./backend
+          platforms: linux/amd64
+          push: true
+          tags: ${{ env.IMAGE }}
+
+  deploy:
+    name: Deploy to Cloud Run
+    runs-on: ubuntu-latest
+    needs: build-and-push
+    environment:
+      name: ${{ needs.build-and-push.outputs.environment || 'dev' }}
+      url: ${{ steps.deploy.outputs.url }}
+
+    permissions:
+      contents: read
+      id-token: write
+
+    defaults:
+      run:
+        working-directory: infra/environments/${{ github.event.inputs.environment || 'dev' }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+
+      - name: Set environment
+        run: |
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            echo "ENVIRONMENT=${{ github.event.inputs.environment }}" >> $GITHUB_ENV
+          else
+            echo "ENVIRONMENT=dev" >> $GITHUB_ENV
+          fi
+
+      # Authenticate to Google Cloud
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.WIF_PROVIDER }}
+          service_account: ${{ secrets.WIF_SERVICE_ACCOUNT }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.10.5
+          terraform_wrapper: false
+
+      - name: Terraform Init
+        run: |
+          terraform init \
+            -backend-config="bucket=${{ secrets.GCP_PROJECT_ID }}-terraform-state"
+
+      - name: Terraform Plan
+        run: |
+          # Construct image URL from commit SHA (same logic as build job)
+          SHA="${{ github.event.workflow_run.head_sha || github.sha }}"
+          TAG="${SHA:0:7}"
+          IMAGE="${{ env.REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ env.REPO_NAME }}/${{ env.IMAGE_NAME }}:${TAG}"
+          echo "Deploying image: ${IMAGE}"
+          terraform plan \
+            -var="project_id=${{ secrets.GCP_PROJECT_ID }}" \
+            -var="image=${IMAGE}" \
+            -out=tfplan
+
+      - name: Terraform Apply
+        run: terraform apply -auto-approve tfplan
+
+      - name: Get Service URL
+        id: deploy
+        run: |
+          URL=$(terraform output -raw service_url)
+          echo "url=${URL}" >> $GITHUB_OUTPUT
+          echo "Service URL: ${URL}"
+
+  validate-dev:
+    name: Validate Dev Deployment
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: deploy
+    if: needs.deploy.result == 'success'
+
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          version: "latest"
+          enable-cache: true
+          cache-dependency-glob: "backend/uv.lock"
+
+      - name: Install dependencies
+        run: |
+          cd backend
+          uv sync --all-extras
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.WIF_PROVIDER }}
+          service_account: ${{ secrets.WIF_SERVICE_ACCOUNT }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Get service URL
+        id: get-url
+        env:
+          ENVIRONMENT: ${{ github.event.inputs.environment || 'dev' }}
+          GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+          GCP_REGION: ${{ env.REGION }}
+        run: |
+          SERVICE_NAME="clinicraft-webapp-${ENVIRONMENT}"
+          SERVICE_URL=$(gcloud run services describe "$SERVICE_NAME" \
+            --region="$GCP_REGION" \
+            --project="$GCP_PROJECT_ID" \
+            --format="value(status.url)")
+
+          if [ -z "$SERVICE_URL" ]; then
+            echo "❌ ERROR: Failed to retrieve service URL"
+            exit 1
+          fi
+
+          echo "url=$SERVICE_URL" >> $GITHUB_OUTPUT
+          echo "✅ Service URL: $SERVICE_URL"
+
+      - name: Authenticate with ID token for Cloud Run
+        id: auth-cloudrun
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.WIF_PROVIDER }}
+          service_account: ${{ secrets.WIF_SERVICE_ACCOUNT }}
+          token_format: 'id_token'
+          id_token_audience: ${{ steps.get-url.outputs.url }}
+          id_token_include_email: true
+
+      - name: Verify ID token generation
+        env:
+          ID_TOKEN: ${{ steps.auth-cloudrun.outputs.id_token }}
+        run: |
+          if [ -z "$ID_TOKEN" ]; then
+            echo "❌ ERROR: ID_TOKEN is empty!"
+            exit 1
+          fi
+          echo "✅ ID token generated successfully"
+
+      - name: Wait for service to be ready
+        env:
+          SERVICE_URL: ${{ steps.get-url.outputs.url }}
+          ID_TOKEN: ${{ steps.auth-cloudrun.outputs.id_token }}
+        run: |
+          echo "⏳ Waiting for service to be ready..."
+
+          MAX_ATTEMPTS=20
+          ATTEMPT=0
+          CONSECUTIVE_401_COUNT=0
+          MAX_CONSECUTIVE_401=3
+
+          while [ $ATTEMPT -lt $MAX_ATTEMPTS ]; do
+            ATTEMPT=$((ATTEMPT + 1))
+
+            HTTP_CODE=$(curl -s -w "%{http_code}" -o /dev/null \
+              -H "Authorization: Bearer $ID_TOKEN" \
+              "$SERVICE_URL/health")
+
+            if [ "$HTTP_CODE" = "200" ]; then
+              echo "✅ Service is ready! (attempt $ATTEMPT/$MAX_ATTEMPTS)"
+              exit 0
+            elif [ "$HTTP_CODE" = "401" ] || [ "$HTTP_CODE" = "403" ]; then
+              CONSECUTIVE_401_COUNT=$((CONSECUTIVE_401_COUNT + 1))
+
+              if [ $CONSECUTIVE_401_COUNT -ge $MAX_CONSECUTIVE_401 ]; then
+                echo ""
+                echo "❌ IAM permission error: WIF service account lacks Cloud Run Invoker role"
+                echo "This should be fixed by the Terraform IAM binding added in this PR."
+                echo "If this persists, verify Terraform applied successfully."
+                exit 1
+              fi
+              echo "⚠️  Got $HTTP_CODE (attempt $CONSECUTIVE_401_COUNT/$MAX_CONSECUTIVE_401)"
+            else
+              CONSECUTIVE_401_COUNT=0
+              echo "ℹ️  Got HTTP $HTTP_CODE, retrying... (attempt $ATTEMPT/$MAX_ATTEMPTS)"
+            fi
+
+            if [ $ATTEMPT -lt $MAX_ATTEMPTS ]; then
+              sleep 10
+            fi
+          done
+
+          echo "❌ Service did not become ready after $MAX_ATTEMPTS attempts"
+          exit 1
+
+      - name: Run validation script
+        env:
+          GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+          GCP_REGION: ${{ env.REGION }}
+          ID_TOKEN: ${{ steps.auth-cloudrun.outputs.id_token }}
+          ENVIRONMENT: ${{ github.event.inputs.environment || 'dev' }}
+        run: |
+          ./scripts/validate-deployment.sh \
+            ${{ steps.get-url.outputs.url }} \
+            --env ${ENVIRONMENT} \
+            --ci-mode \
+            --fail-if-unhealthy
+
+      - name: Run E2E tests against deployed environment
+        env:
+          TEST_BASE_URL: ${{ steps.get-url.outputs.url }}
+          ID_TOKEN: ${{ steps.auth-cloudrun.outputs.id_token }}
+        run: |
+          echo "🧪 Running E2E tests against ${{ github.event.inputs.environment || 'dev' }} deployment..."
+          echo "Target URL: $TEST_BASE_URL"
+          cd backend
+          uv run pytest tests/e2e/test_deployed_user_journey.py -v --tb=short
+
+      - name: Validation Summary
+        if: always()
+        run: |
+          cat >> $GITHUB_STEP_SUMMARY <<EOF
+          ## 🧪 Post-Deployment Validation
+
+          **Status**: ${{ job.status == 'success' && '✅ All checks passed' || '❌ Validation failed' }}
+
+          The ${{ github.event.inputs.environment || 'dev' }} deployment has been validated with:
+          - Health endpoint check
+          - API functionality tests
+          - Feature implementation checks
+          - E2E test suite
+
+          ${{ job.status != 'success' && 'See workflow logs for details.' || '' }}
+          EOF
+
+  # Summary job
+  cd-success:
+    name: CD Success
+    needs: [build-and-push, deploy, validate-dev]
+    runs-on: ubuntu-latest
+    if: success()
+    steps:
+      - name: Check all jobs succeeded
+        if: |
+          contains(needs.*.result, 'failure') ||
+          contains(needs.*.result, 'cancelled')
+        run: exit 1
+
+      - name: Deployment summary
+        run: |
+          echo "🚀 Deployment successful!"
+          echo "Environment: ${{ github.event.inputs.environment || 'dev' }}"
+          echo "Validation: ${{ needs.validate-dev.result }}"
