@@ -1,19 +1,43 @@
 """Authentication routes for user registration and login."""
 
-from fastapi import APIRouter, Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi.responses import HTMLResponse
+from fastapi.security import OAuth2PasswordRequestForm
 
-from app.auth.jwt import create_access_token, verify_token
+from app.auth.dependencies import get_current_user
+from app.auth.jwt import create_access_token
 from app.auth.password import verify_password
+from app.dependencies import get_templates
 from app.models.user import UserCreate, UserResponse
 from app.services.user_service import UserService
 
 
-router = APIRouter(prefix="/auth", tags=["authentication"])
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login")
+router = APIRouter(tags=["authentication"])
 
 
-@router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
+# ========================================
+# Template Routes (HTML pages)
+# ========================================
+
+
+@router.get("/register", response_class=HTMLResponse)
+async def register_form(request: Request, templates=Depends(get_templates)) -> HTMLResponse:
+    """Display registration form."""
+    return templates.TemplateResponse(request=request, name="register.html")
+
+
+@router.get("/login", response_class=HTMLResponse)
+async def login_form(request: Request, templates=Depends(get_templates)) -> HTMLResponse:
+    """Display login form."""
+    return templates.TemplateResponse(request=request, name="login.html")
+
+
+# ========================================
+# API Routes (JSON endpoints)
+# ========================================
+
+
+@router.post("/auth/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
 async def register(user_data: UserCreate):
     """Register a new user.
 
@@ -47,7 +71,7 @@ async def register(user_data: UserCreate):
     )
 
 
-@router.post("/login")
+@router.post("/auth/login")
 async def login(form_data: OAuth2PasswordRequestForm = Depends()):
     """Login user and return JWT access token.
 
@@ -77,45 +101,7 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends()):
     return {"access_token": access_token, "token_type": "bearer"}
 
 
-async def get_current_user(token: str = Depends(oauth2_scheme)) -> UserResponse:
-    """Get current authenticated user from JWT token.
-
-    Args:
-        token: JWT access token from Authorization header
-
-    Returns:
-        UserResponse with current user data
-
-    Raises:
-        HTTPException 401: If token is invalid or user not found
-    """
-    try:
-        token_data = verify_token(token)
-    except ValueError:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Could not validate credentials",
-            headers={"WWW-Authenticate": "Bearer"},
-        ) from None
-
-    user_service = UserService()
-    user = await user_service.get_user_by_id(token_data.user_id)
-
-    if user is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="User not found",
-        )
-
-    return UserResponse(
-        user_id=user.user_id,
-        email=user.email,
-        profile=user.profile,
-        garmin_linked=user.garmin_linked,
-    )
-
-
-@router.get("/me", response_model=UserResponse)
+@router.get("/auth/me", response_model=UserResponse)
 async def get_me(current_user: UserResponse = Depends(get_current_user)):
     """Get current user information.
 
