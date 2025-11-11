@@ -1,28 +1,46 @@
 """Integration tests for authentication routes."""
 
 from datetime import UTC, datetime
-from unittest.mock import AsyncMock, Mock, patch
+from unittest.mock import AsyncMock, Mock
 
 import pytest
 from fastapi.testclient import TestClient
 
+from app.auth.dependencies import get_user_service
 from app.main import app
 from app.models.user import User, UserProfile
-
-
-@pytest.fixture
-def client():
-    """Provide a TestClient for the FastAPI app."""
-    return TestClient(app)
+from app.services.user_service import UserService
 
 
 @pytest.fixture
 def mock_user_service():
-    """Provide a mocked UserService."""
-    with patch("app.routes.auth.UserService") as mock_service_class:
-        mock_service = Mock()
-        mock_service_class.return_value = mock_service
-        yield mock_service
+    """Provide a mocked UserService for integration tests.
+
+    This fixture creates a mock UserService that can be configured in individual
+    tests. It's automatically injected via app.dependency_overrides in the client
+    fixture.
+    """
+    return Mock(spec=UserService)
+
+
+@pytest.fixture
+def client(mock_user_service):
+    """Provide a TestClient with mocked UserService.
+
+    This fixture uses FastAPI's dependency_overrides to inject the mock
+    UserService for all routes, preventing Firestore connection attempts.
+    The override is automatically cleaned up after each test.
+    """
+    # Override the get_user_service dependency
+    app.dependency_overrides[get_user_service] = lambda: mock_user_service
+
+    # Create test client
+    test_client = TestClient(app)
+
+    yield test_client
+
+    # Clean up override after test
+    app.dependency_overrides.clear()
 
 
 @pytest.fixture

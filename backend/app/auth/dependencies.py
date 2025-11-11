@@ -11,7 +11,22 @@ from app.services.user_service import UserService
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login")
 
 
-async def get_current_user(token: str = Depends(oauth2_scheme)) -> UserResponse:
+def get_user_service() -> UserService:
+    """Get UserService instance.
+
+    This dependency function allows for easy mocking in tests
+    via app.dependency_overrides.
+
+    Returns:
+        UserService instance
+    """
+    return UserService()
+
+
+async def get_current_user(
+    token: str = Depends(oauth2_scheme),
+    user_service: UserService = Depends(get_user_service),  # noqa: B008
+) -> UserResponse:
     """Get current authenticated user from JWT token.
 
     Args:
@@ -32,7 +47,6 @@ async def get_current_user(token: str = Depends(oauth2_scheme)) -> UserResponse:
             headers={"WWW-Authenticate": "Bearer"},
         ) from None
 
-    user_service = UserService()
     user = await user_service.get_user_by_id(token_data.user_id)
 
     if user is None:

@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.responses import HTMLResponse
 from fastapi.security import OAuth2PasswordRequestForm
 
-from app.auth.dependencies import get_current_user
+from app.auth.dependencies import get_current_user, get_user_service
 from app.auth.jwt import create_access_token
 from app.auth.password import verify_password
 from app.dependencies import get_templates
@@ -38,7 +38,10 @@ async def login_form(request: Request, templates=Depends(get_templates)) -> HTML
 
 
 @router.post("/auth/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
-async def register(user_data: UserCreate):
+async def register(
+    user_data: UserCreate,
+    user_service: UserService = Depends(get_user_service),
+):
     """Register a new user.
 
     Args:
@@ -50,7 +53,6 @@ async def register(user_data: UserCreate):
     Raises:
         HTTPException 400: If email already registered
     """
-    user_service = UserService()
 
     # Check if email already exists
     existing_user = await user_service.get_user_by_email(user_data.email)
@@ -72,7 +74,10 @@ async def register(user_data: UserCreate):
 
 
 @router.post("/auth/login")
-async def login(form_data: OAuth2PasswordRequestForm = Depends()):
+async def login(
+    form_data: OAuth2PasswordRequestForm = Depends(),
+    user_service: UserService = Depends(get_user_service),
+):
     """Login user and return JWT access token.
 
     Args:
@@ -84,7 +89,6 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends()):
     Raises:
         HTTPException 401: If credentials are invalid
     """
-    user_service = UserService()
 
     # Get user by email (OAuth2 uses 'username' field for email)
     user = await user_service.get_user_by_email(form_data.username)
