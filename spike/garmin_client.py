@@ -1,7 +1,7 @@
 """Garmin Connect client (adapted from garmin_agents for spike validation)."""
 
 import json
-from datetime import date, timedelta
+from datetime import date
 from pathlib import Path
 from typing import Any
 
@@ -160,9 +160,7 @@ class GarminClient:
                     filtered_activities.append(activity)
 
             # Cache results
-            cache_file = (
-                self.cache_dir / f"activities_{start_date}_{end_date}.json"
-            )
+            cache_file = self.cache_dir / f"activities_{start_date}_{end_date}.json"
             cache_file.write_text(
                 json.dumps(filtered_activities, indent=2, default=str)
             )

@@ -1,7 +1,7 @@
 # Garmin Agents Repository - Exploration Summary
 
-**Date**: November 2025  
-**Repository**: `/Users/bryn/repos/garmin_agents`  
+**Date**: November 2025
+**Repository**: `/Users/bryn/repos/garmin_agents`
 **Exploration Scope**: Medium thoroughness with focus on reusable patterns and architecture
 
 ## 1. PROJECT STRUCTURE & ORGANIZATION
@@ -42,7 +42,7 @@ garmin_agents/
 
 ### Smolagents Framework Integration
 
-**Library**: `smolagents[litellm,telemetry]` (v0.3+)  
+**Library**: `smolagents[litellm,telemetry]` (v0.3+)
 **Agent Type**: `ToolCallingAgent` with incremental tool additions
 
 #### Core Agent Setup
@@ -91,7 +91,7 @@ def get_recent_activities(
 
 ### Model Specification System
 
-**Format**: `"provider:model"`  
+**Format**: `"provider:model"`
 **Examples**:
 - `"ollama:qwen2:7b"` - Local Ollama
 - `"hf:meta-llama/Llama-3.2-3B-Instruct"` - HuggingFace
@@ -141,7 +141,7 @@ class GarminClient:
         self.credential_manager = CredentialManager(user_id, username)
         self.garth_client = garth.Client()  # Per-user instance
         self.authenticated = False
-    
+
     def authenticate(self, username: str, password: str, raise_on_mfa: bool = False) -> bool:
         """
         - Try resume from stored tokens first
@@ -191,8 +191,8 @@ GarminAuthException (base)
 ## 4. FRONTEND - GRADIO WEB INTERFACE
 
 ### Structure
-**Entry Point**: `services/web-app/src/garmin_web/app.py` → `main()`  
-**Framework**: Gradio 5.45.0 with FastAPI backend  
+**Entry Point**: `services/web-app/src/garmin_web/app.py` → `main()`
+**Framework**: Gradio 5.45.0 with FastAPI backend
 **Deployment**: HuggingFace Spaces (production URL in `README.md`)
 
 ### Key Components
@@ -276,7 +276,7 @@ Manages:
 resource "google_firestore_database" "database"
   # Native mode Firestore database
   # Multi-region backup enabled
-  
+
 resource "google_service_account" "firestore_sa"
   # Service account for Firestore access
   # Role: datastore.user
@@ -600,10 +600,10 @@ class UserProfile(BaseModel):
         str_strip_whitespace=True,
         validate_default=True,
     )
-    
+
     birth_date: date = Field(alias="birthDate")
     vo2_max: float | None = Field(default=None, alias="vo2Max")
-    
+
     def model_dump(self, by_alias=False, exclude_none=True, mode="json"):
         # For agent consumption
 ```
@@ -686,4 +686,3 @@ gh pr checks <PR_NUMBER>
 6. **Thread-Local Context** - Safe multi-user support
 7. **Redaction Utilities** - Security-first logging
 8. **uv Monorepo** - Package coordination with clean separation
-

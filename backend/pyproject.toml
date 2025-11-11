@@ -1,0 +1,147 @@
+[project]
+name = "selflytics"
+version = "0.1.0"
+description = "Selflytics - AI-powered analysis for quantified self data"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    # Web Framework
+    "fastapi>=0.109.0",
+    "uvicorn[standard]>=0.27.0",
+    "jinja2>=3.1.3",
+    "python-multipart>=0.0.6",
+    # Data Validation
+    "pydantic>=2.5.0",
+    "pydantic-settings>=2.1.0",
+    "email-validator>=2.1.0",
+    # Authentication
+    "python-jose[cryptography]>=3.3.0",
+    "passlib[bcrypt]>=1.7.4",
+    # GCP Services
+    "google-cloud-firestore>=2.14.0",
+    "google-cloud-secret-manager>=2.18.0",
+    "google-cloud-logging>=3.9.0",
+    # HTTP Client
+    "httpx>=0.26.0",
+    # Telemetry
+    "opentelemetry-api>=1.38.0",
+    "opentelemetry-sdk>=1.38.0",
+    "opentelemetry-instrumentation-logging>=0.59b0",
+    "selflytics-telemetry",
+]
+
+[project.optional-dependencies]
+dev = [
+    # Testing
+    "pytest>=7.4.0",
+    "pytest-cov>=4.1.0",
+    "pytest-asyncio>=0.23.0",
+
+    # Code Quality
+    "ruff>=0.1.0",
+    "pre-commit>=3.6.0",
+
+    # Security
+    "bandit>=1.7.6",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["app"]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+fix = true  # Auto-fix when possible
+
+[tool.ruff.lint]
+select = [
+    "E",     # pycodestyle errors
+    "W",     # pycodestyle warnings
+    "F",     # pyflakes
+    "I",     # isort
+    "B",     # flake8-bugbear
+    "C4",    # flake8-comprehensions
+    "UP",    # pyupgrade
+    "N",     # pep8-naming
+    "S",     # flake8-bandit (security)
+    "T20",   # flake8-print
+    "PT",    # flake8-pytest-style
+    "RET",   # flake8-return
+    "SIM",   # flake8-simplify
+    "TCH",   # flake8-type-checking
+    "ARG",   # flake8-unused-arguments
+    "PTH",   # flake8-use-pathlib
+    "ERA",   # eradicate (commented-out code)
+    "PL",    # pylint (all)
+    "PLC",   # pylint conventions
+    "PERF",  # perflint (performance)
+    "RUF",   # ruff-specific rules
+]
+ignore = [
+    "E501",    # line too long (handled by formatter)
+    "S101",    # assert usage (needed for pytest)
+    "PLR0913", # too many arguments (sometimes necessary)
+    "PLR2004", # magic values (sometimes OK)
+]
+
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["F401", "F403"]  # Allow unused imports in __init__.py
+"tests/**" = ["S101", "ARG", "PLR2004", "PLC0415"]  # Allow assert, unused args, magic values, imports in tests
+"**/tests/**" = ["S101", "ARG", "PLR2004", "PLC0415"]  # Allow same in package tests
+"**/conftest.py" = ["ARG"]  # Allow unused args in fixtures
+"**/routes/**" = ["B008"]  # Allow Depends() in FastAPI route argument defaults
+
+[tool.ruff.lint.isort]
+known-first-party = ["app"]
+force-single-line = false
+lines-after-imports = 2
+
+[tool.ruff.lint.mccabe]
+max-complexity = 10
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+line-ending = "auto"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = "test_*.py"
+python_classes = "Test*"
+python_functions = "test_*"
+asyncio_mode = "auto"
+addopts = "-v --cov=app --cov-report=term-missing --cov-report=html"
+markers = [
+    "e2e: End-to-end tests that require external dependencies (gcloud, GCP, etc.)",
+    "api: Tests that make calls to external APIs (OpenAI, Garmin, etc.)",
+]
+
+[tool.coverage.run]
+source = ["app"]
+omit = ["tests/*", "**/__init__.py"]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+    "if TYPE_CHECKING:",
+]
+
+[tool.bandit]
+exclude_dirs = ["tests", "backend/tests"]
+skips = ["B101"]  # Allow assert in tests
+
+[tool.uv.workspace]
+members = [
+    "packages/telemetry",
+]
+
+[tool.uv.sources]
+selflytics-telemetry = { workspace = true, editable = true }
