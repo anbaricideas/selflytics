@@ -2,7 +2,6 @@
 
 **Branch**: `feat/phase-1-infrastructure`
 **Status**: ⬜ TODO
-**Estimated Time**: 80 hours (2 weeks)
 
 ---
 

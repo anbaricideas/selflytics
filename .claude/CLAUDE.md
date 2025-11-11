@@ -80,6 +80,20 @@ git log --oneline main..HEAD --format="%ad" --date=format:"%Y-%m-%d %H:00" | uni
 4. **Track Progress**: Mark ✅ DONE in phase plan (single source of truth)
 5. **Commit Often**: Clear conventional commit messages
 
+## Planning and Time Tracking
+
+**❌ DO NOT include time estimates** for future work in phase plans or roadmaps. Time estimates are unreliable and create false expectations.
+
+**✅ DO track actual time** for completed work using git timestamps:
+```bash
+# Hours estimate for completed work (accurate)
+git log --oneline main..HEAD --format="%ad" --date=format:"%Y-%m-%d %H:00" | uniq | wc -l
+```
+
+- Phase plans should describe **what** needs to be done, not **how long** it will take
+- Roadmap tracks actual time for completed phases only
+- Focus on deliverables and success criteria, not duration
+
 ## Critical Patterns
 
 ### Security - PII Redaction (ALWAYS)

@@ -2,7 +2,6 @@
 
 **Branch**: `feat/phase-2-garmin`
 **Status**: ⬜ TODO
-**Estimated Time**: 80 hours (2 weeks)
 
 ---
 

@@ -108,12 +108,12 @@ Start from: wherever marked as ⏳ NEXT
 | Phase | Description | Status | Actual Time | Branch | PR |
 |-------|-------------|--------|-------------|--------|-----|
 | [Spike](./SPIKE_plan.md) | Technical Validation | ✅ DONE | 8 hours | `feat/selflytics-spike` | - |
-| [1](./PHASE_1_plan.md) | Infrastructure Foundation | ⬜ TODO | 80 hours (est) | `feat/phase-1-infrastructure` | - |
-| [2](./PHASE_2_plan.md) | Garmin Integration | ⬜ TODO | 80 hours (est) | `feat/phase-2-garmin` | - |
-| [3](./PHASE_3_plan.md) | Chat + AI Agent | ⬜ TODO | 120 hours (est) | `feat/phase-3-chat-ai` | - |
-| 4 | Visualization Generation | 📅 PLANNED | 80 hours (est) | TBD | - |
-| 5 | Goals & Polish | 📅 PLANNED | 40 hours (est) | TBD | - |
-| 6 | Launch Preparation | 📅 PLANNED | 40 hours (est) | TBD | - |
+| [1](./PHASE_1_plan.md) | Infrastructure Foundation | ⬜ TODO | - | `feat/phase-1-infrastructure` | - |
+| [2](./PHASE_2_plan.md) | Garmin Integration | ⬜ TODO | - | `feat/phase-2-garmin` | - |
+| [3](./PHASE_3_plan.md) | Chat + AI Agent | ⬜ TODO | - | `feat/phase-3-chat-ai` | - |
+| 4 | Visualization Generation | 📅 PLANNED | - | TBD | - |
+| 5 | Goals & Polish | 📅 PLANNED | - | TBD | - |
+| 6 | Launch Preparation | 📅 PLANNED | - | TBD | - |
 
 **Current Phase**: ⏳ NEXT → [Phase 1](./PHASE_1_plan.md)
 

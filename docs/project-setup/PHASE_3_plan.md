@@ -2,7 +2,6 @@
 
 **Branch**: `feat/phase-3-chat-ai`
 **Status**: ⬜ TODO
-**Estimated Time**: 120 hours (3 weeks)
 
 ---
 
