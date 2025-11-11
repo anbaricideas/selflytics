@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Selflytics - AI-powered analysis for quantified self data">
+    <title>{% block title %}Selflytics{% endblock %}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <style>
+        /* Alpine.js cloak - hide elements until Alpine loads */
+        [x-cloak] {
+            display: none !important;
+        }
+    </style>
+    <style>
+        /* Custom focus styles for accessibility */
+        *:focus {
+            outline: 2px solid #3B82F6;
+            outline-offset: 2px;
+        }
+    </style>
+</head>
+<body class="h-full bg-gray-50 antialiased">
+    <div class="min-h-full">
+        <!-- Alert Messages -->
+        {% if error %}
+        <div class="max-w-7xl mx-auto px-4 pt-4">
+            <div class="bg-red-50 border-l-4 border-red-500 p-4 rounded-r-md" role="alert">
+                <div class="flex">
+                    <div class="flex-shrink-0">
+                        <svg class="h-5 w-5 text-red-500" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
+                        </svg>
+                    </div>
+                    <div class="ml-3">
+                        <p class="text-sm text-red-800 font-medium">{{ error }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        {% if success %}
+        <div class="max-w-7xl mx-auto px-4 pt-4">
+            <div class="bg-green-50 border-l-4 border-green-500 p-4 rounded-r-md" role="alert">
+                <div class="flex">
+                    <div class="flex-shrink-0">
+                        <svg class="h-5 w-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                        </svg>
+                    </div>
+                    <div class="ml-3">
+                        <p class="text-sm text-green-800 font-medium">{{ success }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Page Content -->
+        <main class="py-8">
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+
+    <!-- Footer (optional for MVP) -->
+    <footer role="contentinfo" class="mt-auto py-6 text-center text-sm text-gray-500">
+        <p>&copy; 2025 Selflytics. All rights reserved.</p>
+    </footer>
+</body>
+</html>
