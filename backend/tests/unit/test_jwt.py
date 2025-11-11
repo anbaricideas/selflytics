@@ -1,9 +1,8 @@
 """Unit tests for JWT token handling."""
 
-from datetime import datetime, timedelta, timezone
+from datetime import timedelta
 
 import pytest
-from jose import JWTError
 
 from app.auth.jwt import create_access_token, verify_token
 
@@ -64,7 +63,7 @@ class TestJWTTokens:
         ]
 
         for invalid_token in invalid_tokens:
-            with pytest.raises(ValueError):
+            with pytest.raises(ValueError, match=r"(?i)invalid|expired|format"):
                 verify_token(invalid_token)
 
     def test_verify_token_with_missing_claims(self):
@@ -83,7 +82,7 @@ class TestJWTTokens:
 
     def test_verify_token_with_none_input(self):
         """Test that verify_token handles None input gracefully."""
-        with pytest.raises(ValueError):
+        with pytest.raises(ValueError, match=r"(?i)invalid|format"):
             verify_token(None)
 
     def test_create_token_preserves_additional_claims(self):
@@ -103,7 +102,6 @@ class TestJWTTokens:
 
     def test_token_includes_expiry_claim(self):
         """Test that tokens include the 'exp' (expiry) claim."""
-        from jose import jwt
 
         data = {"sub": "user123", "email": "user@example.com"}
         token = create_access_token(data)

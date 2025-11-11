@@ -5,7 +5,7 @@ used for user authentication. Tokens are signed with HS256 and include
 user_id (sub) and email claims.
 """
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 from jose import JWTError, jwt
 from pydantic import BaseModel
@@ -37,19 +37,14 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None) -> s
 
     # Set expiration time
     if expires_delta:
-        expire = datetime.now(timezone.utc) + expires_delta
+        expire = datetime.now(UTC) + expires_delta
     else:
-        expire = datetime.now(timezone.utc) + timedelta(
-            minutes=settings.access_token_expire_minutes
-        )
+        expire = datetime.now(UTC) + timedelta(minutes=settings.access_token_expire_minutes)
 
     to_encode["exp"] = expire
 
     # Encode and return JWT
-    encoded_jwt = jwt.encode(
-        to_encode, settings.jwt_secret_key, algorithm=settings.jwt_algorithm
-    )
-    return encoded_jwt
+    return jwt.encode(to_encode, settings.jwt_secret_key, algorithm=settings.jwt_algorithm)
 
 
 def verify_token(token: str) -> TokenData:
@@ -69,9 +64,7 @@ def verify_token(token: str) -> TokenData:
     """
     try:
         # Decode and verify token
-        payload = jwt.decode(
-            token, settings.jwt_secret_key, algorithms=[settings.jwt_algorithm]
-        )
+        payload = jwt.decode(token, settings.jwt_secret_key, algorithms=[settings.jwt_algorithm])
 
         # Extract required claims
         user_id: str | None = payload.get("sub")
