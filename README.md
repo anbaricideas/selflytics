@@ -2,8 +2,8 @@
 
 **AI-powered analysis and insights for quantified self data from wearable devices**
 
-[![CI](https://github.com/beldaz/selflytics/workflows/CI/badge.svg)](https://github.com/beldaz/selflytics/actions)
-[![Coverage](https://codecov.io/gh/beldaz/selflytics/branch/main/graph/badge.svg)](https://codecov.io/gh/beldaz/selflytics)
+[![CI](https://github.com/anbaricideas/selflytics/workflows/CI/badge.svg)](https://github.com/anbaricideas/selflytics/actions)
+[![Coverage](https://codecov.io/gh/anbaricideas/selflytics/branch/main/graph/badge.svg)](https://codecov.io/gh/anbaricideas/selflytics)
 
 ## Overview
 
@@ -77,7 +77,7 @@ selflytics/
 
 ```bash
 # Clone the repository
-git clone https://github.com/beldaz/selflytics.git
+git clone https://github.com/anbaricideas/selflytics.git
 cd selflytics
 
 # Setup will be documented as implementation progresses
