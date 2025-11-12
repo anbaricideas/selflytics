@@ -300,13 +300,13 @@ Implement production-ready Garmin Connect integration with OAuth authentication,
 
 **File**: `backend/app/services/garmin_client.py`
 
-- [ ] ⏳ NEXT: Write tests first: `backend/tests/unit/test_garmin_client.py`
+- [x] ✅ DONE: Write tests first: `backend/tests/unit/test_garmin_client.py`
   - Test authenticate (mocked garth)
   - Test get_activities (mocked API response)
   - Test get_daily_metrics (mocked)
   - Test token save/load
   - Test error handling (rate limits, invalid credentials)
-- [ ] Adapt GarminClient from garmin_agents:
+- [x] ✅ DONE: Adapt GarminClient from garmin_agents:
   ```python
   """Garmin Connect client (async wrapper around garth)."""
   import garth
@@ -466,8 +466,8 @@ Implement production-ready Garmin Connect integration with OAuth authentication,
               spo2=health_data.get("spo2")
           )
   ```
-- [ ] Verify tests pass
-- [ ] Commit: "feat: add GarminClient service with async garth wrapper"
+- [x] ✅ DONE: Verify tests pass (15 tests, 100% passing)
+- [x] ✅ DONE: Commit: "feat: add GarminClient service with async garth wrapper"
 
 **Implementation Reference**: Adapt from `/Users/bryn/repos/garmin_agents/garmin_client.py`
 
@@ -477,13 +477,13 @@ Implement production-ready Garmin Connect integration with OAuth authentication,
 
 **File**: `backend/app/utils/cache.py`
 
-- [ ] Write tests first: `backend/tests/unit/test_cache.py`
+- [x] ✅ DONE: Write tests first: `backend/tests/unit/test_cache.py`
   - Test cache key generation
   - Test cache save
   - Test cache load (within TTL)
   - Test cache load (expired)
   - Test cache invalidation
-- [ ] Implement cache utilities:
+- [x] ✅ DONE: Implement cache utilities:
   ```python
   """Caching utilities for Garmin data."""
   from datetime import datetime, timedelta
@@ -582,8 +582,8 @@ Implement production-ready Garmin Connect integration with OAuth authentication,
           for doc in docs:
               doc.reference.delete()
   ```
-- [ ] Verify tests pass
-- [ ] Commit: "feat: add caching utilities for Garmin data"
+- [x] ✅ DONE: Verify tests pass (25 tests, 100% passing)
+- [x] ✅ DONE: Commit: "feat: add caching utilities for Garmin data"
 
 ---
 
@@ -591,7 +591,7 @@ Implement production-ready Garmin Connect integration with OAuth authentication,
 
 **File**: `backend/app/services/garmin_service.py`
 
-- [ ] Write tests first: `backend/tests/integration/test_garmin_oauth.py`
+- [ ] ⏳ NEXT: Write tests first: `backend/tests/integration/test_garmin_oauth.py`
   - Test initiate OAuth flow
   - Test handle OAuth callback
   - Test link Garmin account to user
