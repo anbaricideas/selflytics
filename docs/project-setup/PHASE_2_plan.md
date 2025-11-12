@@ -84,9 +84,9 @@ Implement production-ready Garmin Connect integration with OAuth authentication,
 
 ### Setup
 
-- [ ] ⏳ NEXT: Create branch `feat/phase-2-garmin`
-- [ ] Review Garmin Agents repository: `/Users/bryn/repos/garmin_agents/`
-- [ ] Install garth library: `uv add garth`
+- [x] ✅ DONE: Create branch `feat/phase-2-garmin`
+- [x] ✅ DONE: Review Garmin Agents repository: `/Users/bryn/repos/garmin_agents/`
+- [x] ✅ DONE: Install garth library: `uv add garth`
 - [ ] Register Selflytics app in Garmin Developer Portal
 - [ ] Configure OAuth redirect URI: `https://<your-domain>/auth/garmin/callback`
 
@@ -96,14 +96,14 @@ Implement production-ready Garmin Connect integration with OAuth authentication,
 
 **File**: `backend/app/models/garmin_data.py`
 
-- [ ] Write tests first: `backend/tests/unit/test_garmin_models.py`
+- [x] ✅ DONE: Write tests first: `backend/tests/unit/test_garmin_models.py`
   - Test GarminActivity model validation
   - Test DailyMetrics model validation
   - Test HealthSnapshot model validation
   - Test field types and optional fields
-- [ ] Review tests for quality
-- [ ] Verify tests fail (no implementation)
-- [ ] Implement Pydantic models for Garmin data:
+- [x] ✅ DONE: Review tests for quality
+- [x] ✅ DONE: Verify tests fail (no implementation)
+- [x] ✅ DONE: Implement Pydantic models for Garmin data:
   ```python
   """Garmin data models based on API responses."""
   from pydantic import BaseModel, Field
@@ -151,8 +151,8 @@ Implement production-ready Garmin Connect integration with OAuth authentication,
       email: Optional[str] = None
       profile_image_url: Optional[str] = None
   ```
-- [ ] Verify tests pass
-- [ ] Commit: "feat: add Garmin data Pydantic models"
+- [x] ✅ DONE: Verify tests pass
+- [x] ✅ DONE: Commit: "feat: add Garmin data Pydantic models"
 
 **Implementation Reference**: Adapt from garmin_agents models
 
@@ -162,11 +162,11 @@ Implement production-ready Garmin Connect integration with OAuth authentication,
 
 **File**: `backend/app/models/garmin_token.py`
 
-- [ ] Write tests first: `backend/tests/unit/test_garmin_token_model.py`
+- [x] ✅ DONE: Write tests first: `backend/tests/unit/test_garmin_token_model.py`
   - Test GarminToken model validation
   - Test encryption fields
   - Test timestamp fields
-- [ ] Implement GarminToken model:
+- [x] ✅ DONE: Implement GarminToken model:
   ```python
   """Garmin OAuth token storage model."""
   from pydantic import BaseModel, Field
@@ -189,8 +189,8 @@ Implement production-ready Garmin Connect integration with OAuth authentication,
       oauth1_token: dict
       oauth2_token: dict
   ```
-- [ ] Verify tests pass
-- [ ] Commit: "feat: add GarminToken storage model"
+- [x] ✅ DONE: Verify tests pass
+- [x] ✅ DONE: Commit: "feat: add GarminToken storage model"
 
 ---
 
@@ -198,12 +198,12 @@ Implement production-ready Garmin Connect integration with OAuth authentication,
 
 **File**: `backend/app/utils/encryption.py`
 
-- [ ] Write tests first: `backend/tests/unit/test_encryption.py`
+- [x] ✅ DONE: Write tests first: `backend/tests/unit/test_encryption.py`
   - Test encrypt_token (produces different output each time)
   - Test decrypt_token (recovers original value)
   - Test round-trip (encrypt → decrypt)
   - Test invalid ciphertext handling
-- [ ] Implement KMS encryption functions:
+- [x] ✅ DONE: Implement KMS encryption functions:
   ```python
   """Token encryption using GCP KMS."""
   from google.cloud import kms
@@ -242,8 +242,8 @@ Implement production-ready Garmin Connect integration with OAuth authentication,
       # Parse JSON
       return json.loads(decrypt_response.plaintext.decode('utf-8'))
   ```
-- [ ] Verify tests pass (mock KMS in tests)
-- [ ] Commit: "feat: add token encryption with GCP KMS"
+- [x] ✅ DONE: Verify tests pass (mock KMS in tests)
+- [x] ✅ DONE: Commit: "feat: add token encryption with GCP KMS"
 
 **Note**: Requires KMS key created via Terraform (add to infra in next step)
 
@@ -253,7 +253,7 @@ Implement production-ready Garmin Connect integration with OAuth authentication,
 
 **File**: `infra/modules/kms/main.tf` (new module)
 
-- [ ] Create KMS module for key management:
+- [x] ✅ DONE: Create KMS module for key management:
   ```hcl
   resource "google_kms_key_ring" "key_ring" {
     name     = "${var.project_name}-keys"
@@ -278,7 +278,7 @@ Implement production-ready Garmin Connect integration with OAuth authentication,
   }
   ```
 
-- [ ] Update `infra/environments/dev/main.tf`:
+- [x] ✅ DONE: Update `infra/environments/dev/main.tf`:
   ```hcl
   module "kms" {
     source = "../../modules/kms"
@@ -290,9 +290,9 @@ Implement production-ready Garmin Connect integration with OAuth authentication,
   }
   ```
 
-- [ ] Apply Terraform: `terraform -chdir=infra/environments/dev apply`
+- [ ] ⏳ NEXT: Apply Terraform: `terraform -chdir=infra/environments/dev apply`
 - [ ] Verify KMS key created in GCP Console
-- [ ] Commit: "infra: add KMS key for token encryption"
+- [x] ✅ DONE: Commit: "infra: add KMS key for token encryption"
 
 ---
 
