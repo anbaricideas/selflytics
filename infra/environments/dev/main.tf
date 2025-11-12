@@ -157,7 +157,8 @@ module "cloud_run" {
   allow_unauthenticated = false
 
   # Grant WIF service account invoker access for CI/CD validation
-  grant_wif_invoker_access  = true
+  # TODO: Enable this after creating github-actions-sa service account for CI/CD
+  grant_wif_invoker_access  = false
   wif_service_account_email = "github-actions-sa@${var.project_id}.iam.gserviceaccount.com"
 
   depends_on = [module.secrets]

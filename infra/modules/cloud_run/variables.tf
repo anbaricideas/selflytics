@@ -23,7 +23,7 @@ variable "environment" {
 variable "service_name" {
   description = "Base name for the Cloud Run service"
   type        = string
-  default     = "clinicraft-webapp"
+  default     = "selflytics-webapp"
 }
 
 variable "image" {
