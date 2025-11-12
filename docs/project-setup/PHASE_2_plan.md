@@ -891,6 +891,28 @@ Implement production-ready Garmin Connect integration with OAuth authentication,
 
 ---
 
+### Optional Enhancement: Playwright E2E Tests
+
+**Status**: Started (conftest.py created), can be completed in future session
+
+**Purpose**: Verify HTMX and Alpine.js interactions in actual browser
+
+**Files to create**:
+- `backend/tests/e2e_playwright/conftest.py` ✅ DONE
+- `backend/tests/e2e_playwright/test_garmin_linking_journey.py` - Complete UI flow
+- `backend/tests/e2e_playwright/test_htmx_interactions.py` - HTMX swapping, loading states
+- `backend/tests/e2e_playwright/test_form_validation.py` - HTML5 validation, error display
+
+**Value**: Current 91% backend coverage is excellent. Playwright tests would add browser-level validation of:
+- HTMX `hx-swap` and `hx-target` behavior
+- Alpine.js state management (`x-show`, `x-data`, loading states)
+- Form validation (HTML5 `required`, browser-native errors)
+- Complete UI user journeys with visual confirmation
+
+**Reference**: See CliniCraft `/Users/bryn/repos/clinicraft/backend/tests/e2e/` for patterns
+
+---
+
 ### Final Steps
 
 - [x] ✅ DONE: Run full test suite: `uv run pytest backend/tests/ -v --cov=app`
