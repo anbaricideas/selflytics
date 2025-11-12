@@ -792,7 +792,7 @@ Implement production-ready Garmin Connect integration with OAuth authentication,
 
 **File**: `backend/app/templates/settings_garmin.html`
 
-- [ ] ⏳ NEXT: Create Garmin settings template:
+- [x] ✅ DONE: Create Garmin settings template:
   ```html
   {% extends "base.html" %}
 
@@ -872,7 +872,7 @@ Implement production-ready Garmin Connect integration with OAuth authentication,
   </div>
   {% endblock %}
   ```
-- [ ] Commit: "feat: add Garmin settings page template"
+- [x] ✅ DONE: Commit: "feat: add Garmin settings page template"
 
 ---
 
@@ -880,7 +880,7 @@ Implement production-ready Garmin Connect integration with OAuth authentication,
 
 **File**: `backend/tests/integration/test_garmin_data_fetch.py`
 
-- [ ] Write comprehensive data fetching tests:
+- [ ] ⏳ NEXT: Write comprehensive data fetching tests:
   - Test fetch activities with mocked API
   - Test cache hit scenario
   - Test cache miss scenario
