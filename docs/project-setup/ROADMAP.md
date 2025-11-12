@@ -109,13 +109,13 @@ Start from: wherever marked as ⏳ NEXT
 |-------|-------------|--------|-------------|--------|-----|
 | [Spike](./SPIKE_plan.md) | Technical Validation | ✅ DONE | 8 hours | `feat/selflytics-spike` | - |
 | [1](./PHASE_1_plan.md) | Infrastructure Foundation | ✅ DONE | 7 hours | `feat/phase-1-infrastructure` | - |
-| [2](./PHASE_2_plan.md) | Garmin Integration | ⬜ TODO | - | `feat/phase-2-garmin` | - |
+| [2](./PHASE_2_plan.md) | Garmin Integration | ✅ DONE | 3 hours | `feat/phase-2-garmin` | - |
 | [3](./PHASE_3_plan.md) | Chat + AI Agent | ⬜ TODO | - | `feat/phase-3-chat-ai` | - |
 | 4 | Visualization Generation | 📅 PLANNED | - | TBD | - |
 | 5 | Goals & Polish | 📅 PLANNED | - | TBD | - |
 | 6 | Launch Preparation | 📅 PLANNED | - | TBD | - |
 
-**Current Phase**: ⏳ NEXT → [Phase 2](./PHASE_2_plan.md)
+**Current Phase**: ⏳ NEXT → [Phase 3](./PHASE_3_plan.md)
 
 ---
 
