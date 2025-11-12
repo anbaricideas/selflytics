@@ -352,6 +352,7 @@ declare -A REQUIRED_APIS=(
   ["iamcredentials.googleapis.com"]="IAM Credentials (WIF)"
   ["cloudresourcemanager.googleapis.com"]="Cloud Resource Manager"
   ["logging.googleapis.com"]="Cloud Logging"
+  ["cloudkms.googleapis.com"]="Cloud KMS"
 )
 
 ENABLED_APIS=$(gcloud services list --enabled --project="$PROJECT_ID" --format="value(config.name)" 2>/dev/null)
@@ -370,6 +371,46 @@ done
 
 if [[ "$VERBOSE" != "true" && "$FAILED" == "0" ]]; then
   log_success "All required APIs are enabled"
+fi
+
+#
+# KMS Validation
+#
+log_section "Cloud KMS"
+
+KMS_KEYRING="selflytics-keys"
+KMS_KEY="token-encryption"
+
+# Check KMS key ring
+if gcloud kms keyrings describe "$KMS_KEYRING" --location="$REGION" --project="$PROJECT_ID" &> /dev/null; then
+  log_success "KMS key ring exists: $KMS_KEYRING"
+else
+  log_warning "KMS key ring missing: $KMS_KEYRING (will be created by Terraform)"
+fi
+
+# Check KMS crypto key
+if gcloud kms keys describe "$KMS_KEY" --keyring="$KMS_KEYRING" --location="$REGION" --project="$PROJECT_ID" &> /dev/null; then
+  log_success "KMS crypto key exists: $KMS_KEY"
+
+  if [[ "$VERBOSE" == "true" ]]; then
+    KEY_INFO=$(gcloud kms keys describe "$KMS_KEY" --keyring="$KMS_KEYRING" --location="$REGION" --project="$PROJECT_ID" --format=json)
+    ROTATION_PERIOD=$(echo "$KEY_INFO" | jq -r '.rotationPeriod // "not set"')
+    NEXT_ROTATION=$(echo "$KEY_INFO" | jq -r '.nextRotationTime // "not set"')
+    log_info "  Rotation period: $ROTATION_PERIOD"
+    log_info "  Next rotation: $NEXT_ROTATION"
+  fi
+
+  # Check KMS IAM permissions for Cloud Run service account
+  KMS_IAM=$(gcloud kms keys get-iam-policy "$KMS_KEY" --keyring="$KMS_KEYRING" --location="$REGION" --project="$PROJECT_ID" --format=json 2>/dev/null || echo "{}")
+
+  DEV_SA_MEMBER="serviceAccount:dev-cloud-run-sa@${PROJECT_ID}.iam.gserviceaccount.com"
+  if echo "$KMS_IAM" | jq -e ".bindings[] | select(.role==\"roles/cloudkms.cryptoKeyEncrypterDecrypter\") | .members[] | select(. == \"$DEV_SA_MEMBER\")" &> /dev/null; then
+    log_success "Cloud Run service account has KMS encrypt/decrypt access"
+  else
+    log_error "Cloud Run service account missing KMS encrypt/decrypt permissions"
+  fi
+else
+  log_warning "KMS crypto key missing: $KMS_KEY (will be created by Terraform)"
 fi
 
 #
