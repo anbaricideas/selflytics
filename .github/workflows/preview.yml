@@ -14,8 +14,8 @@ on:
 env:
   PYTHON_VERSION: "3.12"
   REGION: "australia-southeast1"
-  REPO_NAME: "clinicraft"
-  IMAGE_NAME: "webapp"
+  REPO_NAME: "selflytics"
+  IMAGE_NAME: "backend"
 
 jobs:
   # Note: Preview deploys run independently of CI checks for faster feedback.
@@ -135,7 +135,7 @@ jobs:
         id: deploy
         uses: google-github-actions/deploy-cloudrun@v3
         with:
-          service: clinicraft-webapp-preview-${{ steps.sanitize.outputs.feature-name }}
+          service: selflytics-webapp-preview-${{ steps.sanitize.outputs.feature-name }}
           image: ${{ env.IMAGE_FULL }}
           region: ${{ env.REGION }}
           flags: '--min-instances=0 --max-instances=1 --cpu=1 --memory=512Mi --cpu-throttling --no-allow-unauthenticated'
@@ -196,7 +196,7 @@ jobs:
             | **Branch** | `${{ github.head_ref }}` |
             | **Commit** | `${{ github.sha }}` ([view](${{ github.event.pull_request.head.repo.html_url }}/commit/${{ github.sha }})) |
             | **Feature** | `${{ steps.sanitize.outputs.feature-name }}` |
-            | **Service** | `clinicraft-webapp-preview-${{ steps.sanitize.outputs.feature-name }}` |
+            | **Service** | `selflytics-webapp-preview-${{ steps.sanitize.outputs.feature-name }}` |
             | **Image** | `${{ env.IMAGE_TAG }}` |
             | **Region** | `${{ env.REGION }}` |
 
@@ -210,7 +210,7 @@ jobs:
 
             - ✅ Test your changes in the preview environment
             - ✅ Share this preview URL with reviewers
-            - ✅ Check logs: `gcloud run services logs read clinicraft-webapp-preview-${{ steps.sanitize.outputs.feature-name }} --region=${{ env.REGION }}`
+            - ✅ Check logs: `gcloud run services logs read selflytics-webapp-preview-${{ steps.sanitize.outputs.feature-name }} --region=${{ env.REGION }}`
             - ✅ Preview will auto-cleanup when PR is closed or branch is deleted
 
             ### Troubleshooting
@@ -237,7 +237,7 @@ jobs:
 
           ### Details
           - **Feature**: \`${{ steps.sanitize.outputs.feature-name }}\`
-          - **Service**: \`clinicraft-webapp-preview-${{ steps.sanitize.outputs.feature-name }}\`
+          - **Service**: \`selflytics-webapp-preview-${{ steps.sanitize.outputs.feature-name }}\`
           - **URL**: ${{ steps.deploy.outputs.url }}
           - **Image**: \`${{ env.IMAGE_TAG }}\`
           - **Region**: australia-southeast1
@@ -251,8 +251,8 @@ jobs:
           \`\`\`
 
           ### Quick Actions
-          - [View Service in Console](https://console.cloud.google.com/run/detail/australia-southeast1/clinicraft-webapp-preview-${{ steps.sanitize.outputs.feature-name }}?project=${{ secrets.GCP_PROJECT_ID }})
-          - [View Logs](https://console.cloud.google.com/logs/query;query=resource.type%3D%22cloud_run_revision%22%0Aresource.labels.service_name%3D%22clinicraft-webapp-preview-${{ steps.sanitize.outputs.feature-name }}%22?project=${{ secrets.GCP_PROJECT_ID }})
+          - [View Service in Console](https://console.cloud.google.com/run/detail/australia-southeast1/selflytics-webapp-preview-${{ steps.sanitize.outputs.feature-name }}?project=${{ secrets.GCP_PROJECT_ID }})
+          - [View Logs](https://console.cloud.google.com/logs/query;query=resource.type%3D%22cloud_run_revision%22%0Aresource.labels.service_name%3D%22selflytics-webapp-preview-${{ steps.sanitize.outputs.feature-name }}%22?project=${{ secrets.GCP_PROJECT_ID }})
           EOF
 
   validate-preview:
@@ -304,7 +304,7 @@ jobs:
           GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
           GCP_REGION: ${{ env.REGION }}
         run: |
-          SERVICE_NAME="clinicraft-webapp-preview-${FEATURE_NAME}"
+          SERVICE_NAME="selflytics-webapp-preview-${FEATURE_NAME}"
           SERVICE_URL=$(gcloud run services describe "$SERVICE_NAME" \
             --region="$GCP_REGION" \
             --project="$GCP_PROJECT_ID" \
