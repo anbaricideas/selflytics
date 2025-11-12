@@ -696,13 +696,13 @@ Implement production-ready Garmin Connect integration with OAuth authentication,
 
 **File**: `backend/app/routes/garmin.py`
 
-- [ ] ⏳ NEXT: Write tests first: `backend/tests/integration/test_garmin_routes.py`
+- [x] ✅ DONE: Write tests first: `backend/tests/integration/test_garmin_routes.py`
   - Test GET /garmin/link (shows link form)
   - Test POST /garmin/link (initiates OAuth)
   - Test GET /garmin/callback (handles OAuth callback)
   - Test POST /garmin/sync (triggers data sync)
   - Test GET /garmin/status (returns link status)
-- [ ] Implement Garmin routes:
+- [x] ✅ DONE: Implement Garmin routes:
   ```python
   """Garmin integration routes."""
   from fastapi import APIRouter, Depends, HTTPException, Request, status
@@ -783,8 +783,8 @@ Implement production-ready Garmin Connect integration with OAuth authentication,
   from app.routes import garmin
   app.include_router(garmin.router)
   ```
-- [ ] Verify tests pass
-- [ ] Commit: "feat: add Garmin OAuth routes"
+- [x] ✅ DONE: Verify tests pass (13 of 14 passing, 1 failure expected for missing template)
+- [x] ✅ DONE: Commit: "feat: add Garmin OAuth routes"
 
 ---
 
@@ -792,7 +792,7 @@ Implement production-ready Garmin Connect integration with OAuth authentication,
 
 **File**: `backend/app/templates/settings_garmin.html`
 
-- [ ] Create Garmin settings template:
+- [ ] ⏳ NEXT: Create Garmin settings template:
   ```html
   {% extends "base.html" %}
 

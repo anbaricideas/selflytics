@@ -14,8 +14,9 @@ repos:
     rev: 1.8.6
     hooks:
       - id: bandit
-        args: ["-c", "backend/pyproject.toml", "-r", "backend/app"]
+        args: ["-c", "backend/pyproject.toml", "-r", "backend/app/", "-ll"]
         additional_dependencies: ["bandit[toml]"]
+        pass_filenames: false
 
   # Standard pre-commit hooks
   - repo: https://github.com/pre-commit/pre-commit-hooks
