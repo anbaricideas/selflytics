@@ -591,12 +591,12 @@ Implement production-ready Garmin Connect integration with OAuth authentication,
 
 **File**: `backend/app/services/garmin_service.py`
 
-- [ ] ⏳ NEXT: Write tests first: `backend/tests/integration/test_garmin_oauth.py`
+- [x] ✅ DONE: Write tests first: `backend/tests/integration/test_garmin_oauth.py`
   - Test initiate OAuth flow
   - Test handle OAuth callback
   - Test link Garmin account to user
   - Test sync data after linking
-- [ ] Implement GarminService:
+- [x] ✅ DONE: Implement GarminService:
   ```python
   """Garmin service for OAuth and data management."""
   from app.services.garmin_client import GarminClient
@@ -687,8 +687,8 @@ Implement production-ready Garmin Connect integration with OAuth authentication,
 
           return [activity.dict() for activity in activities]
   ```
-- [ ] Verify tests pass
-- [ ] Commit: "feat: add GarminService for OAuth and data sync"
+- [x] ✅ DONE: Verify tests pass (11 tests, 100% passing)
+- [x] ✅ DONE: Commit: "feat: add GarminService for OAuth and data sync"
 
 ---
 
@@ -696,7 +696,7 @@ Implement production-ready Garmin Connect integration with OAuth authentication,
 
 **File**: `backend/app/routes/garmin.py`
 
-- [ ] Write tests first: `backend/tests/integration/test_garmin_routes.py`
+- [ ] ⏳ NEXT: Write tests first: `backend/tests/integration/test_garmin_routes.py`
   - Test GET /garmin/link (shows link form)
   - Test POST /garmin/link (initiates OAuth)
   - Test GET /garmin/callback (handles OAuth callback)
