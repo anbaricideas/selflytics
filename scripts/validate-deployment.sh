@@ -123,8 +123,8 @@ FAILED=0
 # Core health check
 validate_endpoint "/health" 200 || FAILED=$((FAILED + 1))
 
-# API root (redirect to /login expected)
-validate_endpoint "/" 302 || FAILED=$((FAILED + 1))
+# API root (redirect to /login expected - FastAPI uses 303 See Other)
+validate_endpoint "/" 303 || FAILED=$((FAILED + 1))
 
 # Summary
 echo ""
