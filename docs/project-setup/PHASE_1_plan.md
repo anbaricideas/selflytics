@@ -85,9 +85,10 @@ Establish production-ready infrastructure and authentication foundation for Self
 
 - ✅ `.github/workflows/ci.yml` - Quality gates (lint, test, security, terraform)
 - ✅ `.github/workflows/cd.yml` - Deployment to dev
-- ✅ `.github/workflows/preview.yml` - Preview deployments
+- ✅ `.github/workflows/preview.yml` - Preview deployments (updated naming)
 - ✅ `.github/workflows/preview-cleanup.yml` - Preview cleanup
-- ✅ Workload Identity Federation configured
+- ✅ Workload Identity Federation configured (keyless GitHub Actions auth)
+- ✅ GCP infrastructure validation script (`scripts/validate-gcp-setup.sh`)
 
 ### Tests
 
@@ -1056,15 +1057,17 @@ Establish production-ready infrastructure and authentication foundation for Self
 
 **✅ DEPLOYMENT COMPLETE**
 
-**Current Branch**: `feat/phase-1-infrastructure` (34 commits)
-**Current Status**: ✅ DEPLOYED - Infrastructure live on GCP
+**Current Branch**: `feat/phase-1-infrastructure` (38 commits)
+**Current Status**: ✅ DEPLOYED - Infrastructure live on GCP with WIF
 
 **Deployment Summary**:
 - Cloud Run service: https://selflytics-webapp-dev-zjv4dbkvaq-ts.a.run.app
 - Health check: ✅ {"status":"healthy","service":"selflytics"}
-- Infrastructure: Firestore, Secret Manager, IAM all configured
+- Infrastructure: Firestore, Secret Manager, IAM, WIF all configured
 - Test coverage: 96% (87/87 tests passing)
 - Code quality: ruff ✅, bandit ✅ (0 security issues)
+- WIF: GitHub Actions keyless authentication configured
+- Validation: 15 infrastructure checks passing
 
 ### Step-by-Step Resumption Guide
 
@@ -1148,6 +1151,7 @@ gcloud run services describe selflytics-dev \
 
 ### Deployment Completed (2025-11-12)
 
+**Initial Deployment**:
 - ✅ GCP authentication successful
 - ✅ Terraform deployment: 14 resources created
 - ✅ Docker image built and pushed to Artifact Registry
@@ -1155,6 +1159,34 @@ gcloud run services describe selflytics-dev \
 - ✅ Cloud Run service deployed and health check passing
 - ✅ Firestore database created (australia-southeast1)
 - ✅ IAM permissions configured (Firestore, Logging, Secret Manager)
+
+**Session 5 - Workload Identity Federation & Validation (2025-11-12)**:
+
+**Completed in this session**:
+- ✅ Fixed preview workflow environment variables (REPO_NAME, IMAGE_NAME)
+- ✅ Workload Identity Federation setup:
+  - Created WIF pool: `github-pool` (global)
+  - Created WIF provider: `github-provider` (GitHub OIDC)
+  - Created service account: `github-actions-sa@selflytics-infra.iam.gserviceaccount.com`
+  - Granted IAM roles: `roles/run.admin`, `roles/iam.serviceAccountUser`, `roles/artifactregistry.writer`
+  - Configured WIF binding: Repository `anbaricideas/selflytics` → `github-actions-sa`
+  - Configured GitHub secrets: `WIF_PROVIDER`, `WIF_SERVICE_ACCOUNT`, `GCP_PROJECT_ID`
+  - Enabled WIF invoker access in Terraform (grant_wif_invoker_access = true)
+  - Commit: `f85d866` - feat(ci): enable Workload Identity Federation
+- ✅ Infrastructure validation script:
+  - Created `scripts/validate-gcp-setup.sh` (397 lines)
+  - Validates 15 infrastructure components (31 in verbose mode)
+  - Service account validation (dev-cloud-run-sa, github-actions-sa)
+  - IAM permission verification (8 bindings)
+  - WIF configuration checks (pool, provider, bindings)
+  - Cloud Run, Firestore, Secret Manager, Artifact Registry validation
+  - Enabled APIs verification (8 required APIs)
+  - Fixed Firestore check (--database flag requirement)
+  - Fixed bash arithmetic expansion (pre-increment for set -e compatibility)
+  - Commit: `3dc386c` - feat(ops): add GCP infrastructure validation script
+- ✅ All core CI checks passing (tests, linting, security, terraform)
+
+**Commits**: 38 total on branch (4 new commits in this session)
 
 ### Phase 1 Completion Tasks
 
