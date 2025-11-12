@@ -52,7 +52,7 @@ jobs:
           GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
           GCP_REGION: ${{ env.REGION }}
         run: |
-          if ./infra/scripts/preview count --quiet; then
+          if ./infra/scripts/check-preview-limit.sh --quiet; then
             echo "can-deploy=true" >> $GITHUB_OUTPUT
           else
             echo "can-deploy=false" >> $GITHUB_OUTPUT
