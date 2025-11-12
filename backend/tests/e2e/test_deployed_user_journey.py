@@ -11,9 +11,7 @@ import os
 import pytest
 
 
-@pytest.mark.skipif(
-    not os.getenv("TEST_BASE_URL"), reason="TEST_BASE_URL not set (not in CI/CD)"
-)
+@pytest.mark.skipif(not os.getenv("TEST_BASE_URL"), reason="TEST_BASE_URL not set (not in CI/CD)")
 def test_deployed_service_exists():
     """
     Placeholder E2E test for Phase 1.
