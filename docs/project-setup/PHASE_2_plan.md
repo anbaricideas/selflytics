@@ -290,8 +290,8 @@ Implement production-ready Garmin Connect integration with OAuth authentication,
   }
   ```
 
-- [ ] ⏳ NEXT: Apply Terraform: `terraform -chdir=infra/environments/dev apply`
-- [ ] Verify KMS key created in GCP Console
+- [x] ✅ DONE: Apply Terraform: `terraform -chdir=infra/environments/dev apply`
+- [x] ✅ DONE: Verify KMS key created in GCP Console
 - [x] ✅ DONE: Commit: "infra: add KMS key for token encryption"
 
 ---
@@ -300,7 +300,7 @@ Implement production-ready Garmin Connect integration with OAuth authentication,
 
 **File**: `backend/app/services/garmin_client.py`
 
-- [ ] Write tests first: `backend/tests/unit/test_garmin_client.py`
+- [ ] ⏳ NEXT: Write tests first: `backend/tests/unit/test_garmin_client.py`
   - Test authenticate (mocked garth)
   - Test get_activities (mocked API response)
   - Test get_daily_metrics (mocked)
