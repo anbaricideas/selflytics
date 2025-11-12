@@ -111,6 +111,16 @@ module "secrets" {
   create_openai_secret  = true
 }
 
+# KMS module for token encryption
+module "kms" {
+  source = "../../modules/kms"
+
+  project_id                 = var.project_id
+  project_name               = "selflytics"
+  region                     = var.region
+  cloud_run_service_account = google_service_account.cloud_run_sa.email
+}
+
 # Cloud Run service (depends on secrets)
 module "cloud_run" {
   source = "../../modules/cloud_run"
@@ -160,5 +170,5 @@ module "cloud_run" {
   grant_wif_invoker_access  = true
   wif_service_account_email = "github-actions-sa@${var.project_id}.iam.gserviceaccount.com"
 
-  depends_on = [module.secrets]
+  depends_on = [module.secrets, module.kms]
 }

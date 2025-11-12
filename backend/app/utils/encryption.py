@@ -5,6 +5,7 @@ import json
 
 from google.cloud import kms
 
+
 # KMS key configuration
 KMS_KEY_NAME = "projects/selflytics-infra/locations/australia-southeast1/keyRings/selflytics-keys/cryptoKeys/token-encryption"
 

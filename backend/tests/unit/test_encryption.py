@@ -1,6 +1,7 @@
 """Unit tests for token encryption utilities."""
 
 import base64
+import binascii
 import json
 from unittest.mock import MagicMock, patch
 
@@ -167,5 +168,5 @@ class TestTokenEncryption:
         """Test decrypt_token raises error for invalid base64."""
         invalid_encrypted = "not_valid_base64!@#$%"
 
-        with pytest.raises(Exception):
+        with pytest.raises(binascii.Error):
             decrypt_token(invalid_encrypted)
