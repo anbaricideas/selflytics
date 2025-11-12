@@ -1,11 +1,13 @@
 """Pydantic-AI chat agent for fitness insights."""
 
 import os
-from datetime import date, timedelta
+from datetime import date
 from typing import Optional
 
 from pydantic import BaseModel, Field
 from pydantic_ai import Agent, RunContext
+
+from spike.garmin_client import GarminClient
 
 
 class ChatResponse(BaseModel):
@@ -20,9 +22,6 @@ class ChatResponse(BaseModel):
         None, description="Suggested next question"
     )
 
-
-# Initialize Garmin client (module level for spike simplicity)
-from spike.garmin_client import GarminClient
 
 _garmin_client: GarminClient | None = None
 

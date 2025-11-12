@@ -12,7 +12,9 @@ pytestmark = pytest.mark.asyncio
 @pytest_asyncio.fixture(scope="function")
 async def client():
     """Async test client."""
-    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
+    async with AsyncClient(
+        transport=ASGITransport(app=app), base_url="http://test"
+    ) as ac:
         yield ac
 
 
@@ -62,7 +64,9 @@ async def test_visualization_generation(client):
     assert "generation_time_ms" in data
 
     # Verify generation time meets requirement (<3000ms)
-    assert data["generation_time_ms"] < 3000, f"Visualization took {data['generation_time_ms']}ms (>3000ms)"
+    assert data["generation_time_ms"] < 3000, (
+        f"Visualization took {data['generation_time_ms']}ms (>3000ms)"
+    )
 
     # Verify we can fetch the generated image
     viz_id = data["viz_id"]

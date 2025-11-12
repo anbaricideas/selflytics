@@ -1,0 +1,270 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches:
+      - main
+      - 'feat/**'
+
+env:
+  PYTHON_VERSION: "3.12"
+
+jobs:
+  # Draft PRs run lightweight checks only (lint) for fast feedback during development.
+  # Full checks (tests, security, terraform) run automatically when PR is marked ready for review.
+  # This optimization reduces feedback time from 2-3min to 5-10sec for drafts.
+  draft-checks:
+    name: Draft PR - Quick Lint
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request' && github.event.pull_request.draft == true
+    defaults:
+      run:
+        working-directory: backend
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          version: "latest"
+          enable-cache: true
+          cache-dependency-glob: "backend/uv.lock"
+
+      - name: Install dependencies
+        run: uv sync --all-extras
+
+      - name: Run ruff (lint only)
+        run: uv run ruff check .
+
+      - name: Draft PR summary
+        run: |
+          echo "✓ Draft PR - Quick lint passed"
+          echo "Convert to ready for review to run full CI (tests, security, type-check)"
+
+  # Full lint check runs on: push to main, or non-draft PRs
+  # Skipped for draft PRs to provide faster feedback
+  lint:
+    name: Lint & Format Check
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.pull_request.draft == false)
+    defaults:
+      run:
+        working-directory: backend
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          version: "latest"
+          enable-cache: true
+          cache-dependency-glob: "backend/uv.lock"
+
+      - name: Install dependencies
+        run: uv sync --all-extras
+
+      - name: Run ruff (lint)
+        run: uv run ruff check .
+
+      - name: Run ruff (format check)
+        run: uv run ruff format --check .
+
+  # ShellCheck runs on all PRs to catch common bash pitfalls
+  shellcheck:
+    name: ShellCheck
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.pull_request.draft == false)
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install ShellCheck
+        run: sudo apt-get update && sudo apt-get install -y shellcheck
+
+      - name: Run ShellCheck on all shell scripts
+        run: |
+          echo "Running ShellCheck on all .sh files..."
+          # Exclude SC1091: Can't follow source file warnings - library scripts may not be in shellcheck's path
+          find . -type f -name "*.sh" -print0 | \
+            xargs -0 shellcheck --severity=warning --shell=bash --exclude=SC1091
+          echo "✓ ShellCheck passed"
+
+  # Full test suite runs on: push to main, or non-draft PRs
+  # Skipped for draft PRs to provide faster feedback
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.pull_request.draft == false)
+    defaults:
+      run:
+        working-directory: backend
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          version: "latest"
+          enable-cache: true
+          cache-dependency-glob: "backend/uv.lock"
+
+      - name: Install dependencies
+        run: uv sync --all-extras
+
+      - name: Run unit tests
+        run: uv run pytest tests/unit -v --cov=app --cov-report=xml --cov-report=term-missing
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        if: github.event_name == 'push'
+        with:
+          file: ./backend/coverage.xml
+          flags: unittests
+          fail_ci_if_error: false
+
+  # Security scan runs on: push to main, or non-draft PRs
+  # Skipped for draft PRs to provide faster feedback
+  security:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.pull_request.draft == false)
+    defaults:
+      run:
+        working-directory: backend
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          version: "latest"
+          enable-cache: true
+          cache-dependency-glob: "backend/uv.lock"
+
+      - name: Install dependencies
+        run: uv sync --all-extras
+
+      - name: Run bandit security scan
+        run: uv run bandit -c pyproject.toml -r app/ -ll
+
+  # Type check runs on: push to main, or non-draft PRs
+  # Skipped for draft PRs to provide faster feedback
+  type-check:
+    name: Type Check
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.pull_request.draft == false)
+    defaults:
+      run:
+        working-directory: backend
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          version: "latest"
+          enable-cache: true
+          cache-dependency-glob: "backend/uv.lock"
+
+      - name: Install dependencies
+        run: uv sync --all-extras
+
+      - name: Run type checking
+        run: uv run ruff check --select=TCH .
+        continue-on-error: true  # Non-blocking for now
+
+  # Terraform validation runs on: push to main, or non-draft PRs
+  # Skipped for draft PRs to provide faster feedback
+  terraform:
+    name: Terraform Validation
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.pull_request.draft == false)
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.10.5
+
+      - name: Terraform Format Check
+        run: terraform fmt -check -recursive
+        working-directory: infra
+
+      - name: Terraform Init (dev)
+        run: terraform init -backend=false
+        working-directory: infra/environments/dev
+
+      - name: Terraform Validate (dev)
+        run: terraform validate
+        working-directory: infra/environments/dev
+
+  # Summary job that depends on all checks
+  # Logic: Draft PRs run only draft-checks job, ready PRs run full checks
+  ci-success:
+    name: CI Success
+    needs: [draft-checks, lint, shellcheck, test, security, type-check, terraform]
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: Check draft PR passed
+        if: github.event_name == 'pull_request' && github.event.pull_request.draft == true
+        run: |
+          if [ "${{ needs.draft-checks.result }}" != "success" ]; then
+            echo "Draft checks failed"
+            exit 1
+          fi
+          echo "✓ Draft PR checks passed (quick lint only)"
+
+      - name: Check full CI passed
+        if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.pull_request.draft == false)
+        run: |
+          if [ "${{ needs.lint.result }}" != "success" ] || \
+             [ "${{ needs.test.result }}" != "success" ] || \
+             [ "${{ needs.security.result }}" != "success" ] || \
+             [ "${{ needs.type-check.result }}" != "success" ] || \
+             [ "${{ needs.terraform.result }}" != "success" ]; then
+            echo "One or more CI checks failed"
+            exit 1
+          fi
+          echo "✓ Full CI passed (lint, test, security, type-check, terraform)"

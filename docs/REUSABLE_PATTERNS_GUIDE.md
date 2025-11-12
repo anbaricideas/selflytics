@@ -21,7 +21,7 @@ from smolagents import tool
 @tool  # type: ignore[misc]
 def fetch_user_data(user_id: int) -> dict | None:
     """Retrieve user profile from database.
-    
+
     This docstring helps the agent understand when to use this tool.
     The agent will read this to decide if it's relevant to the user's query.
     """
@@ -52,12 +52,12 @@ def create_my_agent(
     custom_system_prompt: str | None = None,
 ) -> ToolCallingAgent:
     """Factory function for easy agent creation."""
-    
+
     if tools is None:
         tools = get_default_tools()
-    
+
     model = create_model_from_spec(model_spec)
-    
+
     agent = ToolCallingAgent(
         model=model,
         tools=tools,
@@ -168,14 +168,14 @@ def chat_interface(message: str, session_token: str) -> tuple:
         agent = get_user_agent(user)
         response = agent.chat_with_tools(message)
         return response, None  # No form needed
-        
+
     except AuthRequired:
         return None, show_auth_form()  # Show login form
-        
+
     except MFARequired as e:
         mfa_context = e.mfa_context
         return None, show_mfa_form(mfa_context)
-        
+
     except InvalidInput as e:
         return f"Invalid input: {e.message}", None
 ```
@@ -226,7 +226,7 @@ class LLMMiddleware:
     ):
         self.cache = cache_backend or DiskCacheBackend()
         self.limiter = rate_limiter or NoOpLimiter()
-    
+
     def call_model(
         self,
         model: str,
@@ -234,22 +234,22 @@ class LLMMiddleware:
     ) -> LLMResponse:
         """Intercept all LLM calls."""
         cache_key = generate_cache_key(model, messages)
-        
+
         # Check cache
         cached = self.cache.get(cache_key)
         if cached:
             logger.debug("Cache hit for %s", cache_key)
             return cached
-        
+
         # Rate limit
         self.limiter.acquire_token(model)
-        
+
         # Call model
         response = self._actually_call_model(model, messages)
-        
+
         # Cache result
         self.cache.set(cache_key, response, ttl=604800)  # 7 days
-        
+
         return response
 ```
 
@@ -263,7 +263,7 @@ def create_middleware(config: MiddlewareConfig) -> LLMMiddleware:
         cache = MemoryCacheBackend(max_size=1000)
     else:
         cache = NoOpCache()
-    
+
     return LLMMiddleware(cache_backend=cache)
 
 # Usage
@@ -280,7 +280,7 @@ response = middleware.call_model("gpt-4", messages)
 class MyAgent:
     def __init__(self, middleware: LLMMiddleware):
         self.llm = middleware
-    
+
     def chat(self, message: str) -> str:
         # This automatically uses caching, rate limiting, etc.
         response = self.llm.call_model("gpt-4", [{"role": "user", "content": message}])
@@ -316,15 +316,15 @@ from openinference.instrumentation.smolagents import SmolagentsInstrumentor
 
 def configure_telemetry(backend: str = "jsonl"):
     """One-call setup for all observability."""
-    
+
     # Create tracer provider
     tracer_provider = trace_sdk.TracerProvider()
     trace_api.set_tracer_provider(tracer_provider)
-    
+
     # Instrument libraries
     LoggingInstrumentor().instrument()  # Correlate Python logs
     SmolagentsInstrumentor().instrument()  # Instrument agents
-    
+
     # Configure exporter based on backend
     if backend == "console":
         processor = SimpleSpanProcessor(ConsoleSpanExporter())
@@ -332,9 +332,9 @@ def configure_telemetry(backend: str = "jsonl"):
         processor = BatchSpanProcessor(JSONLSpanExporter())
     elif backend == "otlp":
         processor = BatchSpanProcessor(OTLPSpanExporter())
-    
+
     tracer_provider.add_span_processor(processor)
-    
+
     return tracer_provider
 ```
 
@@ -348,14 +348,14 @@ tracer = trace_api.get_tracer(__name__)
 def my_function(user_id: int) -> dict:
     with tracer.start_as_current_span("fetch_user") as span:
         span.set_attribute("user_id", user_id)
-        
+
         logger.info("Fetching user %d", user_id)  # ← Automatically gets span ID!
-        
+
         # Your code here
         result = fetch_from_db(user_id)
-        
+
         logger.debug("Result: %s", result)  # ← Also gets span ID!
-        
+
         return result
 ```
 
@@ -426,7 +426,7 @@ def get_user_credentials() -> tuple[str, str]:
     context = get_user_context()
     if not context:
         raise ValueError("No user context set")
-    
+
     # Load from per-user storage
     user_id = context["user_id"]
     return credential_manager.load_credentials(user_id)
@@ -436,7 +436,7 @@ def fetch_user_data(data_type: str) -> dict:
     context = get_user_context()
     if not context:
         raise ValueError("No user context set")
-    
+
     user_id = context["user_id"]
     return api_client.get_user_data(user_id, data_type)
 ```
@@ -449,10 +449,10 @@ async def handle_user_request(
     session_token: str,
 ) -> str:
     """Main request handler - set context at boundary."""
-    
+
     # Authenticate request
     user = authenticate_by_token(session_token)
-    
+
     # Set context for this request/thread
     set_user_context({
         "user_id": user.id,
@@ -460,7 +460,7 @@ async def handle_user_request(
         "email": user.email,
         "preferences": user.preferences,
     })
-    
+
     try:
         # All subsequent code can access user context
         agent = create_agent()  # Uses context internally
@@ -479,7 +479,7 @@ def get_my_activities() -> list[dict] | None:
     context = get_user_context()
     if not context:
         raise ValueError("User not authenticated")
-    
+
     user_id = context["user_id"]
     return fetch_activities(user_id)
 ```
@@ -514,7 +514,7 @@ class Activity(BaseModel):
         str_strip_whitespace=True,
         validate_default=True,
     )
-    
+
     activity_id: int = Field(alias="activityId")
     activity_name: str = Field(alias="activityName")
     activity_type: str = Field(alias="activityType")
@@ -522,7 +522,7 @@ class Activity(BaseModel):
     duration: int    # seconds
     calories: int | None = None
     average_hr: int | None = Field(default=None, alias="averageHR")
-    
+
     # Computed properties
     @property
     def duration_minutes(self) -> float:
@@ -544,19 +544,19 @@ import requests
 
 def fetch_activities(user_id: int) -> list[Activity]:
     """Fetch and validate activities from API."""
-    
+
     response = requests.get(
         f"https://api.example.com/activities",
         params={"userId": user_id},
     )
     response.raise_for_status()
-    
+
     raw_data = response.json()
-    
+
     # Validate with Pydantic
     # This raises ValidationError if data doesn't match schema
     activities = [Activity(**item) for item in raw_data]
-    
+
     return activities
 ```
 
@@ -586,7 +586,7 @@ from pydantic import field_validator
 class Activity(BaseModel):
     activity_type: str
     distance: float
-    
+
     @field_validator("activity_type")
     @classmethod
     def validate_type(cls, v: str) -> str:
@@ -595,7 +595,7 @@ class Activity(BaseModel):
         if v.lower() not in valid_types:
             raise ValueError(f"Unknown activity type: {v}")
         return v.lower()
-    
+
     @field_validator("distance")
     @classmethod
     def validate_distance(cls, v: float) -> float:
@@ -633,7 +633,7 @@ def redact_for_logging(value: str | None) -> str:
     """
     Redact sensitive strings for logging.
     Shows first and last character(s) with asterisks.
-    
+
     Examples:
         "password123" → "p*********3"
         "a" → "a"
@@ -642,16 +642,16 @@ def redact_for_logging(value: str | None) -> str:
     """
     if value is None or value == "":
         return "(redacted)"
-    
+
     value_str = str(value)
-    
+
     if len(value_str) <= 2:
         return value_str
-    
+
     first = value_str[0]
     last = value_str[-1]
     middle = "*" * (len(value_str) - 2)
-    
+
     return f"{first}{middle}{last}"
 
 def redact_string(value: str | None) -> str:
@@ -718,20 +718,20 @@ import os
 @dataclass
 class AppConfig:
     """Application configuration."""
-    
+
     # Database
     db_backend: str = os.getenv("DB_BACKEND", "sqlite")
     db_path: str = os.getenv("DB_PATH", "./data.db")
-    
+
     # Cache
     cache_enabled: bool = os.getenv("CACHE_ENABLED", "true").lower() == "true"
     cache_backend: str = os.getenv("CACHE_BACKEND", "disk")
     cache_dir: str = os.getenv("CACHE_DIR", ".cache")
-    
+
     # Model
     model_provider: str = os.getenv("MODEL_PROVIDER", "ollama")
     model_name: str = os.getenv("MODEL_NAME", "qwen2:7b")
-    
+
     @classmethod
     def from_environment(cls) -> "AppConfig":
         """Create config from environment variables."""
@@ -754,7 +754,7 @@ def create_cache(config: AppConfig) -> CacheBackend:
     """Factory for cache backend."""
     if not config.cache_enabled:
         return NoOpCache()
-    
+
     if config.cache_backend == "disk":
         return DiskCache(config.cache_dir)
     elif config.cache_backend == "memory":
@@ -770,11 +770,11 @@ def create_model(config: AppConfig) -> LanguageModel:
 def create_app(config: AppConfig | None = None) -> App:
     """Main application factory."""
     config = config or AppConfig.from_environment()
-    
+
     database = create_database(config)
     cache = create_cache(config)
     model = create_model(config)
-    
+
     return App(
         database=database,
         cache=cache,
@@ -788,14 +788,14 @@ def create_app(config: AppConfig | None = None) -> App:
 def main():
     # Create from environment
     app = create_app()
-    
+
     # Or with custom config
     config = AppConfig(
         db_backend="firestore",
         cache_backend="memory",
     )
     app = create_app(config)
-    
+
     # Run
     app.run()
 

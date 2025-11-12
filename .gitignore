@@ -111,3 +111,16 @@ cache/
 local/
 tmp/
 temp/
+
+# Spike artifacts
+spike/cache/
+spike/.env
+
+# uv
+.uv/
+
+# Node modules (for future Tailwind)
+node_modules/
+package-lock.json
+yarn.lock
+.envrc

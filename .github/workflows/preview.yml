@@ -1,0 +1,429 @@
+name: Preview Deployment
+
+on:
+  push:
+    branches:
+      - 'feat/**'
+  workflow_dispatch:
+    inputs:
+      branch_name:
+        description: 'Branch to deploy as preview'
+        required: true
+        type: string
+
+env:
+  PYTHON_VERSION: "3.12"
+  REGION: "australia-southeast1"
+  REPO_NAME: "selflytics"
+  IMAGE_NAME: "backend"
+
+jobs:
+  # Note: Preview deploys run independently of CI checks for faster feedback.
+  # Preview environments are isolated and ephemeral, so they don't require
+  # CI validation before deployment. Developers can test changes immediately.
+
+  check-preview-limit:
+    name: Check Preview Limit
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      can-deploy: ${{ steps.check.outputs.can-deploy }}
+
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.WIF_PROVIDER }}
+          service_account: ${{ secrets.WIF_SERVICE_ACCOUNT }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Check preview limit
+        id: check
+        env:
+          GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+          GCP_REGION: ${{ env.REGION }}
+        run: |
+          if ./infra/scripts/check-preview-limit.sh --quiet; then
+            echo "can-deploy=true" >> $GITHUB_OUTPUT
+          else
+            echo "can-deploy=false" >> $GITHUB_OUTPUT
+            exit 1
+          fi
+
+  deploy-preview:
+    name: Deploy Preview
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: check-preview-limit
+    if: needs.check-preview-limit.outputs.can-deploy == 'true'
+    outputs:
+      feature-name: ${{ steps.sanitize.outputs.feature-name }}
+      service-url: ${{ steps.deploy.outputs.url }}
+
+    permissions:
+      contents: read
+      id-token: write
+      pull-requests: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Sanitize branch name
+        id: sanitize
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            BRANCH_NAME="${{ github.event.inputs.branch_name }}"
+          else
+            BRANCH_NAME="${GITHUB_HEAD_REF:-${GITHUB_REF#refs/heads/}}"
+          fi
+
+          echo "Branch name: $BRANCH_NAME"
+          FEATURE_NAME=$(./infra/scripts/sanitize-branch-name.sh "$BRANCH_NAME")
+          echo "feature-name=$FEATURE_NAME" >> $GITHUB_OUTPUT
+          echo "Sanitized branch '$BRANCH_NAME' to feature '$FEATURE_NAME'"
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.WIF_PROVIDER }}
+          service_account: ${{ secrets.WIF_SERVICE_ACCOUNT }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Configure Docker for Artifact Registry
+        run: gcloud auth configure-docker ${{ env.REGION }}-docker.pkg.dev
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Prepare image tags
+        id: meta
+        run: |
+          SHA="${{ github.sha }}"
+          TAG="${SHA:0:7}"
+          FEATURE_NAME="${{ steps.sanitize.outputs.feature-name }}"
+          IMAGE_TAG="preview-${FEATURE_NAME}-${TAG}"
+          IMAGE_FULL="${{ env.REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ env.REPO_NAME }}/${{ env.IMAGE_NAME }}:${IMAGE_TAG}"
+          CACHE_IMAGE="${{ env.REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ env.REPO_NAME }}/${{ env.IMAGE_NAME }}:buildcache"
+
+          echo "IMAGE_FULL=${IMAGE_FULL}" >> $GITHUB_ENV
+          echo "IMAGE_TAG=${IMAGE_TAG}" >> $GITHUB_ENV
+          echo "CACHE_IMAGE=${CACHE_IMAGE}" >> $GITHUB_ENV
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./backend
+          platforms: linux/amd64
+          push: true
+          tags: ${{ env.IMAGE_FULL }}
+          cache-from: type=registry,ref=${{ env.CACHE_IMAGE }}
+          cache-to: type=registry,ref=${{ env.CACHE_IMAGE }},mode=max
+
+      - name: Deploy to Cloud Run
+        id: deploy
+        uses: google-github-actions/deploy-cloudrun@v3
+        with:
+          service: selflytics-webapp-preview-${{ steps.sanitize.outputs.feature-name }}
+          image: ${{ env.IMAGE_FULL }}
+          region: ${{ env.REGION }}
+          flags: '--min-instances=0 --max-instances=1 --cpu=1 --memory=512Mi --cpu-throttling --no-allow-unauthenticated'
+          env_vars: |-
+            ENVIRONMENT=preview-${{ steps.sanitize.outputs.feature-name }}
+            DEBUG=true
+            GOOGLE_CLOUD_PROJECT=${{ secrets.GCP_PROJECT_ID }}
+            GCP_PROJECT_ID=${{ secrets.GCP_PROJECT_ID }}
+            TELEMETRY=cloudlogging
+          secrets: |-
+            JWT_SECRET=dev-jwt-secret:latest
+            OPENAI_API_KEY=dev-openai-api-key:latest
+          labels: |-
+            environment=preview
+            feature=${{ steps.sanitize.outputs.feature-name }}
+            managed_by=github-actions
+
+      - name: Find existing PR comment
+        if: github.event_name == 'pull_request'
+        uses: peter-evans/find-comment@v3
+        id: find-comment
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          comment-author: 'github-actions[bot]'
+          body-includes: '## 🚀 Preview Deployment'
+
+      - name: Create or update PR comment
+        if: github.event_name == 'pull_request'
+        uses: peter-evans/create-or-update-comment@v4
+        with:
+          comment-id: ${{ steps.find-comment.outputs.comment-id }}
+          issue-number: ${{ github.event.pull_request.number }}
+          edit-mode: replace
+          body: |
+            ## 🚀 Preview Deployment
+
+            **Status**: ✅ Deployed successfully
+
+            ### Access Information
+
+            **Preview URL**: ${{ steps.deploy.outputs.url }}
+
+            **Access via Proxy** (required due to IAM authentication):
+            ```bash
+            # Start authenticated proxy
+            ./infra/scripts/proxy.sh preview-${{ steps.sanitize.outputs.feature-name }}
+
+            # Then visit in your browser:
+            # • http://localhost:8080           - API info
+            # • http://localhost:8080/health    - Health check
+            # • http://localhost:8080/docs      - OpenAPI documentation
+            ```
+
+            ### Deployment Details
+
+            | Property | Value |
+            |----------|-------|
+            | **Branch** | `${{ github.head_ref }}` |
+            | **Commit** | `${{ github.sha }}` ([view](${{ github.event.pull_request.head.repo.html_url }}/commit/${{ github.sha }})) |
+            | **Feature** | `${{ steps.sanitize.outputs.feature-name }}` |
+            | **Service** | `selflytics-webapp-preview-${{ steps.sanitize.outputs.feature-name }}` |
+            | **Image** | `${{ env.IMAGE_TAG }}` |
+            | **Region** | `${{ env.REGION }}` |
+
+            ### Environment Configuration
+
+            - **Resources**: 1 CPU, 512Mi memory
+            - **Scaling**: Min 0, Max 1 instance (scales to zero when idle)
+            - **Authentication**: IAM-based (requires gcloud auth)
+
+            ### What's Next?
+
+            - ✅ Test your changes in the preview environment
+            - ✅ Share this preview URL with reviewers
+            - ✅ Check logs: `gcloud run services logs read selflytics-webapp-preview-${{ steps.sanitize.outputs.feature-name }} --region=${{ env.REGION }}`
+            - ✅ Preview will auto-cleanup when PR is closed or branch is deleted
+
+            ### Troubleshooting
+
+            **Proxy won't start?**
+            - Ensure you're authenticated: `gcloud auth login`
+            - Check service exists: `gcloud run services list --region=${{ env.REGION }}`
+
+            **Health check failing?**
+            - Check service logs for startup errors
+            - Verify image was built successfully
+            - Check environment variables are set correctly
+
+            ---
+            *Preview deployments are ephemeral and isolated. Changes here don't affect dev/staging/prod environments.*
+
+      - name: Deployment Summary
+        if: always()
+        run: |
+          cat >> $GITHUB_STEP_SUMMARY <<EOF
+          ## Preview Deployment Summary
+
+          ✅ **Deployment Successful**
+
+          ### Details
+          - **Feature**: \`${{ steps.sanitize.outputs.feature-name }}\`
+          - **Service**: \`selflytics-webapp-preview-${{ steps.sanitize.outputs.feature-name }}\`
+          - **URL**: ${{ steps.deploy.outputs.url }}
+          - **Image**: \`${{ env.IMAGE_TAG }}\`
+          - **Region**: australia-southeast1
+
+          ### Access Instructions
+          \`\`\`bash
+          # Start authenticated proxy
+          ./infra/scripts/proxy.sh preview-${{ steps.sanitize.outputs.feature-name }}
+
+          # Then visit: http://localhost:8080
+          \`\`\`
+
+          ### Quick Actions
+          - [View Service in Console](https://console.cloud.google.com/run/detail/australia-southeast1/selflytics-webapp-preview-${{ steps.sanitize.outputs.feature-name }}?project=${{ secrets.GCP_PROJECT_ID }})
+          - [View Logs](https://console.cloud.google.com/logs/query;query=resource.type%3D%22cloud_run_revision%22%0Aresource.labels.service_name%3D%22selflytics-webapp-preview-${{ steps.sanitize.outputs.feature-name }}%22?project=${{ secrets.GCP_PROJECT_ID }})
+          EOF
+
+  validate-preview:
+    name: Validate Preview Deployment
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: deploy-preview
+    if: needs.deploy-preview.result == 'success'
+
+    permissions:
+      contents: read
+      id-token: write
+      pull-requests: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          version: "latest"
+          enable-cache: true
+          cache-dependency-glob: "backend/uv.lock"
+
+      - name: Install dependencies
+        run: |
+          cd backend
+          uv sync --all-extras
+
+      - name: Authenticate to Google Cloud (for gcloud commands)
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.WIF_PROVIDER }}
+          service_account: ${{ secrets.WIF_SERVICE_ACCOUNT }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Get service URL
+        id: get-url
+        env:
+          FEATURE_NAME: ${{ needs.deploy-preview.outputs.feature-name }}
+          GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+          GCP_REGION: ${{ env.REGION }}
+        run: |
+          SERVICE_NAME="selflytics-webapp-preview-${FEATURE_NAME}"
+          SERVICE_URL=$(gcloud run services describe "$SERVICE_NAME" \
+            --region="$GCP_REGION" \
+            --project="$GCP_PROJECT_ID" \
+            --format="value(status.url)")
+
+          echo "url=$SERVICE_URL" >> $GITHUB_OUTPUT
+          echo "✅ Service URL: $SERVICE_URL"
+
+      - name: Authenticate with ID token for Cloud Run
+        id: auth-cloudrun
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.WIF_PROVIDER }}
+          service_account: ${{ secrets.WIF_SERVICE_ACCOUNT }}
+          token_format: 'id_token'
+          id_token_audience: ${{ steps.get-url.outputs.url }}
+          id_token_include_email: true
+
+      - name: Verify ID token generation
+        env:
+          ID_TOKEN: ${{ steps.auth-cloudrun.outputs.id_token }}
+        run: |
+          if [ -z "$ID_TOKEN" ]; then
+            echo "❌ ERROR: ID_TOKEN is empty!"
+            exit 1
+          fi
+          echo "✅ ID token generated successfully"
+
+      - name: Wait for service to be ready
+        env:
+          SERVICE_URL: ${{ steps.get-url.outputs.url }}
+          ID_TOKEN: ${{ steps.auth-cloudrun.outputs.id_token }}
+        run: |
+          echo "⏳ Waiting for service to be ready..."
+
+          MAX_ATTEMPTS=20  # 20 attempts × 10s = 3.3 minutes max (reduced from 5 min)
+          ATTEMPT=0
+          CONSECUTIVE_401_COUNT=0
+          MAX_CONSECUTIVE_401=3
+
+          while [ $ATTEMPT -lt $MAX_ATTEMPTS ]; do
+            ATTEMPT=$((ATTEMPT + 1))
+
+            HTTP_CODE=$(curl -s -w "%{http_code}" -o /dev/null \
+              -H "Authorization: Bearer $ID_TOKEN" \
+              "$SERVICE_URL/health")
+
+            if [ "$HTTP_CODE" = "200" ]; then
+              echo "✅ Service is ready! (attempt $ATTEMPT/$MAX_ATTEMPTS)"
+              exit 0
+            elif [ "$HTTP_CODE" = "401" ]; then
+              CONSECUTIVE_401_COUNT=$((CONSECUTIVE_401_COUNT + 1))
+
+              if [ $CONSECUTIVE_401_COUNT -ge $MAX_CONSECUTIVE_401 ]; then
+                echo ""
+                echo "❌ IAM permission error: WIF service account lacks Cloud Run Invoker role"
+                echo "Run: gcloud run services add-iam-policy-binding <service-name> --role=roles/run.invoker ..."
+                exit 1
+              fi
+              echo "⚠️  Got 401 (attempt $CONSECUTIVE_401_COUNT/$MAX_CONSECUTIVE_401)"
+            else
+              CONSECUTIVE_401_COUNT=0
+              echo "ℹ️  Got HTTP $HTTP_CODE, retrying... (attempt $ATTEMPT/$MAX_ATTEMPTS)"
+            fi
+
+            if [ $ATTEMPT -lt $MAX_ATTEMPTS ]; then
+              sleep 10
+            fi
+          done
+
+          echo "❌ Service did not become ready after $MAX_ATTEMPTS attempts"
+          exit 1
+
+      - name: Run validation script
+        env:
+          GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+          GCP_REGION: ${{ env.REGION }}
+          ID_TOKEN: ${{ steps.auth-cloudrun.outputs.id_token }}
+        run: |
+          ./scripts/validate-deployment.sh \
+            --preview ${{ needs.deploy-preview.outputs.feature-name }} \
+            --fail-if-unhealthy
+
+      - name: Run E2E tests against deployed preview
+        env:
+          TEST_BASE_URL: ${{ steps.get-url.outputs.url }}
+          ID_TOKEN: ${{ steps.auth-cloudrun.outputs.id_token }}
+        run: |
+          echo "🧪 Running E2E tests against preview deployment..."
+          echo "Target URL: $TEST_BASE_URL"
+          cd backend
+          uv run pytest tests/e2e/test_deployed_user_journey.py -v --tb=short
+
+      - name: Update PR comment with validation results
+        if: github.event_name == 'pull_request' && always()
+        uses: peter-evans/find-comment@v3
+        id: find-comment
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          comment-author: 'github-actions[bot]'
+          body-includes: '## 🚀 Preview Deployment'
+
+      - name: Add validation status to PR comment
+        if: github.event_name == 'pull_request' && always()
+        uses: peter-evans/create-or-update-comment@v4
+        with:
+          comment-id: ${{ steps.find-comment.outputs.comment-id }}
+          issue-number: ${{ github.event.pull_request.number }}
+          edit-mode: append
+          body: |
+
+            ### 🧪 Post-Deployment Validation
+
+            **Status**: ${{ job.status == 'success' && '✅ All checks passed' || '❌ Validation failed' }}
+
+            The preview deployment has been validated with:
+            - Health endpoint check
+            - API functionality tests
+            - Feature implementation checks
+            - E2E test suite
+
+            ${{ job.status != 'success' && 'See workflow logs for details.' || '' }}

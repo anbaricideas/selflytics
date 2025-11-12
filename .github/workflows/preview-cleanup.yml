@@ -1,0 +1,145 @@
+name: Preview Cleanup
+
+on:
+  delete:
+    branches:
+      - 'feat/**'
+  pull_request:
+    types: [closed]
+    branches:
+      - main
+      - 'feat/**'
+  workflow_dispatch:
+    inputs:
+      feature_name:
+        description: 'Feature name to clean up (e.g., telemetry)'
+        required: true
+        type: string
+
+jobs:
+  cleanup:
+    name: Cleanup Preview Environment
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Determine feature name
+        id: feature
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            FEATURE_NAME="${{ github.event.inputs.feature_name }}"
+          elif [ "${{ github.event_name }}" = "pull_request" ]; then
+            BRANCH_NAME="${{ github.event.pull_request.head.ref }}"
+            FEATURE_NAME=$(./infra/scripts/sanitize-branch-name.sh "$BRANCH_NAME")
+          else
+            # Delete event
+            BRANCH_NAME="${{ github.event.ref }}"
+            BRANCH_NAME="${BRANCH_NAME#refs/heads/}"
+            FEATURE_NAME=$(./infra/scripts/sanitize-branch-name.sh "$BRANCH_NAME")
+          fi
+
+          echo "feature-name=$FEATURE_NAME" >> $GITHUB_OUTPUT
+          echo "Cleaning up preview for feature: $FEATURE_NAME"
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.WIF_PROVIDER }}
+          service_account: ${{ secrets.WIF_SERVICE_ACCOUNT }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Delete Cloud Run service
+        run: |
+          FEATURE_NAME="${{ steps.feature.outputs.feature-name }}"
+          SERVICE_NAME="clinicraft-webapp-preview-${FEATURE_NAME}"
+
+          echo "Deleting Cloud Run service: $SERVICE_NAME"
+
+          # Attempt to delete the service
+          if gcloud run services delete "$SERVICE_NAME" \
+              --region=australia-southeast1 \
+              --project=${{ secrets.GCP_PROJECT_ID }} \
+              --quiet 2>&1; then
+            echo "✓ Service deleted successfully"
+          else
+            echo "⚠️  Service may not exist or was already deleted"
+          fi
+
+      - name: Verify cleanup
+        run: |
+          FEATURE_NAME="${{ steps.feature.outputs.feature-name }}"
+          SERVICE_NAME="clinicraft-webapp-preview-${FEATURE_NAME}"
+
+          echo "Verifying service $SERVICE_NAME is deleted..."
+
+          # Retry logic for eventual consistency (GCP deletions can take a few seconds)
+          MAX_ATTEMPTS=3
+          DELAY=5
+
+          for attempt in $(seq 1 $MAX_ATTEMPTS); do
+            echo "Verification attempt $attempt/$MAX_ATTEMPTS..."
+
+            # Check if service still exists (should not)
+            if ! gcloud run services describe "$SERVICE_NAME" \
+                --region=australia-southeast1 \
+                --project=${{ secrets.GCP_PROJECT_ID }} \
+                --format="value(name)" 2>/dev/null; then
+              echo "✓ Preview environment cleaned up successfully"
+              echo "Service $SERVICE_NAME has been deleted"
+              exit 0
+            fi
+
+            # If not the last attempt, wait before retrying
+            if [ $attempt -lt $MAX_ATTEMPTS ]; then
+              echo "Service still exists, waiting ${DELAY}s before retry..."
+              sleep $DELAY
+            fi
+          done
+
+          # All attempts exhausted
+          echo "⚠️  WARNING: Service $SERVICE_NAME still exists after $MAX_ATTEMPTS attempts"
+          echo "Manual cleanup may be required"
+          exit 1
+
+      - name: Cleanup Summary
+        if: always()
+        run: |
+          cat >> $GITHUB_STEP_SUMMARY <<EOF
+          ## Preview Cleanup Summary
+
+          ✅ **Cleanup Completed**
+
+          ### Details
+          - **Feature**: \`${{ steps.feature.outputs.feature-name }}\`
+          - **Service**: \`clinicraft-webapp-preview-${{ steps.feature.outputs.feature-name }}\`
+          - **Trigger**: ${{ github.event_name }}
+
+          ### Resources Removed
+          - Cloud Run service
+          - IAM policy bindings
+          - Service logs (retained for 30 days in Cloud Logging)
+
+          ### Verification
+          Service no longer appears in Cloud Run service list.
+
+          ### Next Steps
+          If cleanup failed, you can manually trigger it again:
+          \`\`\`bash
+          gh workflow run preview-cleanup.yml -f feature_name=${{ steps.feature.outputs.feature-name }}
+          \`\`\`
+
+          Or clean up manually:
+          \`\`\`bash
+          gcloud run services delete clinicraft-webapp-preview-${{ steps.feature.outputs.feature-name }} \\
+            --region=australia-southeast1 --project=${{ secrets.GCP_PROJECT_ID }}
+          \`\`\`
+          EOF

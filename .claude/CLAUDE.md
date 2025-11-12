@@ -52,7 +52,9 @@ uv sync --all-extras
 uv add <package>
 
 # Development
-uv run --directory backend uvicorn app.main:app --reload
+./scripts/dev-server.sh  # Loads backend/.env, uses PORT variable
+# OR manually:
+# uv run --directory backend uvicorn app.main:app --reload --host 127.0.0.1 --port ${PORT:-8000}
 
 # Testing (TDD required, 80%+ coverage)
 uv run pytest backend/tests/ -v --cov=app
