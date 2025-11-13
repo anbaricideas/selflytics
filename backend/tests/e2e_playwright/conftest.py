@@ -24,10 +24,14 @@ def base_url():
     if test_url:
         return test_url.rstrip("/")
 
-    # Load from .env for local testing
+    # Load from .env.local (preferred) or .env for local testing
     backend_dir = Path(__file__).parent.parent.parent
+    env_local_file = backend_dir / ".env.local"
     env_file = backend_dir / ".env"
-    if env_file.exists():
+
+    if env_local_file.exists():
+        load_dotenv(env_local_file)
+    elif env_file.exists():
         load_dotenv(env_file)
 
     # Check for explicit BASE_URL first

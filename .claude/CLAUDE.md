@@ -53,13 +53,17 @@ uv add <package>
 
 # Development
 ./scripts/dev-server.sh  # Loads backend/.env, uses PORT variable
-# OR manually:
-# uv run --directory backend uvicorn app.main:app --reload --host 127.0.0.1 --port ${PORT:-8000}
+
+# Local E2E Testing
+./scripts/local-e2e-server.sh  # Start Firestore emulator + dev server
+# Then in another terminal:
+uv --directory backend run pytest tests/e2e_playwright -v --headed
 
 # Testing (TDD required, 80%+ coverage)
-uv run pytest backend/tests/ -v --cov=app
-uv run pytest backend/tests/unit -v
-uv run pytest -k "test_name" -v
+uv --directory backend run pytest tests/ -v --cov=app
+uv --directory backend run pytest tests/unit -v
+uv --directory backend run pytest tests/integration -v
+uv --directory backend run pytest -k "test_name" -v
 
 # Code quality
 uv run ruff check .
@@ -76,11 +80,19 @@ git log --oneline main..HEAD --format="%ad" --date=format:"%Y-%m-%d %H:00" | uni
 
 ## Development Workflow
 
+See **[docs/DEVELOPMENT_WORKFLOW.md](../docs/DEVELOPMENT_WORKFLOW.md)** for complete workflow guidelines including:
+- TDD cycle and local testing practices
+- E2E testing guidelines and local-first approach
+- Manual testing recommendations
+- Commit guidelines and quality gates
+
+**Quick reference**:
 1. **Follow Roadmap**: Check `ROADMAP.md` for ⏳ NEXT phase
 2. **Read Phase Plan**: Detailed steps in `PHASE_*_plan.md`
 3. **TDD Workflow**: Test first → verify fail → implement → verify pass → commit
-4. **Track Progress**: Mark ✅ DONE in phase plan (single source of truth)
-5. **Commit Often**: Clear conventional commit messages
+4. **Local E2E Testing**: Use `./scripts/local-e2e-server.sh` for local e2e validation
+5. **Track Progress**: Mark ✅ DONE in phase plan (single source of truth)
+6. **Commit Often**: Clear conventional commit messages
 
 ## Planning and Time Tracking
 
