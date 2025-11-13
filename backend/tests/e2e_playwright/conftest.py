@@ -115,13 +115,29 @@ def mock_garmin_api(page: Page):
     """
 
     def handle_garmin_link(route):
-        """Mock successful Garmin link endpoint."""
-        # Check if it's a successful link (credentials match expected mock values)
+        """Mock successful Garmin link endpoint.
+
+        Only intercepts POST requests. GET requests are passed through to the
+        real backend to render the form template.
+        """
         request = route.request
+
+        # Let GET requests through to real backend
+        if request.method == "GET":
+            route.continue_()
+            return
+
+        # Handle POST requests
         post_data = request.post_data
 
         # Simple mock: accept test@garmin.com, reject others
-        if post_data and b"test@garmin.com" in post_data:
+        # Note: post_data can be bytes or string depending on Playwright version
+        test_email = "test@garmin.com"
+        has_test_email = (
+            (isinstance(post_data, bytes) and b"test@garmin.com" in post_data)
+            or (isinstance(post_data, str) and test_email in post_data)
+        )
+        if post_data and has_test_email:
             # Return HTML fragment for HTMX swap (outerHTML)
             route.fulfill(
                 status=200,
