@@ -5,15 +5,19 @@ repos:
     hooks:
       # Stage 1: Auto-fix issues that can be fixed automatically
       - id: ruff
-        args: [--fix]
+        args: [--fix, backend/]
         name: ruff (auto-fix)
+        pass_filenames: false
       # Stage 2: Strict check for remaining violations
       - id: ruff
-        args: [--output-format=full]
+        args: [--output-format=full, backend/]
         name: ruff (strict check)
+        pass_filenames: false
       # Stage 3: Format code
       - id: ruff-format
+        args: [backend/]
         name: ruff (format)
+        pass_filenames: false
 
   # Security checks
   - repo: https://github.com/PyCQA/bandit
