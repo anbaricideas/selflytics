@@ -1,7 +1,7 @@
 # Phase 2: Garmin Integration
 
 **Branch**: `feat/phase-2-garmin`
-**Status**: ✅ COMPLETE
+**Status**: ⚠️ MOSTLY COMPLETE - Auth flow fix needed for E2E tests
 
 ---
 
@@ -893,23 +893,98 @@ Implement production-ready Garmin Connect integration with OAuth authentication,
 
 ### Optional Enhancement: Playwright E2E Tests
 
-**Status**: Started (conftest.py created), can be completed in future session
+**Status**: ⚠️ BLOCKED - Architecture issue discovered
 
 **Purpose**: Verify HTMX and Alpine.js interactions in actual browser
 
-**Files to create**:
-- `backend/tests/e2e_playwright/conftest.py` ✅ DONE
-- `backend/tests/e2e_playwright/test_garmin_linking_journey.py` - Complete UI flow
-- `backend/tests/e2e_playwright/test_htmx_interactions.py` - HTMX swapping, loading states
-- `backend/tests/e2e_playwright/test_form_validation.py` - HTML5 validation, error display
+**Files created**:
+- [x] `backend/tests/e2e_playwright/conftest.py` - Fixtures for authentication, mocking (updated to use PORT from .env)
+- [x] `backend/tests/e2e_playwright/test_garmin_linking_journey.py` - Complete UI flow (6 tests)
+- [x] `backend/tests/e2e_playwright/test_htmx_interactions.py` - HTMX behavior (4 tests)
+- [x] `backend/tests/e2e_playwright/test_form_validation.py` - HTML5 validation, accessibility (8 tests)
 
-**Value**: Current 91% backend coverage is excellent. Playwright tests would add browser-level validation of:
-- HTMX `hx-swap` and `hx-target` behavior
-- Alpine.js state management (`x-show`, `x-data`, loading states)
-- Form validation (HTML5 `required`, browser-native errors)
+**Current Blocker - Registration Flow Broken**:
+
+Tests revealed a **fundamental architecture issue** in the authentication flow:
+
+1. **Problem**: `backend/app/templates/register.html:15` has:
+   ```html
+   <form method="POST" action="/register">
+   ```
+   - Form submits to `/register` (no POST handler exists)
+   - Actual API endpoint is `/auth/register` and expects JSON
+
+2. **Impact**:
+   - Registration form cannot work in current state
+   - E2E tests timeout waiting for redirect to `/dashboard` after registration
+   - 16 tests: 2 FAILED, 14 ERRORS (all due to registration fixture failure)
+
+3. **Root Cause**: Mixed architecture pattern - templates created for HTMX but forms use traditional POST
+
+**Required Fix** (to be done in separate step):
+- **Option A**: Update templates to use HTMX properly:
+  - Add `hx-post="/auth/register"` to forms
+  - Add `hx-swap="outerHTML"` for inline updates
+  - Add Alpine.js for loading states
+  - Handle successful registration redirect client-side
+
+- **Option B**: Add traditional POST handlers:
+  - Create `POST /register` endpoint
+  - Handle form data, validate, create user
+  - Redirect to `/dashboard` on success
+  - Re-render template with errors on failure
+
+**Recommendation**: Option A (HTMX) - aligns with project specification and Garmin settings page pattern
+
+**Implementation Details**:
+1. **Dependency**: Added `pytest-playwright>=0.7.1` to dev dependencies
+2. **Browsers**: Chromium installed via `python -m playwright install chromium`
+3. **Data-testid attributes**: Added to all templates (register.html, login.html, settings_garmin.html)
+   - Makes selectors robust and maintainable
+   - Prevents breakage from UI copy changes
+4. **Mocking Strategy**: Uses Playwright route interception for Garmin API
+   - Returns HTML fragments (not JSON) for HTMX compatibility
+   - Simulates both success and error responses
+5. **Test Coverage** (once auth flow fixed):
+   - User registration → Garmin linking → sync flow
+   - Invalid credentials error handling
+   - HTMX partial updates (no full page reload)
+   - Alpine.js loading states
+   - HTML5 client validation (required, email format)
+   - Server-side validation responses
+   - Keyboard accessibility (Tab navigation, Enter to submit)
+   - Password field masking
+   - Focus states for accessibility
+
+**Value** (once working): Complements 91% backend coverage with browser-level validation of:
+- HTMX `hx-swap="outerHTML"` replaces form with success state
+- Alpine.js `x-show` toggles loading text ("Link Account" → "Linking...")
+- Form validation prevents empty submission (HTML5 `required`)
 - Complete UI user journeys with visual confirmation
+- Accessibility features (keyboard navigation, focus management)
 
-**Reference**: See CliniCraft `/Users/bryn/repos/clinicraft/backend/tests/e2e/` for patterns
+**Running E2E Tests** (once auth flow fixed):
+```bash
+# Ensure dev server running
+./scripts/dev-server.sh
+
+# Run Playwright tests (in separate terminal)
+uv run --directory backend pytest tests/e2e_playwright/ -v
+
+# Run with visible browser (for debugging)
+uv run --directory backend pytest tests/e2e_playwright/ -v --headed
+
+# Run specific test
+uv run --directory backend pytest tests/e2e_playwright/test_garmin_linking_journey.py::TestGarminLinkingJourney::test_new_user_links_garmin_account -v
+```
+
+**Note**: E2E tests require:
+- Backend server running (real or test instance)
+- Firestore emulator OR test GCP project
+- Tests are FAST (mocked Garmin API, no real external calls)
+- **Auth flow must be fixed first** (registration/login working)
+
+**Reference**: Adapted from CliniCraft patterns (`/Users/bryn/repos/clinicraft/backend/tests/e2e/`)
 
 ---
 
@@ -928,6 +1003,17 @@ Implement production-ready Garmin Connect integration with OAuth authentication,
 - [x] ✅ DONE: Run quality checks:
   - `uv run ruff check .` - All checks passed!
   - `uv run ruff format .` - 63 files already formatted
+- [x] ✅ DONE: E2E test investigation:
+  - Updated conftest.py to use PORT from .env
+  - Discovered registration/login flow architecture mismatch
+  - Tests blocked until auth templates updated to use HTMX properly
+- [ ] ⏳ NEXT: Fix authentication flow (separate task):
+  - Update `register.html` to use HTMX (`hx-post="/auth/register"`)
+  - Update `login.html` to use HTMX (`hx-post="/auth/login"`)
+  - Add client-side redirect handling after successful auth
+  - Add Alpine.js loading states
+  - Test registration → login → dashboard flow manually
+  - Run E2E tests to verify complete user journeys
 - [ ] Manual testing (deferred to user):
   - Start server: `uv run --directory backend uvicorn app.main:app --reload`
   - Visit settings: http://localhost:8000/garmin/link
@@ -939,9 +1025,9 @@ Implement production-ready Garmin Connect integration with OAuth authentication,
 - [x] ✅ DONE: Terraform updates:
   - KMS module applied in Step 4
   - KMS key created and validated
-- [x] ✅ DONE: Update this plan: mark all steps ✅ DONE
+- [x] ✅ DONE: Update this plan: mark all steps ✅ DONE and document E2E blocker
 - [ ] ⏳ NEXT: Update `docs/project-setup/ROADMAP.md`: Phase 2 status → ✅ DONE
-- [ ] Final commit: "docs: mark Phase 2 complete"
+- [ ] Final commit: "docs: mark Phase 2 complete with auth flow fix needed"
 - [ ] Ready for PR submission (user can trigger with agent)
 
 ---
@@ -1015,5 +1101,5 @@ With Phase 2 complete, Phase 3 can build Pydantic-AI tools that query real Garmi
 
 ---
 
-*Last Updated: 2025-11-11*
-*Status: ⬜ TODO*
+*Last Updated: 2025-11-13*
+*Status: ⚠️ MOSTLY COMPLETE - Auth flow fix needed*
