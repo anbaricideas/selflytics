@@ -1336,5 +1336,234 @@ These 22 comprehensive integration tests are currently skipped and need OpenAI m
 
 ---
 
+## Enabling Skipped Tests - In Progress (2025-11-13)
+
+### Progress Summary
+
+**✅ COMPLETED** (commits `e6d50d8`, `dd96a72`):
+- Fixed 3 Pydantic-AI v1.15.0 API bugs in production code
+- Rewrote `test_chat_tool_calling.py` (4/4 tests passing)
+- Established testing pattern using FunctionModel
+
+**Production Bugs Fixed**:
+1. `Agent(result_type=...)` → `Agent(output_type=...)` (app/prompts/chat_agent.py:202)
+2. `result.data` → `result.output` (app/services/chat_service.py:67)
+3. `usage_dict: dict` → `RunUsage object` handling (app/utils/cost_tracking.py:36-73)
+
+**⏸️ REMAINING WORK** (18 tests across 2 files):
+- `test_chat_error_scenarios.py` - 10 tests
+- `test_chat_business_requirements.py` - 8 tests
+
+---
+
+### Established Testing Pattern
+
+The correct pattern for testing Pydantic-AI agents (discovered through fixing test_chat_tool_calling.py):
+
+#### Pattern Overview
+
+```python
+import os
+from unittest.mock import AsyncMock, MagicMock, patch
+from pydantic_ai import ModelMessage, ModelResponse, TextPart, ToolCallPart
+from pydantic_ai.models.function import AgentInfo, FunctionModel
+
+# Set dummy API key to allow agent creation without real OpenAI connection
+os.environ.setdefault("OPENAI_API_KEY", "sk-test-key-for-testing-only")
+
+async def test_example():
+    tool_calls_made = []  # Track what tools were called
+
+    # 1. Mock GarminService where tools import it
+    with patch("app.prompts.chat_agent.GarminService") as mock_service_class:
+        mock_service = AsyncMock()
+        mock_service.get_activities_cached.return_value = [...]
+        mock_service_class.return_value = mock_service
+
+        # 2. Define FunctionModel to control agent behavior
+        def model_function(messages: list[ModelMessage], info: AgentInfo) -> ModelResponse:
+            if len(messages) == 1:  # First call: agent decides to call tool
+                tool_call = ToolCallPart(
+                    tool_name="garmin_activity_tool",
+                    args={"start_date": "2025-11-06", "end_date": "2025-11-13"}
+                )
+                tool_calls_made.append(tool_call.args)
+                return ModelResponse(parts=[tool_call])
+            else:  # Second call: agent responds after tool returns
+                return ModelResponse(
+                    parts=[TextPart('{"message": "...", "data_sources_used": [...], ...}')]
+                )
+
+        # 3. Mock conversation service
+        mock_conversation_service = AsyncMock()
+        mock_conversation = MagicMock(conversation_id="conv-123")
+        mock_conversation_service.create_conversation.return_value = mock_conversation
+        mock_conversation_service.add_message.return_value = AsyncMock()
+        mock_conversation_service.get_message_history.return_value = []
+
+        # 4. Create agent and use FunctionModel override
+        from app.prompts.chat_agent import create_chat_agent
+
+        service = ChatService()
+        service.conversation_service = mock_conversation_service
+
+        with patch("app.services.chat_service.create_chat_agent") as mock_create:
+            agent = create_chat_agent()
+            mock_create.return_value = agent
+
+            with agent.override(model=FunctionModel(model_function)):
+                request = ChatRequest(message="How many runs this week?")
+                response, _ = await service.send_message(user_id="test-user", request=request)
+
+        # 5. Verify
+        assert len(tool_calls_made) == 1
+        assert mock_service.get_activities_cached.assert_called()
+        assert "activities" in response.data_sources_used
+```
+
+#### Key Insights
+
+**❌ Wrong Approach (what the skipped tests were trying to do)**:
+- Mock OpenAI client directly
+- Patch `agent.run()` to manually simulate tool calls
+- Defeats the purpose - doesn't test agent logic
+
+**✅ Correct Approach**:
+- Use `FunctionModel` to control LLM's behavior
+- Let the REAL agent call REAL tools with REAL logic
+- Mock only external dependencies (GarminService, Firestore)
+- Use `agent.override(model=FunctionModel(...))` context manager
+
+**Critical Details**:
+1. Set `os.environ["OPENAI_API_KEY"]` at module level to allow agent creation
+2. Mock `GarminService` where tools import it: `patch("app.prompts.chat_agent.GarminService")`
+3. Create real agent, then override with `agent.override(model=FunctionModel(...))`
+4. FunctionModel function controls when tool calls happen and when final response is returned
+5. Tool calls execute real code - verifies actual tool logic, not just mocks
+
+---
+
+### Step-by-Step Instructions to Complete Remaining Tests
+
+#### File 1: `test_chat_error_scenarios.py` (10 tests)
+
+**Current State**: All 10 tests skipped with reason "Requires proper OpenAI API mocking"
+
+**Required Changes**:
+1. Add at top of file:
+   ```python
+   import os
+   os.environ.setdefault("OPENAI_API_KEY", "sk-test-key-for-testing-only")
+   ```
+
+2. Remove the module-level skip decorator:
+   ```python
+   # DELETE THIS:
+   pytestmark = pytest.mark.skip(reason="...")
+   ```
+
+3. For each test, update pattern:
+   - Replace `patch("app.prompts.chat_agent.create_chat_agent")` mocking
+   - Use `FunctionModel` to simulate errors in second model call
+   - Example for timeout test:
+     ```python
+     def model_function(messages, info):
+         if len(messages) == 1:
+             # Simulate timeout on first interaction
+             from openai import APITimeoutError
+             raise APITimeoutError("Request timed out")
+     ```
+
+4. For error tests, FunctionModel should raise exceptions:
+   - `APITimeoutError`, `RateLimitError`, `APIConnectionError` from openai
+   - Test that `ChatService` handles gracefully
+
+**Tests to update**:
+- `test_openai_timeout_error`
+- `test_openai_rate_limit_error`
+- `test_openai_connection_error`
+- `test_garmin_service_failure`
+- `test_firestore_save_failure`
+- `test_conversation_not_found`
+- `test_invalid_agent_response`
+- `test_tool_execution_failure`
+- `test_partial_tool_success`
+- `test_concurrent_message_handling`
+
+#### File 2: `test_chat_business_requirements.py` (8 tests)
+
+**Current State**: All 8 tests skipped with reason "Requires proper OpenAI API mocking"
+
+**Required Changes**:
+1. Same module-level setup as error scenarios file
+
+2. For business requirement tests:
+   - Use `FunctionModel` to return specific responses
+   - Capture logs to verify PII redaction
+   - Check cost tracking accuracy with controlled token counts
+   - Example for PII redaction:
+     ```python
+     def model_function(messages, info):
+         # Return response that should trigger PII redaction
+         if len(messages) == 1:
+             return ModelResponse(parts=[
+                 TextPart('{"message": "User john@example.com data", ...}')
+             ])
+
+     # Capture logs
+     with caplog.at_level(logging.INFO):
+         await service.send_message(...)
+
+     # Verify email was redacted in logs
+     assert "john@example.com" not in caplog.text
+     assert "[REDACTED]" in caplog.text
+     ```
+
+**Tests to update**:
+- `test_pii_redaction_in_logs`
+- `test_cost_tracking_accuracy`
+- `test_confidence_threshold_handling`
+- `test_model_version_tracking`
+- `test_conversation_context_limit`
+- `test_message_history_ordering`
+- `test_concurrent_conversations`
+- `test_tool_timeout_handling`
+
+---
+
+### Running and Verifying All Tests
+
+After updating both files:
+
+```bash
+# Run all 22 tests
+uv run --directory backend pytest \
+  tests/integration/test_chat_tool_calling.py \
+  tests/integration/test_chat_error_scenarios.py \
+  tests/integration/test_chat_business_requirements.py \
+  -v --no-cov
+
+# Expected: 22 passed
+
+# Then run full test suite to ensure nothing broke
+uv run --directory backend pytest tests/ -v --cov=app
+```
+
+---
+
+### Reference Implementation
+
+**Complete working example**: `tests/integration/test_chat_tool_calling.py`
+- All 4 tests use the correct pattern
+- Shows how to mock GarminService
+- Shows how to use FunctionModel for single and multiple tool calls
+- Shows proper verification of tool execution
+
+**Git commits**:
+- `e6d50d8` - Fixed Pydantic-AI v1.15.0 API changes + first test working
+- `dd96a72` - Completed all 4 tests in test_chat_tool_calling.py
+
+---
+
 *Last Updated: 2025-11-13*
-*Status: ✅ DONE (with 22 skipped tests requiring mocking infrastructure)*
+*Status: ⏸️ IN PROGRESS (4/22 tests complete, pattern established, clear instructions provided)*
