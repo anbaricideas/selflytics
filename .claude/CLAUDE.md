@@ -180,6 +180,73 @@ class User(BaseModel):
 - **Test pyramid**: 60% unit, 30% integration, 10% e2e
 - Mock external services (Firestore, Garmin API, OpenAI)
 
+### E2E Testing Workflow
+
+When fixing e2e test failures, **use agents first, manual debugging second**:
+
+#### Decision Tree for Test Failures
+
+**Use @agent-debug-investigator IMMEDIATELY when:**
+- ≥3 tests failing with similar error pattern
+- Test failures have unclear root cause
+- Multiple theories exist but uncertain which is correct
+- Behavior works manually but fails in tests
+- Timeout errors without obvious cause
+
+**Use direct tools when:**
+- Single specific file lookup needed
+- You know the exact solution already
+- Linear task with clear, simple steps
+- Quick verification of known facts
+
+#### E2E Debugging Process
+
+1. **DIAGNOSE FIRST** - Use @agent-debug-investigator before attempting fixes
+   ```
+   Prompt: "N tests failing with [error pattern]. Pattern: [description].
+   Run in headed mode to diagnose root cause with evidence."
+   ```
+
+2. **UNDERSTAND ROOT CAUSE** - Don't guess, get systematic evidence:
+   - Headed mode observation (what actually happens in browser)
+   - Browser console logs (JavaScript errors)
+   - Network tab inspection (request/response details)
+   - Screenshot comparison (expected vs actual)
+
+3. **FIX SYSTEMATICALLY** - Address root cause, not symptoms:
+   - Fix the underlying issue, not just failing assertions
+   - Validate fix addresses root cause, not masking problem
+   - Consider if fix applies to similar patterns elsewhere
+
+4. **VERIFY THOROUGHLY** - Run ALL tests after fixes:
+   ```bash
+   uv --directory backend run pytest tests/e2e_playwright -v
+   ```
+
+#### Common Playwright/HTMX Patterns
+
+Reference these before debugging (may save investigation time):
+
+✅ **Playwright route interception**: Captures ALL HTTP methods
+- Must explicitly handle each method type
+- GET requests need `route.continue_()` to pass through
+- Pattern: `if route.request.method == "GET": route.continue_(); return`
+
+✅ **HTMX error swapping**: Doesn't swap 4xx/5xx by default
+- Requires `htmx:beforeSwap` event listener configuration
+- Pattern: `if (evt.detail.xhr.status === 400) { evt.detail.shouldSwap = true; }`
+- Place script at end of `<body>` or use DOMContentLoaded
+
+✅ **Browser authentication**: Needs redirect handlers, not JSON errors
+- FastAPI exception handlers for 401/403
+- Check Accept header to distinguish browser vs API requests
+- Use 303 redirects for browser requests to `/login`
+
+✅ **JavaScript timing**: Event listeners need DOM ready
+- Scripts in `<head>` run before DOM exists
+- Place interactive scripts at end of `<body>` or wrap in DOMContentLoaded
+- HTMX/Alpine.js event listeners especially sensitive to timing
+
 ## Environment Setup
 
 Copy `.env.example` files and populate:
