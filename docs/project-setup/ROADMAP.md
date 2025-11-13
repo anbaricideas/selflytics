@@ -57,15 +57,17 @@ Phase 2: Garmin Integration (2 weeks)
   ↓
 Phase 3: Chat Interface + AI Agent (3 weeks)
   ↓
-Phase 4: Visualization Generation (2 weeks) [Future]
+Phase 4: E2E Test Fixes & User Journey Verification (1 week)
   ↓
-Phase 5: Goals & Polish (1 week) [Future]
+Phase 5: Visualization Generation (2 weeks) [Future]
   ↓
-Phase 6: Launch Preparation (1 week) [Future]
+Phase 6: Goals & Polish (1 week) [Future]
+  ↓
+Phase 7: Launch Preparation (1 week) [Future]
 ```
 
-**This Roadmap Covers**: Spike + Phases 1-3 (detailed plans provided)
-**Future Phases**: Phases 4-6 will be planned after Phase 3 completion
+**This Roadmap Covers**: Spike + Phases 1-4 (detailed plans provided)
+**Future Phases**: Phases 5-7 will be planned after Phase 4 completion
 
 ### Git Workflow
 
@@ -75,6 +77,7 @@ main
   ← feat/phase-1-infrastructure (PR after Phase 1 complete)
   ← feat/phase-2-garmin (PR after Phase 2 complete)
   ← feat/phase-3-chat-ai (PR after Phase 3 complete)
+  ← feat/phase-4-e2e-fixes (PR after Phase 4 complete)
 ```
 
 **Branch Protection**:
@@ -111,11 +114,12 @@ Start from: wherever marked as ⏳ NEXT
 | [1](./PHASE_1_plan.md) | Infrastructure Foundation | ✅ DONE | 7 hours | `feat/phase-1-infrastructure` | - |
 | [2](./PHASE_2_plan.md) | Garmin Integration | ✅ DONE | 5 hours | `feat/phase-2-garmin` | - |
 | [3](./PHASE_3_plan.md) | Chat + AI Agent | ✅ DONE | 6 hours | `feat/phase-3-chat-ai` | - |
-| 4 | Visualization Generation | 📅 PLANNED | - | TBD | - |
-| 5 | Goals & Polish | 📅 PLANNED | - | TBD | - |
-| 6 | Launch Preparation | 📅 PLANNED | - | TBD | - |
+| [4](./PHASE_4_plan.md) | E2E Test Fixes & User Journeys | ⏳ NEXT | - | `feat/phase-4-e2e-fixes` | - |
+| 5 | Visualization Generation | 📅 PLANNED | - | TBD | - |
+| 6 | Goals & Polish | 📅 PLANNED | - | TBD | - |
+| 7 | Launch Preparation | 📅 PLANNED | - | TBD | - |
 
-**Current Phase**: ✅ Phase 3 Complete → Next: [Phase 4](./PHASE_4_plan.md) (Visualization Generation - to be planned)
+**Current Phase**: ⏳ Phase 4 Ready → [Phase 4 Plan](./PHASE_4_plan.md) (E2E Test Fixes & User Journey Verification)
 
 ---
 
@@ -136,12 +140,13 @@ Start from: wherever marked as ⏳ NEXT
 ### New Dependencies to Add During Implementation
 - `pydantic-ai` - AI agent framework (Phase 3)
 - `garth` - Garmin Connect integration (Phase 2)
-- `matplotlib` + `Pillow` - Visualization generation (Phase 4)
+- `matplotlib` + `Pillow` - Visualization generation (Phase 5)
 - `fastapi` + `uvicorn` - Web framework (Phase 1)
 - `google-cloud-firestore` - Database (Phase 1)
 - `google-cloud-secret-manager` - Secrets (Phase 1)
 - `python-jose[cryptography]` - JWT tokens (Phase 1)
 - `passlib[bcrypt]` - Password hashing (Phase 1)
+- `playwright` - E2E testing (Phase 4)
 
 ### Environment Variables (To Configure)
 
@@ -221,7 +226,7 @@ backend/tests/
 ├── integration/        # API endpoint tests
 │   ├── routers/        # Route handlers
 │   └── test_*.py       # DB interactions
-└── e2e/               # End-to-end workflows
+└── e2e_playwright/     # End-to-end workflows
     └── test_*.py       # Complete user journeys
 ```
 
@@ -297,7 +302,7 @@ uv run ruff check --fix .
 # Run tests by category
 uv run pytest backend/tests/unit -v                    # Unit tests only
 uv run pytest backend/tests/integration -v             # Integration tests
-uv run pytest backend/tests/e2e -v                     # E2E tests
+uv run pytest backend/tests/e2e_playwright -v          # E2E tests
 
 # Check coverage
 uv run pytest --cov=app --cov-report=term-missing --cov-report=html
@@ -416,6 +421,25 @@ Decision point: Proceed to Phase 1 if ALL criteria met
 - [ ] Message history context
 - [ ] 80%+ test coverage (mocked OpenAI)
 
+### Phase 4 Success Criteria (E2E Tests & User Journeys)
+
+**Technical Success**:
+- [ ] All 16 Playwright e2e tests passing locally
+- [ ] E2E tests can be run by any developer (README instructions work)
+- [ ] Test failures provide clear error messages and screenshots
+- [ ] All templates have required `data-testid` attributes
+
+**User Journey Success**:
+- [ ] Manual runsheet completed (all journeys verified working)
+- [ ] User can register → login → link Garmin → sync → chat
+- [ ] Error handling graceful (clear messages, can retry)
+- [ ] Accessibility verified (keyboard nav, screen reader compatible)
+
+**Documentation**:
+- [ ] E2E testing guide clear and actionable
+- [ ] Troubleshooting guide covers common issues
+- [ ] Manual runsheet can be used by non-developers
+
 ---
 
 ## Timeline Estimate
@@ -426,12 +450,13 @@ Decision point: Proceed to Phase 1 if ALL criteria met
 | **Phase 1** | 2 weeks | 80 | 120 |
 | **Phase 2** | 2 weeks | 80 | 200 |
 | **Phase 3** | 3 weeks | 120 | 320 |
-| **Phase 4** | 2 weeks | 80 | 400 |
-| **Phase 5** | 1 week | 40 | 440 |
+| **Phase 4** | 1 week | 40 | 360 |
+| **Phase 5** | 2 weeks | 80 | 440 |
 | **Phase 6** | 1 week | 40 | 480 |
-| **TOTAL** | **12 weeks** | **480 hours** | - |
+| **Phase 7** | 1 week | 40 | 520 |
+| **TOTAL** | **13 weeks** | **520 hours** | - |
 
-**This Roadmap Scope**: Spike + Phases 1-3 (320 hours, 8 weeks)
+**This Roadmap Scope**: Spike + Phases 1-4 (360 hours, 9 weeks)
 
 **Assumptions**:
 - 40 hours/week (full-time)
@@ -465,6 +490,11 @@ Decision point: Proceed to Phase 1 if ALL criteria met
 - **Mitigation**: Manual testing for MFA scenarios
 - **Mitigation**: Store test tokens for development
 
+**Risk**: E2E tests brittle and flaky
+- **Mitigation**: Phase 4 establishes robust test infrastructure
+- **Mitigation**: Journey-driven tests focus on value, not implementation details
+- **Mitigation**: Clear debugging guides and screenshots on failure
+
 ### Process Risks
 
 **Risk**: Reference projects have incompatible patterns
@@ -491,6 +521,7 @@ Decision point: Proceed to Phase 1 if ALL criteria met
 | 2025-11-12 | Phase 1 completed ✅ | Infrastructure deployed, 87 tests (96% coverage), Cloud Run live (~7 hours) |
 | 2025-11-13 | Phase 2 completed ✅ | Garmin integration complete, 179 tests (91% coverage), HTMX auth flow fixed (~5 hours) |
 | 2025-11-13 | Phase 3 completed ✅ | Chat + AI agent complete, 187 tests (91-100% on Phase 3 code), Pydantic-AI with 3 Garmin tools (~6 hours) |
+| 2025-11-14 | Phase 4 plan created | E2E test fixes and user journey verification plan added to roadmap |
 
 ---
 
@@ -516,8 +547,9 @@ Decision point: Proceed to Phase 1 if ALL criteria met
 - [garth Library](https://github.com/matin/garth)
 - [FastAPI Documentation](https://fastapi.tiangolo.com/)
 - [Firestore Documentation](https://cloud.google.com/firestore/docs)
+- [Playwright Documentation](https://playwright.dev/)
 
 ---
 
-*Last Updated: 2025-11-11*
+*Last Updated: 2025-11-14*
 *Status: Ready for Implementation*
