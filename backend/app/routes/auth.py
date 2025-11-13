@@ -7,6 +7,7 @@ from fastapi.security import OAuth2PasswordRequestForm
 from app.auth.dependencies import get_current_user, get_user_service
 from app.auth.jwt import create_access_token
 from app.auth.password import verify_password
+from app.config import get_settings
 from app.dependencies import get_templates
 from app.models.user import UserCreate, UserResponse
 from app.services.user_service import UserService
@@ -43,6 +44,7 @@ async def register(
     email: str = Form(...),
     password: str = Form(...),
     display_name: str = Form(...),
+    confirm_password: str = Form(None),
     user_service: UserService = Depends(get_user_service),
     templates=Depends(get_templates),
 ):
@@ -53,6 +55,7 @@ async def register(
         email: User email
         password: User password
         display_name: User display name
+        confirm_password: Password confirmation (optional, for validation)
         user_service: User service dependency
         templates: Jinja2 templates dependency
 
@@ -61,8 +64,26 @@ async def register(
         For API requests: UserResponse JSON with created user data
 
     Raises:
-        HTTPException 400: If email already registered
+        HTTPException 400: If email already registered or passwords don't match
     """
+
+    # Validate password confirmation if provided
+    if confirm_password and password != confirm_password:
+        if request.headers.get("HX-Request"):
+            return templates.TemplateResponse(
+                request=request,
+                name="register.html",
+                context={
+                    "errors": {"password": "Passwords do not match"},
+                    "email": email,
+                    "display_name": display_name,
+                },
+                status_code=status.HTTP_400_BAD_REQUEST,
+            )
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Passwords do not match",
+        )
 
     # Create UserCreate model from form data
     user_data = UserCreate(
@@ -101,6 +122,7 @@ async def register(
         # Create JWT access token
         access_token = create_access_token(data={"sub": user.user_id, "email": user.email})
 
+        settings = get_settings()
         response = Response(status_code=status.HTTP_200_OK)
         response.headers["HX-Redirect"] = "/dashboard"
         # Set JWT token in httponly cookie for browser-based auth
@@ -108,7 +130,7 @@ async def register(
             key="access_token",
             value=f"Bearer {access_token}",
             httponly=True,
-            secure=True,  # Only over HTTPS in production
+            secure=settings.environment != "development",  # Only over HTTPS in production
             samesite="lax",
             max_age=1800,  # 30 minutes (matches JWT expiry)
         )
@@ -177,6 +199,7 @@ async def login(
 
     # For HTMX requests, redirect to dashboard with cookie
     if request.headers.get("HX-Request"):
+        settings = get_settings()
         response = Response(status_code=status.HTTP_200_OK)
         response.headers["HX-Redirect"] = "/dashboard"
         # Set JWT token in httponly cookie for browser-based auth
@@ -184,7 +207,7 @@ async def login(
             key="access_token",
             value=f"Bearer {access_token}",
             httponly=True,
-            secure=True,  # Only over HTTPS in production
+            secure=settings.environment != "development",  # Only over HTTPS in production
             samesite="lax",
             max_age=1800,  # 30 minutes (matches JWT expiry)
         )

@@ -5,9 +5,22 @@ import json
 
 from google.cloud import kms
 
+from app.config import get_settings
 
-# KMS key configuration
-KMS_KEY_NAME = "projects/selflytics-infra/locations/australia-southeast1/keyRings/selflytics-keys/cryptoKeys/token-encryption"
+
+def _get_kms_key_name() -> str:
+    """Get KMS key name from settings for multi-environment support.
+
+    Returns:
+        Full KMS key resource name
+    """
+    settings = get_settings()
+    return (
+        f"projects/{settings.gcp_project_id}"
+        f"/locations/{settings.gcp_region}"
+        f"/keyRings/selflytics-keys"
+        f"/cryptoKeys/token-encryption"
+    )
 
 
 def encrypt_token(token_dict: dict) -> str:
@@ -28,7 +41,8 @@ def encrypt_token(token_dict: dict) -> str:
     plaintext = json.dumps(token_dict).encode("utf-8")
 
     # Encrypt with KMS
-    encrypt_response = kms_client.encrypt(request={"name": KMS_KEY_NAME, "plaintext": plaintext})
+    kms_key_name = _get_kms_key_name()
+    encrypt_response = kms_client.encrypt(request={"name": kms_key_name, "plaintext": plaintext})
 
     # Return base64-encoded ciphertext
     return base64.b64encode(encrypt_response.ciphertext).decode("utf-8")
@@ -52,7 +66,8 @@ def decrypt_token(encrypted_token: str) -> dict:
     ciphertext = base64.b64decode(encrypted_token.encode("utf-8"))
 
     # Decrypt with KMS
-    decrypt_response = kms_client.decrypt(request={"name": KMS_KEY_NAME, "ciphertext": ciphertext})
+    kms_key_name = _get_kms_key_name()
+    decrypt_response = kms_client.decrypt(request={"name": kms_key_name, "ciphertext": ciphertext})
 
     # Parse JSON and return dict
     return json.loads(decrypt_response.plaintext.decode("utf-8"))

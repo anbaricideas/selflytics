@@ -1,9 +1,11 @@
 """Garmin Connect client (async wrapper around garth)."""
 
+import asyncio
 import logging
-from datetime import date, datetime, timedelta
+from datetime import UTC, date, datetime, timedelta
 
 import garth
+from telemetry.logging_utils import redact_for_logging
 
 from app.db.firestore_client import get_firestore_client
 from app.models.garmin_data import DailyMetrics, GarminActivity, HealthSnapshot
@@ -41,8 +43,8 @@ class GarminClient:
             MFA prompts are handled interactively by garth if required.
         """
         try:
-            # garth login (may prompt for MFA in terminal)
-            garth.login(username, password)
+            # garth login (may prompt for MFA in terminal) - wrap synchronous call
+            await asyncio.to_thread(garth.login, username, password)
 
             # Save tokens after successful authentication
             await self._save_tokens()
@@ -51,7 +53,7 @@ class GarminClient:
             return True
 
         except Exception as e:
-            logger.error("Garmin authentication failed: %s", str(e))
+            logger.error("Garmin authentication failed: %s", redact_for_logging(str(e)))
             return False
 
     async def load_tokens(self) -> bool:
@@ -61,14 +63,15 @@ class GarminClient:
             True if tokens loaded successfully, False otherwise
         """
         try:
-            doc = self.tokens_collection.document(self.user_id).get()
+            # Wrap synchronous Firestore operation
+            doc = await asyncio.to_thread(self.tokens_collection.document(self.user_id).get)
             if not doc.exists:
                 logger.debug("No tokens found for user %s", self.user_id)
                 return False
 
             token_data = GarminToken(**doc.to_dict())
 
-            # Decrypt tokens
+            # Decrypt tokens (KMS operations are already wrapped internally)
             oauth1 = decrypt_token(token_data.oauth1_token_encrypted)
             oauth2 = decrypt_token(token_data.oauth2_token_encrypted)
 
@@ -80,7 +83,7 @@ class GarminClient:
             return True
 
         except Exception as e:
-            logger.error("Failed to load tokens: %s", str(e))
+            logger.error("Failed to load tokens: %s", redact_for_logging(str(e)))
             return False
 
     async def _save_tokens(self):
@@ -94,7 +97,7 @@ class GarminClient:
         oauth2_encrypted = encrypt_token(garth.client.oauth2_token)
 
         # Create token document
-        now = datetime.utcnow()
+        now = datetime.now(UTC)
         token = GarminToken(
             user_id=self.user_id,
             oauth1_token_encrypted=oauth1_encrypted,
@@ -106,9 +109,23 @@ class GarminClient:
             updated_at=now,
         )
 
-        # Save to Firestore
-        self.tokens_collection.document(self.user_id).set(token.model_dump())
+        # Save to Firestore (wrap synchronous operation)
+        await asyncio.to_thread(
+            self.tokens_collection.document(self.user_id).set,
+            token.model_dump()
+        )
         logger.debug("Tokens saved successfully for user %s", self.user_id)
+
+    async def delete_tokens(self):
+        """Delete garth tokens from Firestore.
+
+        Raises:
+            Exception: If Firestore deletion fails
+        """
+        await asyncio.to_thread(
+            self.tokens_collection.document(self.user_id).delete
+        )
+        logger.debug("Tokens deleted for user %s", self.user_id)
 
     async def get_activities(
         self,
@@ -138,8 +155,11 @@ class GarminClient:
 
         while current_date <= end_date:
             try:
-                # garth API call
-                day_activities = garth.activities(current_date.isoformat())
+                # garth API call (wrap synchronous operation)
+                day_activities = await asyncio.to_thread(
+                    garth.activities,
+                    current_date.isoformat()
+                )
 
                 # Parse and validate
                 for activity_data in day_activities:
@@ -153,7 +173,7 @@ class GarminClient:
                 logger.warning(
                     "Failed to fetch activities for %s: %s",
                     current_date,
-                    str(e),
+                    redact_for_logging(str(e)),
                 )
 
             current_date += timedelta(days=1)
@@ -182,8 +202,8 @@ class GarminClient:
         if not await self.load_tokens():
             raise Exception("Not authenticated - user must link Garmin account")
 
-        # garth API call
-        summary = garth.daily_summary(target_date.isoformat())
+        # garth API call (wrap synchronous operation)
+        summary = await asyncio.to_thread(garth.daily_summary, target_date.isoformat())
 
         # Parse to model
         return DailyMetrics(
@@ -209,11 +229,11 @@ class GarminClient:
         if not await self.load_tokens():
             raise Exception("Not authenticated - user must link Garmin account")
 
-        # garth API call for latest health data
-        health_data = garth.health_snapshot()
+        # garth API call for latest health data (wrap synchronous operation)
+        health_data = await asyncio.to_thread(garth.health_snapshot)
 
         return HealthSnapshot(
-            timestamp=datetime.utcnow(),
+            timestamp=datetime.now(UTC),
             heart_rate=health_data.get("heartRate"),
             respiration_rate=health_data.get("respirationRate"),
             stress_level=health_data.get("stressLevel"),

@@ -51,6 +51,28 @@ class GarminService:
 
         return success
 
+    async def unlink_account(self) -> bool:
+        """
+        Unlink Garmin account by deleting tokens and cache.
+
+        Returns:
+            True if successful
+
+        Raises:
+            Exception: If deletion fails
+        """
+        # Delete tokens from Firestore
+        await self.client.delete_tokens()
+
+        # Invalidate all cached data for user
+        await self.cache.invalidate(self.user_id)
+
+        # Update user record
+        await self.user_service.update_garmin_status(user_id=self.user_id, linked=False)
+
+        logger.info("Garmin account unlinked for user %s", self.user_id)
+        return True
+
     async def sync_recent_data(self):
         """Sync last 30 days of activities and metrics."""
         end_date = date.today()

@@ -29,6 +29,10 @@ class Settings(BaseSettings):
         default="selflytics-infra",
         description="GCP project ID",
     )
+    gcp_region: str = Field(
+        default="australia-southeast1",
+        description="GCP region",
+    )
 
     # Authentication
     jwt_secret: str = Field(

@@ -1,8 +1,11 @@
 """Caching utilities for Garmin data."""
 
+import asyncio
 import logging
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from typing import Any
+
+from telemetry.logging_utils import redact_for_logging
 
 from app.db.firestore_client import get_firestore_client
 
@@ -55,7 +58,8 @@ class GarminDataCache:
         try:
             cache_key = self._cache_key(user_id, data_type, **kwargs)
 
-            doc = self.collection.document(cache_key).get()
+            # Wrap synchronous Firestore operation
+            doc = await asyncio.to_thread(self.collection.document(cache_key).get)
             if not doc.exists:
                 return None
 
@@ -63,9 +67,9 @@ class GarminDataCache:
 
             # Check expiry
             expires_at = cached.get("expires_at")
-            if expires_at and datetime.utcnow() >= expires_at:
-                # Expired - delete and return None
-                self.collection.document(cache_key).delete()
+            if expires_at and datetime.now(UTC) >= expires_at:
+                # Expired - delete and return None (wrap synchronous operation)
+                await asyncio.to_thread(self.collection.document(cache_key).delete)
                 logger.debug("Cache expired and deleted: %s", cache_key)
                 return None
 
@@ -73,7 +77,7 @@ class GarminDataCache:
             return cached.get("data")
 
         except Exception as e:
-            logger.error("Cache get error: %s", str(e))
+            logger.error("Cache get error: %s", redact_for_logging(str(e)))
             return None
 
     async def set(
@@ -105,8 +109,8 @@ class GarminDataCache:
             else:
                 ttl = timedelta(hours=1)
 
-        expires_at = datetime.utcnow() + ttl
-        cached_at = datetime.utcnow()
+        expires_at = datetime.now(UTC) + ttl
+        cached_at = datetime.now(UTC)
 
         # Serialize data (handles dict, list, Pydantic models)
         if isinstance(data, (dict, list)):
@@ -120,8 +124,9 @@ class GarminDataCache:
         else:
             serialized_data = data
 
-        # Save to Firestore
-        self.collection.document(cache_key).set(
+        # Save to Firestore (wrap synchronous operation)
+        await asyncio.to_thread(
+            self.collection.document(cache_key).set,
             {
                 "user_id": user_id,
                 "data_type": data_type,
@@ -152,10 +157,11 @@ class GarminDataCache:
                 # Invalidate all
                 query = self.collection.where("user_id", "==", user_id)
 
-            docs = query.stream()
+            # Wrap synchronous Firestore operations
+            docs = await asyncio.to_thread(lambda: list(query.stream()))
             deleted_count = 0
             for doc in docs:
-                doc.reference.delete()
+                await asyncio.to_thread(doc.reference.delete)
                 deleted_count += 1
 
             logger.debug(

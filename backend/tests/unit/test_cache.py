@@ -1,6 +1,6 @@
 """Tests for Garmin data caching utilities."""
 
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from unittest.mock import Mock
 
 import pytest
@@ -105,9 +105,9 @@ class TestCacheSave:
         mock_collection.document.return_value = mock_doc
 
         data = {"activity_id": 123}
-        before = datetime.utcnow()
+        before = datetime.now(UTC)
         await cache.set("user123", "activities", data)
-        after = datetime.utcnow()
+        after = datetime.now(UTC)
 
         saved_data = mock_doc.set.call_args[0][0]
         expires_at = saved_data["expires_at"]
@@ -125,9 +125,9 @@ class TestCacheSave:
         mock_collection.document.return_value = mock_doc
 
         data = {"steps": 10000}
-        before = datetime.utcnow()
+        before = datetime.now(UTC)
         await cache.set("user123", "daily_metrics", data)
-        after = datetime.utcnow()
+        after = datetime.now(UTC)
 
         saved_data = mock_doc.set.call_args[0][0]
         expires_at = saved_data["expires_at"]
@@ -145,9 +145,9 @@ class TestCacheSave:
         mock_collection.document.return_value = mock_doc
 
         data = {"heart_rate": 72}
-        before = datetime.utcnow()
+        before = datetime.now(UTC)
         await cache.set("user123", "health_snapshot", data)
-        after = datetime.utcnow()
+        after = datetime.now(UTC)
 
         saved_data = mock_doc.set.call_args[0][0]
         expires_at = saved_data["expires_at"]
@@ -166,9 +166,9 @@ class TestCacheSave:
 
         data = {"test": "data"}
         custom_ttl = timedelta(minutes=30)
-        before = datetime.utcnow()
+        before = datetime.now(UTC)
         await cache.set("user123", "custom_type", data, ttl=custom_ttl)
-        after = datetime.utcnow()
+        after = datetime.now(UTC)
 
         saved_data = mock_doc.set.call_args[0][0]
         expires_at = saved_data["expires_at"]
@@ -195,8 +195,8 @@ class TestCacheLoad:
             "user_id": "user123",
             "data_type": "activities",
             "data": [{"activity_id": 123, "name": "Morning Run"}],
-            "cached_at": datetime.utcnow() - timedelta(hours=1),
-            "expires_at": datetime.utcnow() + timedelta(hours=23),
+            "cached_at": datetime.now(UTC) - timedelta(hours=1),
+            "expires_at": datetime.now(UTC) + timedelta(hours=23),
             "cache_key": "user123:activities",
         }
         mock_doc_snapshot.to_dict.return_value = cached_data
@@ -237,8 +237,8 @@ class TestCacheLoad:
             "user_id": "user123",
             "data_type": "activities",
             "data": [{"activity_id": 123}],
-            "cached_at": datetime.utcnow() - timedelta(hours=25),
-            "expires_at": datetime.utcnow() - timedelta(hours=1),  # Expired
+            "cached_at": datetime.now(UTC) - timedelta(hours=25),
+            "expires_at": datetime.now(UTC) - timedelta(hours=1),  # Expired
             "cache_key": "user123:activities",
         }
         mock_doc_snapshot.to_dict.return_value = cached_data
@@ -265,8 +265,8 @@ class TestCacheLoad:
             "user_id": "user123",
             "data_type": "activities",
             "data": [{"activity_id": 123}],
-            "cached_at": datetime.utcnow(),
-            "expires_at": datetime.utcnow() + timedelta(hours=24),
+            "cached_at": datetime.now(UTC),
+            "expires_at": datetime.now(UTC) + timedelta(hours=24),
             "cache_key": "user123:activities:date_range:2025-01-01:2025-01-31",
         }
         mock_doc_snapshot.to_dict.return_value = cached_data
@@ -464,7 +464,7 @@ class TestTTLBoundaries:
         mock_doc_snapshot.exists = True
 
         # Expired exactly now
-        now = datetime.utcnow()
+        now = datetime.now(UTC)
         cached_data = {
             "user_id": "user123",
             "data_type": "activities",
@@ -496,5 +496,5 @@ class TestTTLBoundaries:
         saved_data = mock_doc.set.call_args[0][0]
         # expires_at should be approximately now (within 1 second)
         expires_at = saved_data["expires_at"]
-        now = datetime.utcnow()
+        now = datetime.now(UTC)
         assert abs((expires_at - now).total_seconds()) < 1

@@ -1,6 +1,6 @@
 """Unit tests for GarminClient service."""
 
-from datetime import date, datetime
+from datetime import UTC, date, datetime
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -48,7 +48,7 @@ def setup_firestore_with_tokens(mock_firestore):
     """Helper function to setup Firestore mock with tokens."""
     mock_doc = MagicMock()
     mock_doc.exists = True
-    now = datetime.utcnow()
+    now = datetime.now(UTC)
     token_data = {
         "user_id": "test_user_123",
         "oauth1_token_encrypted": "encrypted_oauth1",
@@ -163,7 +163,7 @@ class TestGarminClientLoadTokens:
 
         mock_doc = MagicMock()
         mock_doc.exists = True
-        now = datetime.utcnow()
+        now = datetime.now(UTC)
         token_data = {
             "user_id": "test_user_123",
             "oauth1_token_encrypted": "encrypted_oauth1",
@@ -223,7 +223,7 @@ class TestGarminClientLoadTokens:
 
         mock_doc = MagicMock()
         mock_doc.exists = True
-        now = datetime.utcnow()
+        now = datetime.now(UTC)
         mock_doc.to_dict.return_value = {
             "user_id": "test_user_123",
             "oauth1_token_encrypted": "encrypted_oauth1",

@@ -5,6 +5,7 @@ import logging
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
+from telemetry.logging_utils import redact_for_logging
 
 from app.auth.dependencies import get_current_user
 from app.dependencies import get_templates
@@ -71,10 +72,29 @@ async def sync_garmin_data(
         await service.sync_recent_data()
         return {"message": "Sync completed successfully"}
     except Exception as e:
-        logger.error("Sync failed for user %s: %s", current_user.user_id, str(e))
+        logger.error("Sync failed for user %s: %s", current_user.user_id, redact_for_logging(str(e)))
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Sync failed: {e!s}",
+            detail="Sync failed",
+        ) from e
+
+
+@router.delete("/link")
+async def unlink_garmin_account(
+    current_user: UserResponse = Depends(get_current_user),
+):
+    """Unlink Garmin account by deleting tokens and cache."""
+    service = GarminService(current_user.user_id)
+
+    try:
+        # Delete tokens and invalidate cache
+        await service.unlink_account()
+        return {"message": "Garmin account unlinked successfully"}
+    except Exception as e:
+        logger.error("Failed to unlink for user %s: %s", current_user.user_id, redact_for_logging(str(e)))
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to unlink Garmin account",
         ) from e
 
 
