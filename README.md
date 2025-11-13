@@ -80,7 +80,20 @@ selflytics/
 git clone https://github.com/anbaricideas/selflytics.git
 cd selflytics
 
-# Setup will be documented as implementation progresses
+# Install dependencies
+uv sync --all-extras
+
+# Install pre-commit hooks (catches lint/format issues before commit)
+uv --directory backend run pre-commit install
+
+# Run development server
+./scripts/dev-server.sh
+
+# Run tests
+uv --directory backend run pytest tests/ -v
+
+# Manually run pre-commit checks
+uv --directory backend run pre-commit run --all-files
 ```
 
 ## Contributing
