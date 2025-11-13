@@ -44,7 +44,7 @@ class ConversationService:
         content: str,
         metadata: dict | None = None,
     ) -> Message:
-        """Add message to conversation."""
+        """Add message to conversation atomically."""
         message_id = str(uuid.uuid4())
         now = datetime.now(UTC)
 
@@ -57,15 +57,24 @@ class ConversationService:
             metadata=metadata or {},
         )
 
-        # Save to subcollection
-        messages_ref = self.conversations_collection.document(conversation_id).collection(
-            "messages"
+        # Use batch write for atomicity - ensures both message creation
+        # and conversation update succeed together or both fail
+        batch = self.db.batch()
+
+        # Add message to subcollection
+        message_ref = (
+            self.conversations_collection.document(conversation_id)
+            .collection("messages")
+            .document(message_id)
         )
-        messages_ref.document(message_id).set(message.model_dump())
+        batch.set(message_ref, message.model_dump())
 
         # Update conversation metadata
         conv_ref = self.conversations_collection.document(conversation_id)
-        conv_ref.update({"updated_at": now, "message_count": Increment(1)})
+        batch.update(conv_ref, {"updated_at": now, "message_count": Increment(1)})
+
+        # Commit both operations atomically
+        batch.commit()
 
         return message
 

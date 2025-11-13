@@ -3,14 +3,20 @@
 import logging
 from datetime import date, timedelta
 
+from google.api_core.exceptions import GoogleAPIError
 from pydantic_ai import Agent, RunContext
 
 from app.models.chat import ChatResponse
+from app.models.cost_tracking import GPT_4_1_MINI_MODEL
 from app.services.garmin_service import GarminService
+from app.utils.redact import redact_for_logging
 
 
 logger = logging.getLogger(__name__)
 
+
+# Model configuration - add "openai:" prefix for Pydantic-AI
+CHAT_MODEL = f"openai:{GPT_4_1_MINI_MODEL}"
 
 # System prompt for fitness insights
 CHAT_AGENT_SYSTEM_PROMPT = """You are a fitness data analyst assistant for Selflytics.
@@ -143,9 +149,9 @@ async def garmin_metrics_tool(ctx: RunContext[str], metric_type: str, days: int 
             if value is not None:
                 metrics_list.append({"date": current_date.isoformat(), "value": value})
 
-        except Exception as e:
-            logger.debug("Missing data for %s on %s: %s", metric_type, current_date, str(e))
-            # Skip days with missing data - this is expected
+        except (GoogleAPIError, KeyError, ValueError) as e:
+            logger.debug("Missing data for %s on %s: %s", metric_type, current_date, redact_for_logging(str(e)))
+            # Skip days with missing data - this is expected (Firestore errors, missing keys, etc.)
 
         current_date += timedelta(days=1)
 
@@ -179,7 +185,7 @@ async def garmin_profile_tool(ctx: RunContext[str]) -> dict:
 
     return {
         "display_name": profile.get("display_name", "User"),
-        "email": profile.get("email"),
+        # Email removed to reduce PII exposure - not needed by AI agent
         "garmin_linked": True,
     }
 
@@ -197,7 +203,7 @@ def create_chat_agent() -> Agent[str, ChatResponse]:
     Returns agent configured with Garmin data tools.
     """
     return Agent(
-        model="openai:gpt-4.1-mini-2025-04-14",
+        model=CHAT_MODEL,
         system_prompt=CHAT_AGENT_SYSTEM_PROMPT,
         output_type=ChatResponse,
         tools=[garmin_activity_tool, garmin_metrics_tool, garmin_profile_tool],

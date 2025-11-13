@@ -195,18 +195,9 @@ def test_get_conversation_wrong_user(client, test_user_token):
         assert response.status_code == status.HTTP_404_NOT_FOUND
 
 
+@pytest.mark.skip(reason="DELETE endpoint removed - deferred to Phase 4 per PR feedback")
 def test_delete_conversation(client, test_user_token):
     """Test deleting a conversation."""
-    response = client.delete(
-        "/chat/conv-123", headers={"Authorization": f"Bearer {test_user_token}"}
-    )
-
-    # For now, just verify it returns success
-    # Full implementation would actually delete from Firestore
-    # Debug: print response if not OK
-    if response.status_code != status.HTTP_200_OK:
-        print(f"Response status: {response.status_code}")
-        print(f"Response body: {response.json()}")
-
-    assert response.status_code == status.HTTP_200_OK
-    assert "message" in response.json()
+    # TODO (Phase 4): Re-enable this test when DELETE endpoint is implemented
+    # Should include ownership validation and cascade delete of messages
+    pass

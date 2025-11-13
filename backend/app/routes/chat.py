@@ -73,12 +73,5 @@ async def get_conversation(
     }
 
 
-@router.delete("/{conversation_id}")
-async def delete_conversation(
-    conversation_id: str, _current_user: UserResponse = Depends(get_current_user)
-):
-    """Delete conversation (soft delete)."""
-    # TODO: Implement actual deletion logic
-    # Will verify user owns conversation and soft-delete from Firestore
-    _ = conversation_id  # Silence unused variable warning
-    return {"message": "Conversation deleted"}
+# TODO (Phase 4): Implement DELETE /chat/{conversation_id} endpoint
+# Should include ownership validation and cascade delete of messages subcollection

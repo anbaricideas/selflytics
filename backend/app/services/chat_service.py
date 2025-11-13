@@ -2,10 +2,13 @@
 
 import logging
 
+from pydantic_ai.exceptions import ModelRetry, UnexpectedModelBehavior
+
 from app.models.chat import ChatRequest, ChatResponse
-from app.prompts.chat_agent import create_chat_agent
+from app.prompts.chat_agent import CHAT_MODEL, create_chat_agent
 from app.services.conversation_service import ConversationService
 from app.utils.cost_tracking import create_usage_record
+from app.utils.redact import redact_for_logging
 
 
 logger = logging.getLogger(__name__)
@@ -33,6 +36,9 @@ class ChatService:
             conversation = await self.conversation_service.get_conversation(request.conversation_id)
             if not conversation:
                 raise ValueError("Conversation not found")
+            # Verify user owns this conversation
+            if conversation.user_id != user_id:
+                raise PermissionError("Access denied to conversation")
             conversation_id = request.conversation_id
         else:
             # Create new conversation
@@ -67,7 +73,9 @@ class ChatService:
             response = result.output
 
             # Extract usage for cost tracking
-            usage_record = create_usage_record(result.usage(), model="gpt-4.1-mini-2025-04-14")
+            # Strip "openai:" prefix for model name storage
+            model_name = CHAT_MODEL.replace("openai:", "")
+            usage_record = create_usage_record(result.usage(), model=model_name)
 
             # Save assistant message with metadata
             await self.conversation_service.add_message(
@@ -75,7 +83,7 @@ class ChatService:
                 role="assistant",
                 content=response.message,
                 metadata={
-                    "model_used": "gpt-4.1-mini-2025-04-14",
+                    "model_used": model_name,
                     "tokens": usage_record.model_dump(),
                     "cost_usd": usage_record.cost_usd,
                     "confidence": response.confidence,
@@ -97,6 +105,7 @@ class ChatService:
 
             return response, conversation_id
 
-        except Exception as e:
-            logger.error("Chat agent error: %s", str(e))
+        except (ModelRetry, UnexpectedModelBehavior, ValueError) as e:
+            # Catch specific Pydantic-AI exceptions and validation errors
+            logger.error("Chat agent error: %s", redact_for_logging(str(e)))
             raise

@@ -27,9 +27,12 @@ class TokenCost(BaseModel):
     reasoning_cost_per_1m: float = 0.0
 
 
+# Model name constant
+GPT_4_1_MINI_MODEL = "gpt-4.1-mini-2025-04-14"
+
 # Pricing for gpt-4.1-mini (2025-04-14)
 GPT_4_1_MINI_PRICING = TokenCost(
-    model="gpt-4.1-mini-2025-04-14",
+    model=GPT_4_1_MINI_MODEL,
     input_cost_per_1m=0.15,
     output_cost_per_1m=0.60,
     cached_cost_per_1m=0.075,  # 50% discount for cached inputs

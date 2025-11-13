@@ -2,7 +2,12 @@
 
 from datetime import UTC, datetime
 
-from app.models.cost_tracking import GPT_4_1_MINI_PRICING, ChatUsage, TokenCost
+from app.models.cost_tracking import (
+    GPT_4_1_MINI_MODEL,
+    GPT_4_1_MINI_PRICING,
+    ChatUsage,
+    TokenCost,
+)
 
 
 def calculate_cost(
@@ -33,7 +38,7 @@ def calculate_cost(
     )
 
 
-def create_usage_record(usage_obj, model: str = "gpt-4.1-mini-2025-04-14") -> ChatUsage:
+def create_usage_record(usage_obj, model: str = GPT_4_1_MINI_MODEL) -> ChatUsage:
     """
     Create ChatUsage record from Pydantic-AI RunUsage object or dict.
 

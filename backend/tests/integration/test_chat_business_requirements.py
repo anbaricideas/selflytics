@@ -287,7 +287,7 @@ class TestChatBusinessRequirements:
             for i in range(15)
         ]
 
-        mock_conversation = MagicMock(conversation_id="conv-123")
+        mock_conversation = MagicMock(conversation_id="conv-123", user_id="test-user")
         mock_conversation_service.get_conversation.return_value = mock_conversation
         mock_conversation_service.add_message.return_value = AsyncMock()
         # Return only last 10 messages

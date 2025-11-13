@@ -178,13 +178,15 @@ class TestGarminMetricsTool:
     @pytest.mark.asyncio
     async def test_get_metrics_with_missing_data(self):
         """Test handling missing data gracefully."""
+        from google.api_core.exceptions import GoogleAPIError
+
         ctx = MagicMock()
         ctx.deps = "user-123"
 
         with patch("app.prompts.chat_agent.GarminService") as mock_service_class:
             mock_service = AsyncMock()
-            # Simulate exception for missing data
-            mock_service.get_daily_metrics_cached.side_effect = Exception("No data")
+            # Simulate Firestore exception for missing data (more specific than generic Exception)
+            mock_service.get_daily_metrics_cached.side_effect = GoogleAPIError("No data")
             mock_service_class.return_value = mock_service
 
             result = await garmin_metrics_tool(ctx, metric_type="steps", days=2)
@@ -212,9 +214,9 @@ class TestGarminProfileTool:
 
             result = await garmin_profile_tool(ctx)
 
-            # Verify result
+            # Verify result (email removed to reduce PII exposure)
             assert result["display_name"] == "John Runner"
-            assert result["email"] == "john@example.com"
+            assert "email" not in result  # Email no longer exposed to AI agent
             assert result["garmin_linked"] is True
 
     @pytest.mark.asyncio
@@ -232,7 +234,7 @@ class TestGarminProfileTool:
 
             result = await garmin_profile_tool(ctx)
 
-            # Should use defaults
+            # Should use defaults (email no longer returned)
             assert result["display_name"] == "User"
-            assert result["email"] is None
+            assert "email" not in result  # Email no longer exposed to AI agent
             assert result["garmin_linked"] is True
