@@ -13,6 +13,7 @@ from app.main import app
 from app.models.user import User, UserProfile
 from app.services.user_service import UserService
 
+
 # Set dummy API key for tests that create agents
 # This prevents "api_key client option must be set" errors
 os.environ.setdefault("OPENAI_API_KEY", "sk-test-key-for-testing-only")
@@ -54,9 +55,7 @@ def client(mock_user_service, test_user):
     """Provide TestClient with mocked UserService and auth."""
     # Mock JWT verification
     with patch("app.auth.dependencies.verify_token") as mock_verify:
-        mock_verify.return_value = TokenData(
-            user_id=test_user["user_id"], email=test_user["email"]
-        )
+        mock_verify.return_value = TokenData(user_id=test_user["user_id"], email=test_user["email"])
 
         # Override UserService dependency
         app.dependency_overrides[get_user_service] = lambda: mock_user_service

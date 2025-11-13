@@ -7,9 +7,10 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from app.models.chat import ChatRequest, ChatResponse
+from app.models.chat import ChatRequest
 from app.services.chat_service import ChatService
 from app.services.conversation_service import ConversationService
+
 
 # Set dummy API key to prevent OpenAI client initialization errors
 os.environ.setdefault("OPENAI_API_KEY", "sk-test-key-for-testing-only")
@@ -149,6 +150,7 @@ class TestChatBusinessRequirements:
 
                 async def patched_run(*args, **kwargs):
                     result = await original_run(*args, **kwargs)
+
                     # Mock the usage method to return specific counts
                     def mock_usage():
                         # Create a simple object with the attributes we need
@@ -157,10 +159,11 @@ class TestChatBusinessRequirements:
                         mock_usage_obj.output_tokens = 500
                         mock_usage_obj.cached_input_tokens = 200
                         return mock_usage_obj
+
                     result.usage = mock_usage
                     return result
 
-                with patch.object(agent, 'run', side_effect=patched_run):
+                with patch.object(agent, "run", side_effect=patched_run):
                     # Test
                     request = ChatRequest(message="Test")
                     await service.send_message(user_id="test-user", request=request)

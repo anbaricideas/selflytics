@@ -150,7 +150,12 @@ async def garmin_metrics_tool(ctx: RunContext[str], metric_type: str, days: int 
                 metrics_list.append({"date": current_date.isoformat(), "value": value})
 
         except (GoogleAPIError, KeyError, ValueError) as e:
-            logger.debug("Missing data for %s on %s: %s", metric_type, current_date, redact_for_logging(str(e)))
+            logger.debug(
+                "Missing data for %s on %s: %s",
+                metric_type,
+                current_date,
+                redact_for_logging(str(e)),
+            )
             # Skip days with missing data - this is expected (Firestore errors, missing keys, etc.)
 
         current_date += timedelta(days=1)
