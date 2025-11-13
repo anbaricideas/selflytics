@@ -115,9 +115,9 @@ module "secrets" {
 module "kms" {
   source = "../../modules/kms"
 
-  project_id                 = var.project_id
-  project_name               = "selflytics"
-  region                     = var.region
+  project_id                = var.project_id
+  project_name              = "selflytics"
+  region                    = var.region
   cloud_run_service_account = google_service_account.cloud_run_sa.email
 }
 
