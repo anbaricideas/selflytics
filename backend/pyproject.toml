@@ -31,6 +31,8 @@ dependencies = [
     "python-dotenv>=1.2.1",
     "google-cloud-kms>=3.7.0",
     "garth>=0.5.19",
+    "pydantic-ai>=1.15.0",
+    "openai>=2.7.2",
 ]
 
 [project.optional-dependencies]
