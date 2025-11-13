@@ -29,14 +29,43 @@
    - Changed to accept Form(...) data instead of JSON
    - Added proper data-testid attributes to HTML responses
 
+---
+
+## Session 2 Summary (2025-11-14)
+
+**Completed**: 1 commit, ~1 hour
+**Progress**: Fixed URL encoding issue in mock fixture - 5 tests now passing (up from 1)
+
+### ✅ Completed Work
+
+1. **URL Encoding Fix** (commit: "fix(test): handle URL-encoded form data in Garmin mock")
+   - Fixed mock_garmin_api fixture to handle URL-encoded form data
+   - Browser sends `test%40garmin.com` (@ becomes %40) in form submissions
+   - Mock now checks for both raw and URL-encoded email addresses
+   - This fixed `test_new_user_links_garmin_account` which was failing at form submission
+
 ### 🔄 Current Status
 
-**Test Progress**: `test_new_user_links_garmin_account`
-- ✅ Form renders correctly (GET /garmin/link works)
-- ❌ Form submission not completing (POST needs debugging)
-- **Issue**: Success state `[data-testid="garmin-status-linked"]` not appearing after submit
+**Test Progress**: 5 passing, 11 failing (out of 16 total)
 
-**Next Session Goal**: Debug POST submission, fix remaining tests, create documentation
+**Passing Tests**:
+- ✅ `test_required_fields_validation` (HTML5 client validation)
+- ✅ `test_email_format_validation` (HTML5 client validation)
+- ✅ `test_password_field_masked` (accessibility)
+- ✅ `test_focus_visible_on_inputs` (accessibility)
+- ✅ `test_new_user_links_garmin_account` (main user journey) 🎉
+
+**Failing Tests Pattern**: Most failures timeout waiting for `[data-testid="input-garmin-username"]`
+- Root cause: Tests using `authenticated_user` fixture but setting up their own route handlers
+- These tests navigate to `/garmin/link` but form doesn't appear (authentication or routing issue)
+- Need to investigate fixture interaction and authentication persistence
+
+**Next Session Goal**:
+1. Fix remaining 11 test failures (mostly fixture/authentication issues)
+2. Verify all 16 tests passing
+3. Create manual testing runsheet
+4. Create E2E testing documentation
+5. Final validation and phase completion
 
 ---
 
