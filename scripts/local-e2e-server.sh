@@ -45,17 +45,26 @@ if [ ! -f "$ENV_LOCAL" ]; then
     exit 1
 fi
 
-# Start Firestore emulator in background
-echo -e "${GREEN}Starting Firestore emulator...${NC}"
+# Load .env.local early to get configuration
+set -a
+source "$ENV_LOCAL"
+set +a
+
+# Get Firestore emulator port from firebase.json (hardcoded to 8092)
+# NOTE: firebase.json defines this, we just use it here for consistency
+FIRESTORE_PORT=8092
+
+# Start Firestore emulator in background (port configured in firebase.json)
+echo -e "${GREEN}Starting Firestore emulator on port ${FIRESTORE_PORT}...${NC}"
 "$FIREBASE_CMD" emulators:start --only firestore --project test-project &
 EMULATOR_PID=$!
 
-# Wait for emulator to be ready (check port 8080)
-echo -e "${YELLOW}Waiting for Firestore emulator...${NC}"
+# Wait for emulator to be ready (check configured port)
+echo -e "${YELLOW}Waiting for Firestore emulator on port ${FIRESTORE_PORT}...${NC}"
 TIMEOUT=30
 ELAPSED=0
 
-while ! curl -s http://localhost:8080 > /dev/null 2>&1; do
+while ! curl -s "http://localhost:${FIRESTORE_PORT}" > /dev/null 2>&1; do
     if [ $ELAPSED -ge $TIMEOUT ]; then
         echo -e "${RED}Error: Firestore emulator failed to start within ${TIMEOUT}s${NC}"
         kill $EMULATOR_PID 2>/dev/null || true
@@ -65,16 +74,12 @@ while ! curl -s http://localhost:8080 > /dev/null 2>&1; do
     ELAPSED=$((ELAPSED + 1))
 done
 
-echo -e "${GREEN}Firestore emulator ready!${NC}"
+echo -e "${GREEN}Firestore emulator ready on port ${FIRESTORE_PORT}!${NC}"
 
-# Set environment variables for dev server
-export FIRESTORE_EMULATOR_HOST=localhost:8080
-export GOOGLE_CLOUD_PROJECT=test-project
-
-# Load .env.local for additional configuration
-set -a
-source "$ENV_LOCAL"
-set +a
+# Set environment variables for dev server (already loaded from .env.local above)
+# Re-export to ensure they're available to child process (dev-server.sh)
+export FIRESTORE_EMULATOR_HOST="localhost:${FIRESTORE_PORT}"
+export GOOGLE_CLOUD_PROJECT="${GOOGLE_CLOUD_PROJECT:-test-project}"
 
 echo -e "${GREEN}Starting dev server...${NC}"
 echo -e "${YELLOW}Environment: FIRESTORE_EMULATOR_HOST=${FIRESTORE_EMULATOR_HOST}${NC}"
