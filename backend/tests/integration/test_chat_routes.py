@@ -33,7 +33,7 @@ def mock_user_service(test_user):
     mock_user = User(
         user_id=test_user["user_id"],
         email=test_user["email"],
-        hashed_password="hashed",
+        hashed_password="hashed",  # noqa: S106 - Test fixture, not a real password
         created_at=datetime.now(UTC),
         updated_at=datetime.now(UTC),
         profile=UserProfile(**test_user["profile"]),

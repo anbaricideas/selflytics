@@ -1,0 +1,216 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="min-h-screen flex" x-data="chatInterface()">
+    <!-- Sidebar: Conversation list -->
+    <aside class="w-64 bg-gray-50 border-r overflow-y-auto">
+        <div class="p-4">
+            <h2 class="font-semibold text-lg mb-4">Conversations</h2>
+
+            <button
+                @click="newConversation()"
+                class="w-full bg-blue-600 text-white py-2 px-4 rounded mb-4 hover:bg-blue-700 transition"
+            >
+                New Chat
+            </button>
+
+            <div class="space-y-2">
+                <template x-for="conv in conversations" :key="conv.conversation_id">
+                    <div
+                        @click="loadConversation(conv.conversation_id)"
+                        :class="{'bg-blue-100 border-blue-500': currentConversationId === conv.conversation_id}"
+                        class="p-3 rounded cursor-pointer hover:bg-gray-100 border border-transparent transition"
+                    >
+                        <p class="text-sm font-medium truncate" x-text="conv.title"></p>
+                        <p class="text-xs text-gray-500" x-text="formatDate(conv.updated_at)"></p>
+                    </div>
+                </template>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main chat area -->
+    <div class="flex-1 flex flex-col">
+        <!-- Messages -->
+        <div id="messages" class="flex-1 overflow-y-auto p-6 space-y-4">
+            <template x-for="msg in messages" :key="msg.message_id">
+                <div :class="msg.role === 'user' ? 'text-right' : 'text-left'">
+                    <div
+                        :class="msg.role === 'user' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-800'"
+                        class="inline-block px-4 py-3 rounded-lg max-w-2xl shadow"
+                    >
+                        <p class="whitespace-pre-wrap" x-text="msg.content"></p>
+
+                        <!-- Assistant metadata -->
+                        <template x-if="msg.role === 'assistant' && msg.metadata && msg.metadata.confidence">
+                            <div class="mt-2 text-xs opacity-75 pt-2 border-t border-gray-300">
+                                <span x-text="`Confidence: ${(msg.metadata.confidence * 100).toFixed(0)}%`"></span>
+                                <template x-if="msg.metadata.cost_usd">
+                                    <span class="ml-2" x-text="`Cost: $${msg.metadata.cost_usd.toFixed(4)}`"></span>
+                                </template>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+            </template>
+
+            <!-- Loading indicator -->
+            <div x-show="loading" class="text-center">
+                <div class="inline-block">
+                    <div class="animate-pulse flex space-x-2">
+                        <div class="rounded-full bg-blue-600 h-3 w-3"></div>
+                        <div class="rounded-full bg-blue-600 h-3 w-3"></div>
+                        <div class="rounded-full bg-blue-600 h-3 w-3"></div>
+                    </div>
+                    <p class="text-gray-500 text-sm mt-2">AI is thinking...</p>
+                </div>
+            </div>
+
+            <!-- Error message -->
+            <div x-show="error" class="text-center">
+                <div class="inline-block bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+                    <p x-text="error"></p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Input form -->
+        <div class="border-t p-4 bg-white">
+            <form @submit.prevent="sendMessage()" class="flex gap-2">
+                <input
+                    x-model="messageInput"
+                    type="text"
+                    placeholder="Ask about your fitness data..."
+                    class="flex-1 border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    :disabled="loading"
+                    maxlength="2000"
+                >
+                <button
+                    type="submit"
+                    :disabled="loading || !messageInput.trim()"
+                    class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                >
+                    Send
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+function chatInterface() {
+    return {
+        conversations: [],
+        currentConversationId: null,
+        messages: [],
+        messageInput: '',
+        loading: false,
+        error: null,
+
+        async init() {
+            await this.loadConversations();
+        },
+
+        async loadConversations() {
+            try {
+                const response = await fetch('/chat/conversations');
+                if (!response.ok) throw new Error('Failed to load conversations');
+                const data = await response.json();
+                this.conversations = data.conversations;
+            } catch (e) {
+                console.error('Error loading conversations:', e);
+                this.error = 'Failed to load conversations';
+            }
+        },
+
+        async loadConversation(conversationId) {
+            try {
+                this.currentConversationId = conversationId;
+                this.error = null;
+
+                const response = await fetch(`/chat/${conversationId}`);
+                if (!response.ok) throw new Error('Failed to load conversation');
+
+                const data = await response.json();
+                this.messages = data.messages;
+
+                // Scroll to bottom
+                this.$nextTick(() => {
+                    const messagesDiv = document.getElementById('messages');
+                    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+                });
+            } catch (e) {
+                console.error('Error loading conversation:', e);
+                this.error = 'Failed to load conversation';
+            }
+        },
+
+        async sendMessage() {
+            if (!this.messageInput.trim()) return;
+
+            const userMessage = this.messageInput;
+            this.messageInput = '';
+            this.loading = true;
+            this.error = null;
+
+            try {
+                const response = await fetch('/chat/send', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        message: userMessage,
+                        conversation_id: this.currentConversationId
+                    })
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.detail || 'Failed to send message');
+                }
+
+                const data = await response.json();
+
+                // Update conversation ID if new
+                if (!this.currentConversationId) {
+                    this.currentConversationId = data.conversation_id;
+                }
+
+                // Reload conversation to show new messages
+                await this.loadConversation(this.currentConversationId);
+                await this.loadConversations();  // Refresh list
+
+            } catch (e) {
+                console.error('Error sending message:', e);
+                this.error = e.message || 'Failed to send message';
+                this.messageInput = userMessage;  // Restore message
+            } finally {
+                this.loading = false;
+            }
+        },
+
+        newConversation() {
+            this.currentConversationId = null;
+            this.messages = [];
+            this.messageInput = '';
+            this.error = null;
+        },
+
+        formatDate(dateStr) {
+            if (!dateStr) return '';
+            const date = new Date(dateStr);
+            const now = new Date();
+            const diffMs = now - date;
+            const diffMins = Math.floor(diffMs / 60000);
+            const diffHours = Math.floor(diffMs / 3600000);
+            const diffDays = Math.floor(diffMs / 86400000);
+
+            if (diffMins < 1) return 'Just now';
+            if (diffMins < 60) return `${diffMins}m ago`;
+            if (diffHours < 24) return `${diffHours}h ago`;
+            if (diffDays < 7) return `${diffDays}d ago`;
+            return date.toLocaleDateString();
+        }
+    }
+}
+</script>
+{% endblock %}

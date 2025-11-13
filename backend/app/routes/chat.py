@@ -1,13 +1,24 @@
 """Chat API routes."""
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi.responses import HTMLResponse
+from fastapi.templating import Jinja2Templates
 
 from app.auth.dependencies import get_current_user
 from app.models.chat import ChatRequest
 from app.models.user import UserResponse
 from app.services.chat_service import ChatService
 
+
+templates = Jinja2Templates(directory="app/templates")
+
 router = APIRouter(prefix="/chat", tags=["chat"])
+
+
+@router.get("/", response_class=HTMLResponse)
+async def chat_page(request: Request, _current_user: UserResponse = Depends(get_current_user)):
+    """Render chat interface page."""
+    return templates.TemplateResponse("chat.html", {"request": request})
 
 
 @router.post("/send")
@@ -25,9 +36,7 @@ async def send_message(
         return {"conversation_id": conversation_id, "response": response.model_dump()}
 
     except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
-        ) from e
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)) from e
 
 
 @router.get("/conversations")
@@ -51,12 +60,11 @@ async def get_conversation(
     conversation = await service.conversation_service.get_conversation(conversation_id)
 
     if not conversation or conversation.user_id != current_user.user_id:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Conversation not found"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Conversation not found")
 
     messages = await service.conversation_service.get_message_history(
-        conversation_id=conversation_id, limit=100  # All messages for display
+        conversation_id=conversation_id,
+        limit=100,  # All messages for display
     )
 
     return {
@@ -67,9 +75,9 @@ async def get_conversation(
 
 @router.delete("/{conversation_id}")
 async def delete_conversation(
-    conversation_id: str, current_user: UserResponse = Depends(get_current_user)
+    _conversation_id: str, _current_user: UserResponse = Depends(get_current_user)
 ):
     """Delete conversation (soft delete)."""
-    # Implementation: mark as deleted or actually delete
-    # For now, simple response
+    # TODO: Implement actual deletion logic
+    # Will verify user owns conversation and soft-delete from Firestore
     return {"message": "Conversation deleted"}
