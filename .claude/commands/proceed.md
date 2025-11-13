@@ -12,12 +12,24 @@ Guidelines:
 - Follow the relevant phase planning document as the single source of truth
 - Use TDD when developing code: write tests → review with @agent-test-quality-reviewer → revise tests → implement code to pass
 - After each major step:
-  1. Update progress in phase planning document (DON’T create separate docs)
+  1. Update progress in phase planning document (DON'T create separate docs)
   2. Commit with @agent-git-commit-helper
 - Follow CLAUDE.md guidelines (imports at top, etc.)
-- If non-trivial problems are encountered, use @agent-debug-investigator to investigate
 - Ask questions only if blocked or contradictory info found
 - If the session context is over 80% full, stop work, update the phase plan, and commit changes, so that work can be resumed in a new session
+
+Debugging workflow (IMPORTANT - use agents first):
+
+- **When ≥3 tests fail with similar errors**: Use @agent-debug-investigator IMMEDIATELY
+  - Don't manually debug - let the agent run tests in headed mode
+  - Agent will provide systematic evidence and root cause analysis
+  - Only proceed with fixes AFTER receiving agent's recommendations
+- **When encountering unclear problems**: Use @agent-debug-investigator to investigate
+  - Provide error pattern, suspected issue, and what you've tried
+  - Agent will gather evidence systematically
+- **When debugging e2e tests**: Check CLAUDE.md "Common Playwright/HTMX Patterns" section first
+  - May save investigation time if it's a known pattern
+  - Use agent if pattern not listed or unclear
 
 When phase is complete:
 
