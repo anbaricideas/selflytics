@@ -116,12 +116,17 @@ async def register(
         )
         return response
 
-    # For API requests, return UserResponse JSON
-    return UserResponse(
+    # For API requests, return UserResponse JSON with 201 Created status
+    from fastapi.responses import JSONResponse
+    user_response = UserResponse(
         user_id=user.user_id,
         email=user.email,
         profile=user.profile,
         garmin_linked=user.garmin_linked,
+    )
+    return JSONResponse(
+        status_code=status.HTTP_201_CREATED,
+        content=user_response.model_dump(),
     )
 
 
