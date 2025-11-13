@@ -48,6 +48,7 @@ htmlcov/
 coverage.xml
 *.cover
 .hypothesis/
+backend/tests/e2e_playwright/
 
 # Jupyter
 .ipynb_checkpoints
