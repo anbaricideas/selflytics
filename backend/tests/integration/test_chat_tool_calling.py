@@ -125,11 +125,11 @@ class TestChatToolCalling:
 
         tool_calls_made = []
 
-        # Mock GarminService
-        with patch("app.services.garmin_service.GarminService") as mock_garmin_class:
-            mock_garmin = AsyncMock()
-            mock_garmin.get_daily_metrics_cached.return_value = {"steps": 8500}
-            mock_garmin_class.return_value = mock_garmin
+        # Mock GarminService (need to mock the class, not instance methods)
+        with patch("app.prompts.chat_agent.GarminService") as mock_service_class:
+            mock_service = AsyncMock()
+            mock_service.get_daily_metrics_cached.return_value = {"steps": 8500}
+            mock_service_class.return_value = mock_service
 
             def model_function(messages: list[ModelMessage], info: AgentInfo) -> ModelResponse:
                 """Control agent to call garmin_metrics_tool for steps query."""
@@ -159,26 +159,26 @@ class TestChatToolCalling:
             mock_conversation_service.add_message.return_value = AsyncMock()
             mock_conversation_service.get_message_history.return_value = []
 
-            with patch("app.services.chat_service.create_chat_agent") as mock_create_agent:
-                from app.prompts.chat_agent import create_chat_agent
+            from app.prompts.chat_agent import create_chat_agent
 
-                real_agent = create_chat_agent()
-                real_agent._model = FunctionModel(model_function)
-                mock_create_agent.return_value = real_agent
+            service = ChatService()
+            service.conversation_service = mock_conversation_service
 
-                service = ChatService()
-                service.conversation_service = mock_conversation_service
+            with patch("app.services.chat_service.create_chat_agent") as mock_create:
+                agent = create_chat_agent()
+                mock_create.return_value = agent
 
-                request = ChatRequest(message="Show me my step count for the last week")
-                response, _ = await service.send_message(user_id="test-user", request=request)
+                with agent.override(model=FunctionModel(model_function)):
+                    request = ChatRequest(message="Show me my step count for the last week")
+                    response, _ = await service.send_message(user_id="test-user", request=request)
 
                 # Verify tool was called
                 assert len(tool_calls_made) == 1
                 assert tool_calls_made[0]["metric_type"] == "steps"
                 assert tool_calls_made[0]["days"] == 7
 
-                # Verify GarminService was called
-                assert mock_garmin.get_daily_metrics_cached.called
+                # Verify GarminService.get_daily_metrics_cached was called
+                mock_service.get_daily_metrics_cached.assert_called()
 
                 # Verify response
                 assert "metrics" in response.data_sources_used
@@ -189,15 +189,13 @@ class TestChatToolCalling:
         tool_calls_made = []
 
         # Mock GarminService
-        with patch("app.services.garmin_service.GarminService") as mock_garmin_class:
-            mock_garmin = AsyncMock()
-
-            def get_metrics(metric_date):
-                """Return different metrics based on date."""
-                return {"resting_heart_rate": 65, "sleep_seconds": 27000, "steps": 8500}
-
-            mock_garmin.get_daily_metrics_cached.side_effect = get_metrics
-            mock_garmin_class.return_value = mock_garmin
+        with patch("app.prompts.chat_agent.GarminService") as mock_service_class:
+            mock_service = AsyncMock()
+            mock_service.get_daily_metrics_cached.return_value = {
+                "resting_heart_rate": 65,
+                "sleep_seconds": 27000,
+            }
+            mock_service_class.return_value = mock_service
 
             call_count = 0
 
@@ -245,18 +243,18 @@ class TestChatToolCalling:
             mock_conversation_service.add_message.return_value = AsyncMock()
             mock_conversation_service.get_message_history.return_value = []
 
-            with patch("app.services.chat_service.create_chat_agent") as mock_create_agent:
-                from app.prompts.chat_agent import create_chat_agent
+            from app.prompts.chat_agent import create_chat_agent
 
-                real_agent = create_chat_agent()
-                real_agent._model = FunctionModel(model_function)
-                mock_create_agent.return_value = real_agent
+            service = ChatService()
+            service.conversation_service = mock_conversation_service
 
-                service = ChatService()
-                service.conversation_service = mock_conversation_service
+            with patch("app.services.chat_service.create_chat_agent") as mock_create:
+                agent = create_chat_agent()
+                mock_create.return_value = agent
 
-                request = ChatRequest(message="Am I recovering well?")
-                response, _ = await service.send_message(user_id="test-user", request=request)
+                with agent.override(model=FunctionModel(model_function)):
+                    request = ChatRequest(message="Am I recovering well?")
+                    response, _ = await service.send_message(user_id="test-user", request=request)
 
                 # Verify multiple tools were called
                 assert len(tool_calls_made) == 2, "Should call metrics tool twice"
@@ -274,13 +272,13 @@ class TestChatToolCalling:
         tool_calls_made = []
 
         # Mock GarminService
-        with patch("app.services.garmin_service.GarminService") as mock_garmin_class:
-            mock_garmin = AsyncMock()
-            mock_garmin.get_user_profile.return_value = {
+        with patch("app.prompts.chat_agent.GarminService") as mock_service_class:
+            mock_service = AsyncMock()
+            mock_service.get_user_profile.return_value = {
                 "display_name": "Test User",
                 "email": "test@example.com",
             }
-            mock_garmin_class.return_value = mock_garmin
+            mock_service_class.return_value = mock_service
 
             def model_function(messages: list[ModelMessage], info: AgentInfo) -> ModelResponse:
                 """Control agent to call garmin_profile_tool."""
@@ -307,25 +305,25 @@ class TestChatToolCalling:
             mock_conversation_service.add_message.return_value = AsyncMock()
             mock_conversation_service.get_message_history.return_value = []
 
-            with patch("app.services.chat_service.create_chat_agent") as mock_create_agent:
-                from app.prompts.chat_agent import create_chat_agent
+            from app.prompts.chat_agent import create_chat_agent
 
-                real_agent = create_chat_agent()
-                real_agent._model = FunctionModel(model_function)
-                mock_create_agent.return_value = real_agent
+            service = ChatService()
+            service.conversation_service = mock_conversation_service
 
-                service = ChatService()
-                service.conversation_service = mock_conversation_service
+            with patch("app.services.chat_service.create_chat_agent") as mock_create:
+                agent = create_chat_agent()
+                mock_create.return_value = agent
 
-                request = ChatRequest(message="What's my Garmin profile?")
-                response, _ = await service.send_message(user_id="test-user", request=request)
+                with agent.override(model=FunctionModel(model_function)):
+                    request = ChatRequest(message="What's my Garmin profile?")
+                    response, _ = await service.send_message(user_id="test-user", request=request)
 
                 # Verify tool was called
                 assert len(tool_calls_made) == 1
                 assert tool_calls_made[0] == "profile"
 
                 # Verify GarminService.get_user_profile was called
-                mock_garmin.get_user_profile.assert_called_once()
+                mock_service.get_user_profile.assert_called_once()
 
                 # Verify response
                 assert "profile" in response.data_sources_used
