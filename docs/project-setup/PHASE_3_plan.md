@@ -1236,6 +1236,45 @@ With Phase 3 complete, Phase 4 can extend ChatResponse to request visualizations
 - Manual testing deferred to next session (requires running server with OPENAI_API_KEY)
 - Cost per conversation estimated at ~$0.001-0.005 based on typical token usage
 
+### User Journey Tests Added (Not Yet Run)
+
+**Location**: `backend/tests/integration/test_user_journey_*.py` and `backend/tests/e2e/test_chat_user_journeys.py`
+
+**Status**: ⏸️ Tests created but NOT yet executed - require review and execution in future session
+
+**Test Files Created**:
+1. `tests/helpers/mock_helpers.py` - Mock utilities for Garmin, OpenAI, and Firestore
+2. `tests/integration/test_user_journey_quick_checkin.py` - Quick daily check-in journey
+3. `tests/integration/test_user_journey_multi_turn.py` - Multi-turn conversation with context
+4. `tests/integration/test_user_journey_performance.py` - Performance deep dive
+5. `tests/integration/test_user_journey_recovery.py` - Recovery & multi-source analysis
+6. `tests/integration/test_user_journey_comparison.py` - Comparative time period analysis
+7. `tests/integration/test_user_journey_returning_user.py` - Load existing conversations
+8. `tests/integration/test_user_journey_goal_inquiry.py` - Goal progress calculation
+9. `tests/e2e/test_chat_user_journeys.py` - Full E2E workflows with Playwright
+
+**What These Tests Verify**:
+- Complete user workflows from login through chat interaction
+- Multi-turn conversations with context retention
+- Agent tool orchestration (multiple Garmin data queries)
+- Conversation persistence across sessions
+- Error handling and loading states
+- UI interactions (Alpine.js components)
+
+**Before Running These Tests**:
+1. Review test fixtures and mock helpers for completeness
+2. Ensure auth fixtures work correctly with TestClient
+3. Set up Firestore emulator or improve Firestore mocks
+4. Configure OpenAI API mocks to match actual response format
+5. Run with: `pytest tests/integration/test_user_journey_*.py -v`
+6. For E2E: Start dev server, then run `pytest tests/e2e/ --headed`
+
+**Expected Outcomes**:
+- Verify all 7 user journeys work end-to-end
+- Confirm agent calls correct tools with correct parameters
+- Validate conversation context retention over multiple messages
+- Ensure UI handles loading, errors, and success states properly
+
 ---
 
 *Last Updated: 2025-11-13*
