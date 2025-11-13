@@ -27,7 +27,7 @@ class TestChatService:
 
         # Mock agent response
         mock_agent_result = MagicMock()
-        mock_agent_result.data = ChatResponse(
+        mock_agent_result.output = ChatResponse(
             message="You're doing great! 5 runs this week.",
             data_sources_used=["activities"],
             confidence=0.9,
@@ -98,7 +98,7 @@ class TestChatService:
 
         # Mock agent response
         mock_agent_result = MagicMock()
-        mock_agent_result.data = ChatResponse(
+        mock_agent_result.output = ChatResponse(
             message="Last month you had 8 runs.", data_sources_used=["activities"], confidence=0.85
         )
         mock_agent_result.usage.return_value = {
@@ -164,7 +164,7 @@ class TestChatService:
         mock_conversation.conversation_id = "conv-123"
 
         mock_agent_result = MagicMock()
-        mock_agent_result.data = ChatResponse(
+        mock_agent_result.output = ChatResponse(
             message="You did 5 runs.", data_sources_used=[], confidence=0.9
         )
         mock_agent_result.usage.return_value = {
@@ -204,7 +204,7 @@ class TestChatService:
         mock_conversation.conversation_id = "conv-123"
 
         mock_agent_result = MagicMock()
-        mock_agent_result.data = ChatResponse(
+        mock_agent_result.output = ChatResponse(
             message="Response", data_sources_used=[], confidence=0.8
         )
         mock_agent_result.usage.return_value = {

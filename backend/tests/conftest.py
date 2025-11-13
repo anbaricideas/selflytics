@@ -1,5 +1,6 @@
 """Shared test fixtures for all test types."""
 
+import os
 from datetime import UTC, datetime
 from unittest.mock import AsyncMock, Mock, patch
 
@@ -11,6 +12,10 @@ from app.auth.jwt import TokenData
 from app.main import app
 from app.models.user import User, UserProfile
 from app.services.user_service import UserService
+
+# Set dummy API key for tests that create agents
+# This prevents "api_key client option must be set" errors
+os.environ.setdefault("OPENAI_API_KEY", "sk-test-key-for-testing-only")
 
 
 @pytest.fixture

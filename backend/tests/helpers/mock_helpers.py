@@ -48,11 +48,11 @@ def patch_openai_agent(response=None, message_history_count=None, usage=None):
     Yields:
         Mocked agent instance
     """
-    with patch("app.prompts.chat_agent.create_chat_agent") as mock:
+    with patch("app.services.chat_service.create_chat_agent") as mock:
         agent = AsyncMock()
 
         mock_result = MagicMock()
-        mock_result.data = response or ChatResponse(
+        mock_result.output = response or ChatResponse(
             message="Mocked response",
             data_sources_used=["activities"],
             confidence=0.9,
