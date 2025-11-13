@@ -1,7 +1,42 @@
 # Phase 4: E2E Test Fixes & User Journey Verification
 
 **Branch**: `feat/phase-4-e2e-fixes`
-**Status**: ⬜ TODO
+**Status**: 🔄 IN PROGRESS (Session 1 of 2)
+
+---
+
+## Session 1 Summary (2025-11-14)
+
+**Completed**: 4 commits, ~3 hours
+**Progress**: Infrastructure fixes and backend HTMX support complete
+**See**: `docs/project-setup/PHASE_4_SESSION_1_PROGRESS.md` for detailed summary
+
+### ✅ Completed Work
+
+1. **Port Configuration** (commit `71556d3`)
+   - Configured `.env.local` with non-conflicting ports (8042 web, 8092 Firestore)
+   - Updated dev-server.sh and local-e2e-server.sh scripts
+   - Prevents port conflicts during local e2e testing
+
+2. **Mock Fixture Fix** (commit `6c5d84a`)
+   - Fixed `mock_garmin_api` to only intercept POST requests
+   - GET requests now pass through to real backend for form rendering
+   - Fixed bytes vs string comparison for Playwright compatibility
+
+3. **Backend HTMX Support** (commit `a8f9c2b`)
+   - Converted POST /garmin/link to return HTML fragments
+   - Converted POST /garmin/sync to return HTML fragments
+   - Changed to accept Form(...) data instead of JSON
+   - Added proper data-testid attributes to HTML responses
+
+### 🔄 Current Status
+
+**Test Progress**: `test_new_user_links_garmin_account`
+- ✅ Form renders correctly (GET /garmin/link works)
+- ❌ Form submission not completing (POST needs debugging)
+- **Issue**: Success state `[data-testid="garmin-status-linked"]` not appearing after submit
+
+**Next Session Goal**: Debug POST submission, fix remaining tests, create documentation
 
 ---
 
@@ -24,29 +59,30 @@ Fix all 16 failing e2e tests and verify complete user journeys work end-to-end. 
 - ✅ Phase 2: Garmin Integration (OAuth, token management, caching)
 - ✅ Phase 3: Chat + AI Agent (Pydantic-AI, conversation management)
 
-**Required Context:**
-- E2E tests location: `backend/tests/e2e_playwright/`
-- Test results show: 2 FAILED, 14 ERRORS (all timeout at fixture setup)
-- Root cause: Tests timeout waiting for `[data-testid="register-link"]` to appear
+**Local Environment:**
+- ✅ Branch created: `feat/phase-4-e2e-fixes`
+- ✅ `.env.local` configured with ports 8042/8092
+- ✅ Firebase emulator and dev server scripts updated
+- ✅ Playwright installed and working
 
 ---
 
 ## Deliverables
 
 ### Investigation Outputs
-- ✅ Test failure analysis document
-- ✅ Root cause identification
-- ✅ Missing `data-testid` inventory
+- ✅ Test failure analysis (via debug-investigator)
+- ✅ Root cause identification (mock fixture + backend responses)
+- ⬜ Missing `data-testid` inventory (templates already have them)
 
 ### Code Changes
-- ✅ All templates have proper `data-testid` attributes
-- ✅ E2E test infrastructure improvements
-- ✅ Test reliability fixes
+- ✅ All templates have proper `data-testid` attributes (verified)
+- ✅ E2E test infrastructure improvements (port config, mock fixes)
+- 🔄 Test reliability fixes (in progress - POST submission issue)
 
 ### Documentation
-- ✅ Manual testing runsheet for user journeys
-- ✅ E2E testing guide for local development
-- ✅ Troubleshooting guide for common failures
+- ⬜ Manual testing runsheet for user journeys
+- ⬜ E2E testing guide for local development
+- ⬜ Troubleshooting guide for common failures
 
 ---
 
@@ -54,15 +90,37 @@ Fix all 16 failing e2e tests and verify complete user journeys work end-to-end. 
 
 ### Setup
 
-- [ ] ⏳ NEXT: Create branch `feat/phase-4-e2e-fixes`
-- [ ] Verify local environment ready:
-  - [ ] Firebase emulator running (`./scripts/start-emulators.sh`)
-  - [ ] Dev server running (`./scripts/dev-server.sh`)
-  - [ ] Playwright installed (`uv run pytest backend/tests/e2e_playwright --version`)
+- [x] ✅ Create branch `feat/phase-4-e2e-fixes`
+- [x] ✅ Verify local environment ready:
+  - [x] Firebase emulator running (`./scripts/local-e2e-server.sh`)
+  - [x] Dev server running (started by local-e2e-server.sh)
+  - [x] Playwright installed and working
 
 ---
 
-### Step 1: Investigate Test Failures
+### ⏳ NEXT: Debug POST Submission Issue
+
+**Current Problem**:
+- Test `test_new_user_links_garmin_account` fails at line 56
+- Form submits but success state `[data-testid="garmin-status-linked"]` doesn't appear
+- Need to verify if mock is intercepting POST or backend is processing it
+
+**Debug Steps**:
+1. Restart dev server: `kill <PID>; ./scripts/local-e2e-server.sh > /tmp/e2e-server.log 2>&1 &`
+2. Run test with headed mode: `uv --directory backend run pytest tests/e2e_playwright/test_garmin_linking_journey.py::TestGarminLinkingJourney::test_new_user_links_garmin_account -v --headed`
+3. Check server logs: `tail -f /tmp/e2e-server.log` (watch for POST /garmin/link)
+4. If POST appears in logs → mock not intercepting (check route pattern)
+5. If POST doesn't appear → mock intercepting but not returning correct HTML (check mock logic)
+6. Check browser console for HTMX errors during headed run
+
+**Potential Fixes**:
+- Mock might need to check form data encoding (url-encoded vs multipart)
+- HTMX might not be triggering swap (check hx-swap directive)
+- Form might not have correct HTMX attributes
+
+---
+
+### Step 1: Investigate Test Failures (✅ COMPLETED)
 
 **File**: Analysis document
 
