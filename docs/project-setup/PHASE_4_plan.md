@@ -33,39 +33,55 @@
 
 ## Session 2 Summary (2025-11-14)
 
-**Completed**: 1 commit, ~1 hour
-**Progress**: Fixed URL encoding issue in mock fixture - 5 tests now passing (up from 1)
+**Completed**: 3 commits, ~2 hours
+**Progress**: All 16 e2e tests passing ✅
 
 ### ✅ Completed Work
 
-1. **URL Encoding Fix** (commit: "fix(test): handle URL-encoded form data in Garmin mock")
+1. **URL Encoding Fix** (commit `78e1cec`)
    - Fixed mock_garmin_api fixture to handle URL-encoded form data
    - Browser sends `test%40garmin.com` (@ becomes %40) in form submissions
    - Mock now checks for both raw and URL-encoded email addresses
-   - This fixed `test_new_user_links_garmin_account` which was failing at form submission
+   - Result: 5/16 tests passing
 
-### 🔄 Current Status
+2. **Route Handler GET Passthrough** (commit `a8b2e07`)
+   - Fixed 11 inline route handlers across 3 test files
+   - Added GET request passthrough: `if route.request.method == "GET": route.continue_(); return`
+   - Root cause: Playwright intercepts ALL HTTP methods - handlers only mocked POST, causing GET timeouts
+   - Files: `test_form_validation.py` (5), `test_htmx_interactions.py` (4), `test_garmin_linking_journey.py` (2)
+   - Result: 11/16 tests passing
 
-**Test Progress**: 5 passing, 11 failing (out of 16 total)
+3. **HTMX Error Swap + 401 Redirect** (commit `143852f`)
+   - Added `htmx:beforeSwap` event listener in `base.html` to enable swapping on HTTP 400 errors
+   - HTMX by default doesn't swap 4xx/5xx responses - needed explicit configuration
+   - Added 401 exception handler in `main.py` to redirect browser requests to `/login`
+   - Detects browser vs API using Accept header and HX-Request header
+   - Result: 16/16 tests passing ✅
 
-**Passing Tests**:
-- ✅ `test_required_fields_validation` (HTML5 client validation)
-- ✅ `test_email_format_validation` (HTML5 client validation)
-- ✅ `test_password_field_masked` (accessibility)
-- ✅ `test_focus_visible_on_inputs` (accessibility)
-- ✅ `test_new_user_links_garmin_account` (main user journey) 🎉
+### 🎉 Final Status
 
-**Failing Tests Pattern**: Most failures timeout waiting for `[data-testid="input-garmin-username"]`
-- Root cause: Tests using `authenticated_user` fixture but setting up their own route handlers
-- These tests navigate to `/garmin/link` but form doesn't appear (authentication or routing issue)
-- Need to investigate fixture interaction and authentication persistence
+**Test Progress**: **16 passing, 0 failing** (100% pass rate)
 
-**Next Session Goal**:
-1. Fix remaining 11 test failures (mostly fixture/authentication issues)
-2. Verify all 16 tests passing
-3. Create manual testing runsheet
-4. Create E2E testing documentation
-5. Final validation and phase completion
+**All Tests Passing**:
+- ✅ HTML5 Client Validation (3 tests)
+- ✅ Server-Side Validation (1 test)
+- ✅ Input Behavior & Accessibility (3 tests)
+- ✅ Error Recovery Flows (1 test)
+- ✅ Garmin Linking Journey (3 tests)
+- ✅ Garmin Sync Journey (1 test)
+- ✅ HTMX Partial Updates (2 tests)
+- ✅ Alpine.js Loading States (1 test)
+- ✅ HTMX Error Handling (1 test)
+
+**Key Insights**:
+- Playwright route interception requires explicit GET handling when mocking POST endpoints
+- HTMX needs `htmx:beforeSwap` configuration for 4xx error swapping
+- Browser authentication flows require 401 redirect handlers, not just JSON errors
+
+**Remaining Tasks**:
+- Manual testing runsheet (optional for Phase 4)
+- E2E testing documentation (optional for Phase 4)
+- These can be added in future phases if needed
 
 ---
 
