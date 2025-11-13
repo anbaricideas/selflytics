@@ -6,7 +6,6 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Selflytics** - AI-powered analysis for quantified self data from wearable devices (Garmin integration)
 
-- **Status**: 🚧 Phase 4 In Progress
 - **GCP Project**: selflytics-infra (174666459313, australia-southeast1)
 - **Tech Stack**: FastAPI + Pydantic-AI + Firestore + Jinja2/HTMX/Alpine.js + Terraform
 - **Package Manager**: uv (not pip/poetry)
@@ -21,27 +20,18 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 1. **Specification**: `docs/SELFLYTICS_SPECIFICATION.md` - Complete technical design
 2. **Roadmap**: `docs/project-setup/ROADMAP.md` - Current phase, overall progress
 3. **Phase Plans**: `docs/project-setup/PHASE_*_plan.md` - Step-by-step implementation guides
-4. **Patterns Guide**: `docs/REUSABLE_PATTERNS_GUIDE.md` - Reusable patterns from Garmin Agents
+4. **Development Workflow**: `docs/DEVELOPMENT_WORKFLOW.md` - TDD cycle, testing practices, commit guidelines
+5. **Patterns Guide**: `docs/REUSABLE_PATTERNS_GUIDE.md` - Reusable patterns from Garmin Agents
 
 ## Project Structure
 
 ```
 backend/
-├── app/
-│   ├── auth/              # JWT, password hashing
-│   ├── services/          # Business logic
-│   ├── routes/            # API endpoints
-│   ├── models/            # Pydantic models
-│   ├── templates/         # Jinja2 templates
-│   └── main.py
+├── app/                   # Main application code
 ├── packages/telemetry/    # Workspace package (OpenTelemetry + Cloud Logging)
 └── tests/                 # unit/, integration/, e2e_playwright/
 infra/                     # Terraform modules + environments
-docs/
-├── SELFLYTICS_SPECIFICATION.md
-└── project-setup/
-    ├── ROADMAP.md        # Overall status
-    └── PHASE_*_plan.md   # Detailed phase steps
+docs/                      # Specification, roadmap, phase plans, guides
 ```
 
 ## Common Commands
