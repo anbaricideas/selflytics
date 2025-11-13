@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Selflytics** - AI-powered analysis for quantified self data from wearable devices (Garmin integration)
 
-- **Status**: 🚧 Specification Phase Complete
+- **Status**: 🚧 Phase 4 In Progress
 - **GCP Project**: selflytics-infra (174666459313, australia-southeast1)
 - **Tech Stack**: FastAPI + Pydantic-AI + Firestore + Jinja2/HTMX/Alpine.js + Terraform
 - **Package Manager**: uv (not pip/poetry)
@@ -16,7 +16,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **CliniCraft** (`/Users/bryn/repos/clinicraft/`) - Infrastructure, auth, Pydantic-AI, frontend, telemetry
 - **Garmin Agents** (`/Users/bryn/repos/garmin_agents/`) - Garmin integration, token management, MFA flows
 
-## High-Level Structure
+## Key Documents to Reference
+
+1. **Specification**: `docs/SELFLYTICS_SPECIFICATION.md` - Complete technical design
+2. **Roadmap**: `docs/project-setup/ROADMAP.md` - Current phase, overall progress
+3. **Phase Plans**: `docs/project-setup/PHASE_*_plan.md` - Step-by-step implementation guides
+4. **Patterns Guide**: `docs/REUSABLE_PATTERNS_GUIDE.md` - Reusable patterns from Garmin Agents
+
+## Project Structure
 
 ```
 backend/
@@ -28,21 +35,14 @@ backend/
 │   ├── templates/         # Jinja2 templates
 │   └── main.py
 ├── packages/telemetry/    # Workspace package (OpenTelemetry + Cloud Logging)
-└── tests/                 # unit/, integration/, e2e/
+└── tests/                 # unit/, integration/, e2e_playwright/
 infra/                     # Terraform modules + environments
 docs/
 ├── SELFLYTICS_SPECIFICATION.md
-├── project-setup/
-│   ├── ROADMAP.md        # Overall status
-│   └── PHASE_*_plan.md   # Detailed phase steps
+└── project-setup/
+    ├── ROADMAP.md        # Overall status
+    └── PHASE_*_plan.md   # Detailed phase steps
 ```
-
-## Key Documents to Reference
-
-1. **Specification**: `docs/SELFLYTICS_SPECIFICATION.md` - Complete technical design
-2. **Roadmap**: `docs/project-setup/ROADMAP.md` - Current phase, overall progress
-3. **Phase Plans**: `docs/project-setup/PHASE_*_plan.md` - Step-by-step implementation guides
-4. **Patterns Guide**: `docs/REUSABLE_PATTERNS_GUIDE.md` - Reusable patterns from Garmin Agents
 
 ## Common Commands
 
@@ -54,7 +54,7 @@ uv add <package>
 # Development
 ./scripts/dev-server.sh  # Loads backend/.env, uses PORT variable
 
-# Local E2E Testing
+# Local E2E Testing (requires both emulator + server)
 ./scripts/local-e2e-server.sh  # Start Firestore emulator + dev server
 # Then in another terminal:
 uv --directory backend run pytest tests/e2e_playwright -v --headed
@@ -63,7 +63,6 @@ uv --directory backend run pytest tests/e2e_playwright -v --headed
 uv --directory backend run pytest tests/ -v --cov=app
 uv --directory backend run pytest tests/unit -v
 uv --directory backend run pytest tests/integration -v
-uv --directory backend run pytest -k "test_name" -v
 
 # Code quality
 uv run ruff check .
@@ -74,39 +73,45 @@ uv run bandit -c backend/pyproject.toml -r backend/app/ -ll
 terraform -chdir=infra/environments/dev plan
 terraform -chdir=infra/environments/dev apply
 
-# Hours estimate
+# Actual hours spent (completed work only)
 git log --oneline main..HEAD --format="%ad" --date=format:"%Y-%m-%d %H:00" | uniq | wc -l
 ```
 
 ## Development Workflow
 
-See **[docs/DEVELOPMENT_WORKFLOW.md](../docs/DEVELOPMENT_WORKFLOW.md)** for complete workflow guidelines including:
-- TDD cycle and local testing practices
-- E2E testing guidelines and local-first approach
-- Manual testing recommendations
-- Commit guidelines and quality gates
+### Phase Implementation Workflow
 
-**Quick reference**:
-1. **Follow Roadmap**: Check `ROADMAP.md` for ⏳ NEXT phase
-2. **Read Phase Plan**: Detailed steps in `PHASE_*_plan.md`
-3. **TDD Workflow**: Test first → verify fail → implement → verify pass → commit
-4. **Local E2E Testing**: Use `./scripts/local-e2e-server.sh` for local e2e validation
-5. **Track Progress**: Mark ✅ DONE in phase plan (single source of truth)
-6. **Commit Often**: Clear conventional commit messages
+1. **Check ROADMAP.md** for current phase (marked ⏳ NEXT or IN PROGRESS)
+2. **Read phase plan** (`PHASE_*_plan.md`) - this is the single source of truth
+3. **Follow TDD**: Test first → verify fail → implement → verify pass → commit
+4. **Track progress**: Update checkboxes in phase plan as you complete steps
+5. **Commit often**: Clear conventional commit messages after each major step
 
-## Planning and Time Tracking
+### Phase Completion Verification
 
-**❌ DO NOT include time estimates** for future work in phase plans or roadmaps. Time estimates are unreliable and create false expectations.
+**BEFORE claiming a phase complete**, verify ALL of the following:
 
-**✅ DO track actual time** for completed work using git timestamps:
-```bash
-# Hours estimate for completed work (accurate)
-git log --oneline main..HEAD --format="%ad" --date=format:"%Y-%m-%d %H:00" | uniq | wc -l
-```
+1. ✅ **Every step checkbox** in phase plan is checked (not just session summaries)
+2. ✅ **Every deliverable file exists** on filesystem (verify with `find`/`ls`/`grep`)
+3. ✅ **All success criteria** checkboxes are checked
+4. ✅ **All validation checks pass** (tests, coverage ≥80%, lint, security scan)
 
-- Phase plans should describe **what** needs to be done, not **how long** it will take
-- Roadmap tracks actual time for completed phases only
-- Focus on deliverables and success criteria, not duration
+**If any verification fails**:
+- Mark step status honestly: ❌ NOT DONE, ⚠️ PARTIAL, ✅ DONE
+- ASK user: "Steps X-Y incomplete. Should I: (A) complete them, (B) defer them, (C) other?"
+- Document user's decision in plan
+- NEVER defer scope without explicit user approval
+
+**If you see contradictory information** (e.g., session summary says complete but checkboxes unchecked):
+- Checkboxes are source of truth
+- Ask user to clarify if uncertain
+
+### Handling Conflicting Information
+
+When phase plan sections conflict:
+- **Step-by-step checkboxes** = authoritative source of truth
+- **Session summaries** = informal notes only
+- If in doubt, ask rather than assume
 
 ## Critical Patterns
 
@@ -172,6 +177,8 @@ class User(BaseModel):
 6. ❌ **Don't create new docs** - update existing instead
 7. ❌ **Don't push after every commit** - only when needed (e.g., CI)
 8. ❌ **Don't progress with failing tests** - fix ALL before PR
+9. ❌ **Don't claim phase complete without verifying all checkboxes**
+10. ❌ **Don't defer scope without explicit user approval**
 
 ## Testing Requirements
 
@@ -182,70 +189,36 @@ class User(BaseModel):
 
 ### E2E Testing Workflow
 
-When fixing e2e test failures, **use agents first, manual debugging second**:
+**Running E2E tests requires infrastructure**:
+- Firestore emulator must be running
+- Dev server must be running at configured PORT
+- Use `./scripts/local-e2e-server.sh` to start both
 
-#### Decision Tree for Test Failures
+**When fixing e2e test failures**:
 
-**Use @agent-debug-investigator IMMEDIATELY when:**
+Use **@agent-debug-investigator** when:
 - ≥3 tests failing with similar error pattern
 - Test failures have unclear root cause
 - Multiple theories exist but uncertain which is correct
 - Behavior works manually but fails in tests
 - Timeout errors without obvious cause
 
-**Use direct tools when:**
+Use **direct tools** when:
 - Single specific file lookup needed
 - You know the exact solution already
 - Linear task with clear, simple steps
-- Quick verification of known facts
 
-#### E2E Debugging Process
-
+**E2E Debugging Process**:
 1. **DIAGNOSE FIRST** - Use @agent-debug-investigator before attempting fixes
-   ```
-   Prompt: "N tests failing with [error pattern]. Pattern: [description].
-   Run in headed mode to diagnose root cause with evidence."
-   ```
+2. **UNDERSTAND ROOT CAUSE** - Get systematic evidence (headed mode, console logs, network tab)
+3. **FIX SYSTEMATICALLY** - Address root cause, not symptoms
+4. **VERIFY THOROUGHLY** - Run ALL tests after fixes
 
-2. **UNDERSTAND ROOT CAUSE** - Don't guess, get systematic evidence:
-   - Headed mode observation (what actually happens in browser)
-   - Browser console logs (JavaScript errors)
-   - Network tab inspection (request/response details)
-   - Screenshot comparison (expected vs actual)
-
-3. **FIX SYSTEMATICALLY** - Address root cause, not symptoms:
-   - Fix the underlying issue, not just failing assertions
-   - Validate fix addresses root cause, not masking problem
-   - Consider if fix applies to similar patterns elsewhere
-
-4. **VERIFY THOROUGHLY** - Run ALL tests after fixes:
-   ```bash
-   uv --directory backend run pytest tests/e2e_playwright -v
-   ```
-
-#### Common Playwright/HTMX Patterns
-
-Reference these before debugging (may save investigation time):
-
-✅ **Playwright route interception**: Captures ALL HTTP methods
-- Must explicitly handle each method type
-- GET requests need `route.continue_()` to pass through
-- Pattern: `if route.request.method == "GET": route.continue_(); return`
-
-✅ **HTMX error swapping**: Doesn't swap 4xx/5xx by default
-- Requires `htmx:beforeSwap` event listener configuration
-- Pattern: `if (evt.detail.xhr.status === 400) { evt.detail.shouldSwap = true; }`
-- Place script at end of `<body>` or use DOMContentLoaded
-
-✅ **Browser authentication**: Needs redirect handlers, not JSON errors
-- FastAPI exception handlers for 401/403
-- Check Accept header to distinguish browser vs API requests
-- Use 303 redirects for browser requests to `/login`
-
-✅ **JavaScript timing**: Event listeners need DOM ready
-- Scripts in `<head>` run before DOM exists
-- Place interactive scripts at end of `<body>` or wrap in DOMContentLoaded
-- HTMX/Alpine.js event listeners especially sensitive to timing
+**Common Playwright/HTMX Patterns**:
+- **Route interception**: Must explicitly handle GET requests (`route.continue_()`)
+- **HTMX error swapping**: Requires `htmx:beforeSwap` event listener for 4xx/5xx
+- **Browser authentication**: Needs 401 redirect handlers (check Accept header)
+- **JavaScript timing**: Event listeners need DOM ready (place scripts at end of `<body>`)
 
 ## Environment Setup
 
