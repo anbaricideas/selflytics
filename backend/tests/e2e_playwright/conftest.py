@@ -81,7 +81,8 @@ def authenticated_user(page: Page, base_url: str, test_user: dict):
     page.fill('input[name="confirm_password"]', test_user["password"])
     page.click('[data-testid="submit-register"]')
 
-    # Wait for dashboard redirect
+    # Wait for HTMX redirect (HX-Redirect header triggers client-side navigation)
+    # HTMX will receive the HX-Redirect header and navigate to /dashboard
     page.wait_for_url(f"{base_url}/dashboard", timeout=10000)
 
     yield page
