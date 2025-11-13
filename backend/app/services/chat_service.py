@@ -7,6 +7,7 @@ from app.prompts.chat_agent import create_chat_agent
 from app.services.conversation_service import ConversationService
 from app.utils.cost_tracking import create_usage_record
 
+
 logger = logging.getLogger(__name__)
 
 
@@ -16,9 +17,7 @@ class ChatService:
     def __init__(self):
         self.conversation_service = ConversationService()
 
-    async def send_message(
-        self, user_id: str, request: ChatRequest
-    ) -> tuple[ChatResponse, str]:
+    async def send_message(self, user_id: str, request: ChatRequest) -> tuple[ChatResponse, str]:
         """
         Send chat message and get AI response.
 
@@ -31,21 +30,17 @@ class ChatService:
         """
         # Create or get conversation
         if request.conversation_id:
-            conversation = await self.conversation_service.get_conversation(
-                request.conversation_id
-            )
+            conversation = await self.conversation_service.get_conversation(request.conversation_id)
             if not conversation:
                 raise ValueError("Conversation not found")
             conversation_id = request.conversation_id
         else:
             # Create new conversation
-            conversation = await self.conversation_service.create_conversation(
-                user_id=user_id
-            )
+            conversation = await self.conversation_service.create_conversation(user_id=user_id)
             conversation_id = conversation.conversation_id
 
         # Save user message
-        user_message = await self.conversation_service.add_message(
+        await self.conversation_service.add_message(
             conversation_id=conversation_id, role="user", content=request.message
         )
 

@@ -39,9 +39,7 @@ class TestChatService:
         }
 
         with (
-            patch(
-                "app.services.chat_service.ConversationService"
-            ) as mock_conv_service_class,
+            patch("app.services.chat_service.ConversationService") as mock_conv_service_class,
             patch("app.services.chat_service.create_chat_agent") as mock_create_agent,
         ):
             # Setup conversation service mock
@@ -66,9 +64,7 @@ class TestChatService:
             )
 
             # Verify conversation created
-            mock_conv_service.create_conversation.assert_called_once_with(
-                user_id="user-456"
-            )
+            mock_conv_service.create_conversation.assert_called_once_with(user_id="user-456")
 
             # Verify user message saved
             assert mock_conv_service.add_message.call_count == 2  # User + assistant
@@ -87,9 +83,7 @@ class TestChatService:
     @pytest.mark.asyncio
     async def test_send_message_existing_conversation(self):
         """Test sending message to existing conversation."""
-        request = ChatRequest(
-            message="What about last month?", conversation_id="conv-123"
-        )
+        request = ChatRequest(message="What about last month?", conversation_id="conv-123")
 
         # Mock existing conversation
         mock_conversation = MagicMock()
@@ -98,12 +92,8 @@ class TestChatService:
 
         # Mock message history
         mock_history = [
-            MagicMock(
-                role="user", content="How am I doing?", timestamp=datetime.now(UTC)
-            ),
-            MagicMock(
-                role="assistant", content="You're doing great!", timestamp=datetime.now(UTC)
-            ),
+            MagicMock(role="user", content="How am I doing?", timestamp=datetime.now(UTC)),
+            MagicMock(role="assistant", content="You're doing great!", timestamp=datetime.now(UTC)),
         ]
 
         # Mock agent response
@@ -117,17 +107,13 @@ class TestChatService:
         }
 
         with (
-            patch(
-                "app.services.chat_service.ConversationService"
-            ) as mock_conv_service_class,
+            patch("app.services.chat_service.ConversationService") as mock_conv_service_class,
             patch("app.services.chat_service.create_chat_agent") as mock_create_agent,
         ):
             mock_conv_service = AsyncMock()
             mock_conv_service.get_conversation.return_value = mock_conversation
             mock_conv_service.add_message.return_value = MagicMock()
-            mock_conv_service.get_message_history.return_value = mock_history + [
-                MagicMock()
-            ]
+            mock_conv_service.get_message_history.return_value = [*mock_history, MagicMock()]
             mock_conv_service_class.return_value = mock_conv_service
 
             mock_agent = AsyncMock()
@@ -159,9 +145,7 @@ class TestChatService:
         """Test error when conversation doesn't exist."""
         request = ChatRequest(message="Test", conversation_id="nonexistent")
 
-        with patch(
-            "app.services.chat_service.ConversationService"
-        ) as mock_conv_service_class:
+        with patch("app.services.chat_service.ConversationService") as mock_conv_service_class:
             mock_conv_service = AsyncMock()
             mock_conv_service.get_conversation.return_value = None
             mock_conv_service_class.return_value = mock_conv_service
@@ -189,9 +173,7 @@ class TestChatService:
         }
 
         with (
-            patch(
-                "app.services.chat_service.ConversationService"
-            ) as mock_conv_service_class,
+            patch("app.services.chat_service.ConversationService") as mock_conv_service_class,
             patch("app.services.chat_service.create_chat_agent") as mock_create_agent,
         ):
             mock_conv_service = AsyncMock()
@@ -231,9 +213,7 @@ class TestChatService:
         }
 
         with (
-            patch(
-                "app.services.chat_service.ConversationService"
-            ) as mock_conv_service_class,
+            patch("app.services.chat_service.ConversationService") as mock_conv_service_class,
             patch("app.services.chat_service.create_chat_agent") as mock_create_agent,
         ):
             mock_conv_service = AsyncMock()
