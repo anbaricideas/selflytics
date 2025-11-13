@@ -1,7 +1,7 @@
 # Phase 4: E2E Test Fixes & User Journey Verification
 
 **Branch**: `feat/phase-4-e2e-fixes`
-**Status**: ✅ COMPLETE (2 sessions, 4 hours actual)
+**Status**: 🔄 IN PROGRESS (~25% complete - core fixes done, documentation/validation incomplete)
 
 ---
 
@@ -115,21 +115,26 @@ Fix all 16 failing e2e tests and verify complete user journeys work end-to-end. 
 ## Deliverables
 
 ### Investigation Outputs
-- ✅ Test failure analysis (via debug-investigator)
+- ⚠️ Test failure analysis (done informally, no document created)
 - ✅ Root cause identification (URL encoding, route handlers, HTMX swapping, auth redirects)
-- ✅ Templates already have proper `data-testid` attributes (verified)
+- ❌ Missing `data-testid` inventory (not created)
 
 ### Code Changes
-- ✅ All templates have proper `data-testid` attributes
+- ✅ All templates have proper `data-testid` attributes (verified existing)
 - ✅ E2E test infrastructure improvements (port config, mock fixes)
 - ✅ Test reliability fixes (URL encoding, GET passthrough, HTMX error swap, 401 redirect)
 - ✅ All 16 e2e tests passing (100% pass rate)
+- ❌ Additional unit/integration tests for HTMX (not created)
+- ❌ Template rendering tests (not created)
+- ❌ Alpine.js state tests (not created)
 
 ### Documentation
 - ✅ E2E testing workflow added to CLAUDE.md
 - ✅ Agent-first debugging guidelines documented
-- ⬜ Manual testing runsheet (deferred - not critical for Phase 4)
-- ⬜ Comprehensive E2E testing guide (deferred - basic guide in CLAUDE.md sufficient)
+- ❌ Manual testing runsheet (not created)
+- ❌ Comprehensive E2E testing guide (not created)
+- ❌ E2E debugging log (not created)
+- ❌ E2E test results document (not created)
 
 ---
 
@@ -159,7 +164,7 @@ Fix all 16 failing e2e tests and verify complete user journeys work end-to-end. 
 
 ---
 
-### Step 1: Investigate Test Failures (✅ COMPLETED - Session 1)
+### Step 1: Investigate Test Failures (⚠️ PARTIALLY COMPLETE - informal only)
 
 **File**: Analysis document
 
@@ -190,7 +195,7 @@ Fix all 16 failing e2e tests and verify complete user journeys work end-to-end. 
 
 ---
 
-### Step 2: Debug with @agent-debug-investigator
+### Step 2: Debug with @agent-debug-investigator (❌ NOT DONE - no documentation created)
 
 **Investigator Tasks:**
 
@@ -220,7 +225,7 @@ Fix all 16 failing e2e tests and verify complete user journeys work end-to-end. 
 
 ---
 
-### Step 3: Fix Root Cause Issues
+### Step 3: Fix Root Cause Issues (⚠️ PARTIALLY COMPLETE - fixes done, documentation incomplete)
 
 **Based on investigation, implement fixes:**
 
@@ -293,7 +298,7 @@ Fix all 16 failing e2e tests and verify complete user journeys work end-to-end. 
 
 ---
 
-### Step 4: Audit and Add Missing data-testid Attributes
+### Step 4: Audit and Add Missing data-testid Attributes (⚠️ PARTIALLY COMPLETE - verified existing, no inventory created)
 
 **Files**: All templates in `backend/app/templates/`
 
@@ -380,7 +385,7 @@ Fix all 16 failing e2e tests and verify complete user journeys work end-to-end. 
 
 ---
 
-### Step 5: Create Unit/Integration Tests with @agent-test-quality-reviewer
+### Step 5: Create Unit/Integration Tests with @agent-test-quality-reviewer (❌ NOT DONE)
 
 **Goal**: Add tests to cover gaps in coverage revealed by e2e test scenarios
 
@@ -445,7 +450,7 @@ Fix all 16 failing e2e tests and verify complete user journeys work end-to-end. 
 
 ---
 
-### Step 6: Fix Identified Issues
+### Step 6: Fix Identified Issues (⚠️ PARTIALLY COMPLETE - core e2e fixes done in Session 2)
 
 **Based on test failures from Step 5, implement fixes:**
 
@@ -457,7 +462,7 @@ Fix all 16 failing e2e tests and verify complete user journeys work end-to-end. 
 
 ---
 
-### Step 7: Run Full E2E Test Suite
+### Step 7: Run Full E2E Test Suite (⚠️ PARTIALLY COMPLETE - tests pass, documentation not created)
 
 **Verify all 16 tests pass:**
 
@@ -507,7 +512,7 @@ backend/tests/e2e_playwright/test_form_validation.py::TestErrorRecoveryFlows::te
 
 ---
 
-### Step 8: Create Manual Testing Runsheet
+### Step 8: Create Manual Testing Runsheet (❌ NOT DONE)
 
 **File**: `docs/development/MANUAL_TESTING_RUNSHEET.md`
 
@@ -727,7 +732,7 @@ backend/tests/e2e_playwright/test_form_validation.py::TestErrorRecoveryFlows::te
 
 ---
 
-### Step 9: Execute Manual Testing Runsheet
+### Step 9: Execute Manual Testing Runsheet (❌ NOT DONE - depends on Step 8)
 
 **With User** (if available):
 
@@ -752,7 +757,7 @@ backend/tests/e2e_playwright/test_form_validation.py::TestErrorRecoveryFlows::te
 
 ---
 
-### Step 10: Create E2E Testing Documentation
+### Step 10: Create E2E Testing Documentation (❌ NOT DONE - only basic guidance in CLAUDE.md)
 
 **File**: `docs/development/E2E_TESTING_GUIDE.md`
 
@@ -929,7 +934,7 @@ E2E tests run in GitHub Actions on:
 
 ---
 
-### Step 11: Final Validation
+### Step 11: Final Validation (❌ NOT DONE)
 
 **Quality Checks**:
 
@@ -966,7 +971,7 @@ E2E tests run in GitHub Actions on:
 
 ---
 
-### Step 12: Update Roadmap
+### Step 12: Update Roadmap (❌ NOT DONE - prematurely marked complete, now reverted)
 
 **File**: `docs/project-setup/ROADMAP.md`
 
@@ -1006,24 +1011,24 @@ E2E tests run in GitHub Actions on:
 
 - [x] ✅ All 16 Playwright e2e tests passing locally (100% pass rate)
 - [x] ✅ E2E tests can be run by any developer (CLAUDE.md has instructions)
-- [x] ✅ Test failures provide clear error messages and screenshots
+- [ ] Test failures provide clear error messages and screenshots (needs verification)
 - [x] ✅ All templates have required `data-testid` attributes
-- [x] ✅ Integration tests cover HTMX responses and auth flows
+- [ ] Unit/integration tests cover HTMX responses and auth flows (NOT DONE - Step 5)
 
 ### User Journey Success
 
 - [x] ✅ User can register → login → link Garmin → sync (verified via e2e tests)
 - [x] ✅ Error handling graceful (clear messages, can retry via HTMX)
 - [x] ✅ Keyboard navigation works (tested in `test_keyboard_navigation`)
-- [ ] Manual runsheet completed (deferred - e2e tests provide sufficient validation)
-- [ ] Accessibility verified with screen reader (deferred - keyboard nav verified)
+- [ ] Manual runsheet completed (NOT DONE - Step 8)
+- [ ] Accessibility verified with screen reader (NOT DONE - Step 9)
 
 ### Documentation Success
 
 - [x] ✅ E2E testing workflow documented in CLAUDE.md
 - [x] ✅ Debugging guidelines added (agent-first approach)
-- [x] ✅ Future developers can write new e2e tests following existing patterns
-- [ ] Comprehensive troubleshooting guide (deferred - CLAUDE.md has essentials)
+- [ ] Future developers can write new e2e tests following patterns (needs comprehensive guide - Step 10)
+- [ ] Comprehensive troubleshooting guide (NOT DONE - Step 10)
 
 ---
 
@@ -1067,6 +1072,6 @@ This phase provides the foundation for testing those features.
 
 ---
 
-**Phase Status**: ✅ COMPLETE
+**Phase Status**: 🔄 IN PROGRESS (~25% complete)
 **Last Updated**: 2025-11-14
-**Branch**: `feat/phase-4-e2e-fixes` (ready for PR to main)
+**Branch**: `feat/phase-4-e2e-fixes`

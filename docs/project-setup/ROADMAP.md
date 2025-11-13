@@ -114,12 +114,12 @@ Start from: wherever marked as ⏳ NEXT
 | [1](./PHASE_1_plan.md) | Infrastructure Foundation | ✅ DONE | 7 hours | `feat/phase-1-infrastructure` | - |
 | [2](./PHASE_2_plan.md) | Garmin Integration | ✅ DONE | 5 hours | `feat/phase-2-garmin` | - |
 | [3](./PHASE_3_plan.md) | Chat + AI Agent | ✅ DONE | 6 hours | `feat/phase-3-chat-ai` | - |
-| [4](./PHASE_4_plan.md) | E2E Test Fixes & User Journeys | ✅ DONE | 4 hours | `feat/phase-4-e2e-fixes` | - |
+| [4](./PHASE_4_plan.md) | E2E Test Fixes & User Journeys | ⏳ IN PROGRESS | ~4 hours so far | `feat/phase-4-e2e-fixes` | - |
 | 5 | Visualization Generation | 📅 PLANNED | - | TBD | - |
 | 6 | Goals & Polish | 📅 PLANNED | - | TBD | - |
 | 7 | Launch Preparation | 📅 PLANNED | - | TBD | - |
 
-**Current Phase**: ✅ Phase 4 Complete → Phases 5-7 need planning before implementation
+**Current Phase**: ⏳ Phase 4 In Progress → [Phase 4 Plan](./PHASE_4_plan.md) (~25% complete - core fixes done, documentation/validation incomplete)
 
 ---
 
@@ -521,7 +521,7 @@ Decision point: Proceed to Phase 1 if ALL criteria met
 | 2025-11-12 | Phase 1 completed ✅ | Infrastructure deployed, 87 tests (96% coverage), Cloud Run live (~7 hours) |
 | 2025-11-13 | Phase 2 completed ✅ | Garmin integration complete, 179 tests (91% coverage), HTMX auth flow fixed (~5 hours) |
 | 2025-11-13 | Phase 3 completed ✅ | Chat + AI agent complete, 187 tests (91-100% on Phase 3 code), Pydantic-AI with 3 Garmin tools (~6 hours) |
-| 2025-11-14 | Phase 4 completed ✅ | All 16 e2e tests passing (100%), HTMX error handling + auth redirects fixed, debugging workflow documented (4 hours) |
+| 2025-11-14 | Phase 4 in progress | Core e2e fixes complete (16/16 tests pass), but documentation/validation steps incomplete (~4 hours so far) |
 
 ---
 
