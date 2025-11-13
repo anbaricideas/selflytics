@@ -1,6 +1,5 @@
 """E2E tests for complete Garmin linking user journey."""
 
-import pytest
 from playwright.sync_api import Page, expect
 
 
@@ -53,9 +52,7 @@ class TestGarminLinkingJourney:
         page.click('[data-testid="submit-link-garmin"]')
 
         # Step 5: Verify success state (HTMX swapped content)
-        expect(page.locator('[data-testid="garmin-status-linked"]')).to_be_visible(
-            timeout=5000
-        )
+        expect(page.locator('[data-testid="garmin-status-linked"]')).to_be_visible(timeout=5000)
 
         # Verify form no longer visible
         expect(page.locator('[data-testid="form-link-garmin"]')).not_to_be_visible()
@@ -135,9 +132,7 @@ class TestGarminLinkingJourney:
 class TestGarminSyncJourney:
     """Test manual sync functionality after linking."""
 
-    def test_manual_sync_success(
-        self, authenticated_user: Page, base_url: str, mock_garmin_api
-    ):
+    def test_manual_sync_success(self, authenticated_user: Page, base_url: str, mock_garmin_api):
         """Test successful manual sync after linking.
 
         User Journey:
@@ -157,7 +152,7 @@ class TestGarminSyncJourney:
             route.fulfill(
                 status=200,
                 content_type="text/html",
-                body='''
+                body="""
                 <div data-testid="garmin-status-linked">
                     <p>Garmin account linked</p>
                     <button
@@ -167,7 +162,7 @@ class TestGarminSyncJourney:
                         Sync Now
                     </button>
                 </div>
-                ''',
+                """,
             )
 
         def handle_sync_success(route):
@@ -192,9 +187,7 @@ class TestGarminSyncJourney:
         page.click('[data-testid="submit-link-garmin"]')
 
         # Wait for linked state
-        expect(page.locator('[data-testid="garmin-status-linked"]')).to_be_visible(
-            timeout=5000
-        )
+        expect(page.locator('[data-testid="garmin-status-linked"]')).to_be_visible(timeout=5000)
 
         # Click sync button
         page.click('[data-testid="button-sync-garmin"]')

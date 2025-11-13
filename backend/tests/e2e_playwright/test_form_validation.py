@@ -7,16 +7,13 @@ Focuses on:
 - Accessibility (keyboard navigation, focus states)
 """
 
-import pytest
 from playwright.sync_api import Page, expect
 
 
 class TestHTML5ClientValidation:
     """Test HTML5 and client-side validation."""
 
-    def test_required_fields_validation(
-        self, authenticated_user: Page, base_url: str
-    ):
+    def test_required_fields_validation(self, authenticated_user: Page, base_url: str):
         """Test that required fields prevent submission when empty.
 
         Validates:
@@ -36,9 +33,7 @@ class TestHTML5ClientValidation:
         # Success state should not appear
         expect(page.locator('[data-testid="garmin-status-linked"]')).not_to_be_visible()
 
-    def test_email_format_validation(
-        self, authenticated_user: Page, base_url: str
-    ):
+    def test_email_format_validation(self, authenticated_user: Page, base_url: str):
         """Test email format validation on username field.
 
         Validates:
@@ -69,9 +64,7 @@ class TestHTML5ClientValidation:
         # Input should be invalid
         assert not is_valid, "Invalid email should fail HTML5 validation"
 
-    def test_valid_form_submits(
-        self, authenticated_user: Page, base_url: str
-    ):
+    def test_valid_form_submits(self, authenticated_user: Page, base_url: str):
         """Test that valid form passes client validation and submits.
 
         Validates:
@@ -106,17 +99,13 @@ class TestHTML5ClientValidation:
         page.click('[data-testid="submit-link-garmin"]')
 
         # Verify submission succeeded
-        expect(page.locator('[data-testid="garmin-status-linked"]')).to_be_visible(
-            timeout=5000
-        )
+        expect(page.locator('[data-testid="garmin-status-linked"]')).to_be_visible(timeout=5000)
 
 
 class TestServerSideValidation:
     """Test server-side validation responses."""
 
-    def test_server_rejects_invalid_credentials(
-        self, authenticated_user: Page, base_url: str
-    ):
+    def test_server_rejects_invalid_credentials(self, authenticated_user: Page, base_url: str):
         """Test server validates credentials and returns error.
 
         Validates:
@@ -136,11 +125,11 @@ class TestServerSideValidation:
             route.fulfill(
                 status=400,
                 content_type="text/html",
-                body='''
+                body="""
                 <div data-testid="error-message" class="error">
                     Failed to link Garmin account. Please check your credentials.
                 </div>
-                ''',
+                """,
             )
 
         page.route("**/garmin/link", handle_invalid_credentials)
@@ -161,9 +150,7 @@ class TestServerSideValidation:
 class TestInputBehaviorAndAccessibility:
     """Test input field behavior and accessibility."""
 
-    def test_password_field_masked(
-        self, authenticated_user: Page, base_url: str
-    ):
+    def test_password_field_masked(self, authenticated_user: Page, base_url: str):
         """Test password input is properly masked.
 
         Validates:
@@ -182,9 +169,7 @@ class TestInputBehaviorAndAccessibility:
         password_input.fill("MySecretPassword123")
         expect(password_input).to_have_attribute("type", "password")
 
-    def test_keyboard_navigation(
-        self, authenticated_user: Page, base_url: str
-    ):
+    def test_keyboard_navigation(self, authenticated_user: Page, base_url: str):
         """Test form is fully keyboard accessible.
 
         Validates:
@@ -231,13 +216,9 @@ class TestInputBehaviorAndAccessibility:
         page.keyboard.press("Enter")
 
         # Verify submission
-        expect(page.locator('[data-testid="garmin-status-linked"]')).to_be_visible(
-            timeout=5000
-        )
+        expect(page.locator('[data-testid="garmin-status-linked"]')).to_be_visible(timeout=5000)
 
-    def test_focus_visible_on_inputs(
-        self, authenticated_user: Page, base_url: str
-    ):
+    def test_focus_visible_on_inputs(self, authenticated_user: Page, base_url: str):
         """Test focus states are visible for accessibility.
 
         Validates:
@@ -262,9 +243,7 @@ class TestInputBehaviorAndAccessibility:
 class TestErrorRecoveryFlows:
     """Test error recovery and retry behavior."""
 
-    def test_user_can_retry_after_error(
-        self, authenticated_user: Page, base_url: str
-    ):
+    def test_user_can_retry_after_error(self, authenticated_user: Page, base_url: str):
         """Test user can correct errors and retry submission.
 
         Validates:

@@ -134,8 +134,11 @@ def mock_garmin_api(page: Page):
         # Note: post_data can be bytes or string depending on Playwright version
         # Check for both raw and URL-encoded email (@ becomes %40 in form data)
         has_test_email = (
-            (isinstance(post_data, bytes) and (b"test@garmin.com" in post_data or b"test%40garmin.com" in post_data))
-            or (isinstance(post_data, str) and ("test@garmin.com" in post_data or "test%40garmin.com" in post_data))
+            isinstance(post_data, bytes)
+            and (b"test@garmin.com" in post_data or b"test%40garmin.com" in post_data)
+        ) or (
+            isinstance(post_data, str)
+            and ("test@garmin.com" in post_data or "test%40garmin.com" in post_data)
         )
         if post_data and has_test_email:
             # Return HTML fragment for HTMX swap (outerHTML)
