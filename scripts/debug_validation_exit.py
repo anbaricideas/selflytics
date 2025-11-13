@@ -4,20 +4,18 @@ Debug script to identify why validate-gcp-setup.sh exits silently after Prerequi
 Created: 2025-11-13
 Purpose: Reproduce the exact failure conditions and trace the exit point
 """
+
 import subprocess
-import sys
-import os
+
 
 def run_bash_test(script_content: str, description: str) -> tuple[int, str, str]:
     """Run a bash script and capture output, error, and exit code."""
-    print(f"\n{'='*70}")
+    print(f"\n{'=' * 70}")
     print(f"TEST: {description}")
-    print(f"{'='*70}")
+    print(f"{'=' * 70}")
 
     result = subprocess.run(
-        ['bash', '-c', script_content],
-        capture_output=True,
-        text=True
+        ["bash", "-c", script_content], capture_output=True, text=True
     )
 
     print(f"Exit Code: {result.returncode}")
@@ -151,22 +149,22 @@ run_bash_test(test6, "Multiple check_command calls before log_success")
 
 
 # Test 7: Check actual exit code of the real script
-print(f"\n{'='*70}")
+print(f"\n{'=' * 70}")
 print("TEST: Run actual validate-gcp-setup.sh with set -x")
-print(f"{'='*70}")
+print(f"{'=' * 70}")
 result = subprocess.run(
-    ['bash', '-x', '/Users/bryn/repos/selflytics/scripts/validate-gcp-setup.sh'],
+    ["bash", "-x", "/Users/bryn/repos/selflytics/scripts/validate-gcp-setup.sh"],
     capture_output=True,
     text=True,
-    timeout=10
+    timeout=10,
 )
 print(f"Exit Code: {result.returncode}")
-print(f"\nLast 50 lines of STDERR (trace):")
-lines = result.stderr.split('\n')
+print("\nLast 50 lines of STDERR (trace):")
+lines = result.stderr.split("\n")
 for line in lines[-50:]:
     print(line)
 
-print(f"\nLast 20 lines of STDOUT:")
-lines = result.stdout.split('\n')
+print("\nLast 20 lines of STDOUT:")
+lines = result.stdout.split("\n")
 for line in lines[-20:]:
     print(line)

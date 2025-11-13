@@ -39,6 +39,7 @@ dev = [
     "pytest>=7.4.0",
     "pytest-cov>=4.1.0",
     "pytest-asyncio>=0.23.0",
+    "pytest-playwright>=0.4.0",
 
     # Code Quality
     "ruff>=0.1.0",
@@ -148,3 +149,8 @@ members = [
 
 [tool.uv.sources]
 selflytics-telemetry = { workspace = true, editable = true }
+
+[dependency-groups]
+dev = [
+    "pytest-playwright>=0.7.1",
+]

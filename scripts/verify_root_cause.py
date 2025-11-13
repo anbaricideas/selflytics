@@ -3,11 +3,12 @@
 Final verification of root cause.
 Reproduces the exact execution state when script fails.
 """
+
 import subprocess
 
-print("="*70)
+print("=" * 70)
 print("ROOT CAUSE VERIFICATION")
-print("="*70)
+print("=" * 70)
 
 # Simulate the exact script execution path up to the failure point
 script = r"""
@@ -34,7 +35,7 @@ log_success "All required commands are available"
 echo "Script reached line 98: Project Access section"
 """
 
-result = subprocess.run(['bash', '-c', script], capture_output=True, text=True)
+result = subprocess.run(["bash", "-c", script], capture_output=True, text=True)
 
 print("\nExecution Result:")
 print(f"Exit Code: {result.returncode}")
@@ -42,9 +43,9 @@ print(f"Output:\n{result.stdout}")
 if result.stderr:
     print(f"Stderr: {result.stderr}")
 
-print("\n" + "="*70)
+print("\n" + "=" * 70)
 print("ANALYSIS")
-print("="*70)
+print("=" * 70)
 
 print("""
 EXECUTION TIMELINE:
@@ -78,9 +79,9 @@ Why does it work in non-verbose mode in some systems?
 - Or the command runs in a subshell where 'set -e' doesn't propagate
 """)
 
-print("\n" + "="*70)
+print("\n" + "=" * 70)
 print("SOLUTION VERIFICATION")
-print("="*70)
+print("=" * 70)
 
 # Verify the fix works
 fixed_script = r"""
@@ -99,7 +100,7 @@ log_success "All required commands are available"
 echo "Script continues to Project Access section"
 """
 
-result = subprocess.run(['bash', '-c', fixed_script], capture_output=True, text=True)
+result = subprocess.run(["bash", "-c", fixed_script], capture_output=True, text=True)
 print(f"Fixed version exit code: {result.returncode}")
 print(f"Fixed version output:\n{result.stdout}")
 print("\nFix confirmed: Script runs to completion with exit code 0")

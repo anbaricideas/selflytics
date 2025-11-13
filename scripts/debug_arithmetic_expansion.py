@@ -3,18 +3,15 @@
 Debug script to isolate the arithmetic expansion issue.
 The issue is that ((PASSED++)) with set -e exits with error when PASSED is 0.
 """
+
 import subprocess
-import sys
+
 
 def test_arithmetic(description: str, script: str) -> tuple[int, str]:
     """Test arithmetic expansion behavior."""
     print(f"\nTest: {description}")
     print("-" * 60)
-    result = subprocess.run(
-        ['bash', '-c', script],
-        capture_output=True,
-        text=True
-    )
+    result = subprocess.run(["bash", "-c", script], capture_output=True, text=True)
     print(f"Exit Code: {result.returncode}")
     print(f"Output: {result.stdout if result.stdout else '(empty)'}")
     if result.stderr:
@@ -23,9 +20,9 @@ def test_arithmetic(description: str, script: str) -> tuple[int, str]:
 
 
 # The critical test: post-increment with set -e
-print("="*60)
+print("=" * 60)
 print("CRITICAL: Post-increment ((VAR++)) with set -e")
-print("="*60)
+print("=" * 60)
 
 # Test 1: ((PASSED++)) where PASSED=0
 test_arithmetic(
@@ -36,7 +33,7 @@ PASSED=0
 echo "Before: PASSED=$PASSED"
 ((PASSED++))
 echo "After: PASSED=$PASSED"
-"""
+""",
 )
 
 # Test 2: ((++PASSED)) pre-increment
@@ -48,7 +45,7 @@ PASSED=0
 echo "Before: PASSED=$PASSED"
 ((++PASSED))
 echo "After: PASSED=$PASSED"
-"""
+""",
 )
 
 # Test 3: PASSED=$((PASSED+1)) assignment
@@ -60,7 +57,7 @@ PASSED=0
 echo "Before: PASSED=$PASSED"
 PASSED=$((PASSED+1))
 echo "After: PASSED=$PASSED"
-"""
+""",
 )
 
 # Test 4: Without set -e
@@ -71,7 +68,7 @@ PASSED=0
 echo "Before: PASSED=$PASSED"
 ((PASSED++))
 echo "After: PASSED=$PASSED"
-"""
+""",
 )
 
 # Test 5: The actual failure case with -e and -u
@@ -83,12 +80,12 @@ PASSED=0
 echo "Before: PASSED=$PASSED"
 ((PASSED++))
 echo "After: PASSED=$PASSED"
-"""
+""",
 )
 
-print("\n" + "="*60)
+print("\n" + "=" * 60)
 print("EXPLANATION")
-print("="*60)
+print("=" * 60)
 print("""
 In bash, post-increment ((VAR++)) has a special behavior:
 - The return value of ((PASSED++)) is the VALUE BEFORE increment
