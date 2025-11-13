@@ -1,12 +1,13 @@
 """Authentication routes for user registration and login."""
 
-from fastapi import APIRouter, Depends, HTTPException, Request, status
-from fastapi.responses import HTMLResponse
+from fastapi import APIRouter, Depends, Form, HTTPException, Request, Response, status
+from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.security import OAuth2PasswordRequestForm
 
 from app.auth.dependencies import get_current_user, get_user_service
 from app.auth.jwt import create_access_token
 from app.auth.password import verify_password
+from app.config import get_settings
 from app.dependencies import get_templates
 from app.models.user import UserCreate, UserResponse
 from app.services.user_service import UserService
@@ -37,26 +38,77 @@ async def login_form(request: Request, templates=Depends(get_templates)) -> HTML
 # ========================================
 
 
-@router.post("/auth/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/auth/register")
 async def register(
-    user_data: UserCreate,
+    request: Request,
+    email: str = Form(...),
+    password: str = Form(...),
+    display_name: str = Form(...),
+    confirm_password: str = Form(None),
     user_service: UserService = Depends(get_user_service),
+    templates=Depends(get_templates),
 ):
     """Register a new user.
 
     Args:
-        user_data: User registration data (email, password, display_name)
+        request: FastAPI request object
+        email: User email
+        password: User password
+        display_name: User display name
+        confirm_password: Password confirmation (optional, for validation)
+        user_service: User service dependency
+        templates: Jinja2 templates dependency
 
     Returns:
-        UserResponse with created user data (no password)
+        For HTMX requests: Redirect to /dashboard (HX-Redirect header)
+        For API requests: UserResponse JSON with created user data
 
     Raises:
-        HTTPException 400: If email already registered
+        HTTPException 400: If email already registered or passwords don't match
     """
+
+    # Validate password confirmation if provided
+    if confirm_password and password != confirm_password:
+        if request.headers.get("HX-Request"):
+            return templates.TemplateResponse(
+                request=request,
+                name="register.html",
+                context={
+                    "errors": {"password": "Passwords do not match"},
+                    "email": email,
+                    "display_name": display_name,
+                },
+                status_code=status.HTTP_400_BAD_REQUEST,
+            )
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Passwords do not match",
+        )
+
+    # Create UserCreate model from form data
+    user_data = UserCreate(
+        email=email,
+        password=password,
+        display_name=display_name,
+    )
 
     # Check if email already exists
     existing_user = await user_service.get_user_by_email(user_data.email)
     if existing_user:
+        # For HTMX requests, return error HTML fragment
+        if request.headers.get("HX-Request"):
+            return templates.TemplateResponse(
+                request=request,
+                name="register.html",
+                context={
+                    "errors": {"email": "Email already registered"},
+                    "email": user_data.email,
+                    "display_name": user_data.display_name,
+                },
+                status_code=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # For API requests, raise HTTPException
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Email already registered",
@@ -65,26 +117,56 @@ async def register(
     # Create new user
     user = await user_service.create_user(user_data)
 
-    return UserResponse(
+    # For HTMX requests, redirect to dashboard with auth cookie
+    if request.headers.get("HX-Request"):
+        # Create JWT access token
+        access_token = create_access_token(data={"sub": user.user_id, "email": user.email})
+
+        settings = get_settings()
+        response = Response(status_code=status.HTTP_200_OK)
+        response.headers["HX-Redirect"] = "/dashboard"
+        # Set JWT token in httponly cookie for browser-based auth
+        response.set_cookie(
+            key="access_token",
+            value=f"Bearer {access_token}",
+            httponly=True,
+            secure=settings.environment != "development",  # Only over HTTPS in production
+            samesite="lax",
+            max_age=1800,  # 30 minutes (matches JWT expiry)
+        )
+        return response
+
+    # For API requests, return UserResponse JSON with 201 Created status
+    user_response = UserResponse(
         user_id=user.user_id,
         email=user.email,
         profile=user.profile,
         garmin_linked=user.garmin_linked,
     )
+    return JSONResponse(
+        status_code=status.HTTP_201_CREATED,
+        content=user_response.model_dump(),
+    )
 
 
 @router.post("/auth/login")
 async def login(
+    request: Request,
     form_data: OAuth2PasswordRequestForm = Depends(),
     user_service: UserService = Depends(get_user_service),
+    templates=Depends(get_templates),
 ):
     """Login user and return JWT access token.
 
     Args:
+        request: FastAPI request object
         form_data: OAuth2 form with username (email) and password
+        user_service: User service dependency
+        templates: Jinja2 templates dependency
 
     Returns:
-        Access token and token type
+        For HTMX requests: Redirect to /dashboard (HX-Redirect header) with Set-Cookie
+        For API requests: JSON with access token and token type
 
     Raises:
         HTTPException 401: If credentials are invalid
@@ -93,6 +175,19 @@ async def login(
     # Get user by email (OAuth2 uses 'username' field for email)
     user = await user_service.get_user_by_email(form_data.username)
     if not user or not verify_password(form_data.password, user.hashed_password):
+        # For HTMX requests, return error HTML fragment
+        if request.headers.get("HX-Request"):
+            return templates.TemplateResponse(
+                request=request,
+                name="login.html",
+                context={
+                    "errors": {"general": "Incorrect email or password"},
+                    "email": form_data.username,
+                },
+                status_code=status.HTTP_401_UNAUTHORIZED,
+            )
+
+        # For API requests, raise HTTPException
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect email or password",
@@ -102,6 +197,23 @@ async def login(
     # Create JWT access token
     access_token = create_access_token(data={"sub": user.user_id, "email": user.email})
 
+    # For HTMX requests, redirect to dashboard with cookie
+    if request.headers.get("HX-Request"):
+        settings = get_settings()
+        response = Response(status_code=status.HTTP_200_OK)
+        response.headers["HX-Redirect"] = "/dashboard"
+        # Set JWT token in httponly cookie for browser-based auth
+        response.set_cookie(
+            key="access_token",
+            value=f"Bearer {access_token}",
+            httponly=True,
+            secure=settings.environment != "development",  # Only over HTTPS in production
+            samesite="lax",
+            max_age=1800,  # 30 minutes (matches JWT expiry)
+        )
+        return response
+
+    # For API requests, return JSON
     return {"access_token": access_token, "token_type": "bearer"}
 
 

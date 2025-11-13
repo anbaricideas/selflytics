@@ -29,6 +29,8 @@ dependencies = [
     "opentelemetry-instrumentation-logging>=0.59b0",
     "selflytics-telemetry", # workspace package
     "python-dotenv>=1.2.1",
+    "google-cloud-kms>=3.7.0",
+    "garth>=0.5.19",
 ]
 
 [project.optional-dependencies]
@@ -37,6 +39,7 @@ dev = [
     "pytest>=7.4.0",
     "pytest-cov>=4.1.0",
     "pytest-asyncio>=0.23.0",
+    "pytest-playwright>=0.4.0",
 
     # Code Quality
     "ruff>=0.1.0",
@@ -146,3 +149,8 @@ members = [
 
 [tool.uv.sources]
 selflytics-telemetry = { workspace = true, editable = true }
+
+[dependency-groups]
+dev = [
+    "pytest-playwright>=0.7.1",
+]

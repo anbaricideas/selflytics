@@ -71,7 +71,7 @@ class TestRegisterEndpoint:
 
         response = client.post(
             "/auth/register",
-            json={
+            data={
                 "email": "newuser@example.com",
                 "password": "securepass123",
                 "display_name": "New User",
@@ -93,7 +93,7 @@ class TestRegisterEndpoint:
 
         response = client.post(
             "/auth/register",
-            json={
+            data={
                 "email": "existing@example.com",
                 "password": "password123",
                 "display_name": "Test User",
@@ -311,7 +311,7 @@ class TestAuthFlowIntegration:
 
         register_response = client.post(
             "/auth/register",
-            json={
+            data={
                 "email": "newuser@example.com",
                 "password": "securepass123",
                 "display_name": "New User",

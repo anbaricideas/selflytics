@@ -109,13 +109,13 @@ Start from: wherever marked as ⏳ NEXT
 |-------|-------------|--------|-------------|--------|-----|
 | [Spike](./SPIKE_plan.md) | Technical Validation | ✅ DONE | 8 hours | `feat/selflytics-spike` | - |
 | [1](./PHASE_1_plan.md) | Infrastructure Foundation | ✅ DONE | 7 hours | `feat/phase-1-infrastructure` | - |
-| [2](./PHASE_2_plan.md) | Garmin Integration | ⬜ TODO | - | `feat/phase-2-garmin` | - |
+| [2](./PHASE_2_plan.md) | Garmin Integration | ✅ DONE | 5 hours | `feat/phase-2-garmin` | - |
 | [3](./PHASE_3_plan.md) | Chat + AI Agent | ⬜ TODO | - | `feat/phase-3-chat-ai` | - |
 | 4 | Visualization Generation | 📅 PLANNED | - | TBD | - |
 | 5 | Goals & Polish | 📅 PLANNED | - | TBD | - |
 | 6 | Launch Preparation | 📅 PLANNED | - | TBD | - |
 
-**Current Phase**: ⏳ NEXT → [Phase 2](./PHASE_2_plan.md)
+**Current Phase**: ⏳ NEXT → [Phase 3](./PHASE_3_plan.md)
 
 ---
 
@@ -489,6 +489,7 @@ Decision point: Proceed to Phase 1 if ALL criteria met
 | 2025-11-11 | GitHub repo created | https://github.com/anbaricideas/selflytics |
 | 2025-11-11 | Spike completed ✅ | 8 hours (vs 40 est). Decision: PROCEED to Phase 1. All validation criteria met. |
 | 2025-11-12 | Phase 1 completed ✅ | Infrastructure deployed, 87 tests (96% coverage), Cloud Run live (~7 hours) |
+| 2025-11-13 | Phase 2 completed ✅ | Garmin integration complete, 179 tests (91% coverage), HTMX auth flow fixed (~5 hours) |
 
 ---
 

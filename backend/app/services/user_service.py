@@ -93,3 +93,27 @@ class UserService:
             return User(**doc.to_dict())
 
         return None
+
+    async def update_garmin_status(self, user_id: str, linked: bool) -> None:
+        """Update user's Garmin link status.
+
+        Args:
+            user_id: Unique user identifier
+            linked: Whether Garmin account is linked
+
+        Note:
+            Updates garmin_linked and garmin_link_date fields in Firestore
+        """
+        now = datetime.now(UTC)
+
+        update_data = {
+            "garmin_linked": linked,
+            "updated_at": now,
+        }
+
+        if linked:
+            update_data["garmin_link_date"] = now
+        else:
+            update_data["garmin_link_date"] = None
+
+        self.collection.document(user_id).update(update_data)

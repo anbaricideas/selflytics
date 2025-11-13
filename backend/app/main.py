@@ -12,7 +12,7 @@ from fastapi.responses import RedirectResponse
 
 from app.config import get_settings
 from app.middleware.telemetry import TelemetryMiddleware
-from app.routes import auth, dashboard
+from app.routes import auth, dashboard, garmin
 from app.telemetry_config import setup_telemetry, teardown_telemetry
 
 
@@ -94,6 +94,7 @@ app.add_middleware(
 # Include routers
 app.include_router(auth.router)
 app.include_router(dashboard.router)
+app.include_router(garmin.router)
 
 
 @app.get("/")
