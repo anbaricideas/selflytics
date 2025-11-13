@@ -1,7 +1,7 @@
 """Tests for ConversationService."""
 
 from datetime import UTC, datetime
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -27,9 +27,7 @@ class TestConversationService:
         with patch("app.services.conversation_service.get_firestore_client", return_value=mock_db):
             service = ConversationService()
 
-            conversation = await service.create_conversation(
-                user_id="user-123", first_message="How am I doing?"
-            )
+            conversation = await service.create_conversation(user_id="user-123")
 
             # Verify conversation created with correct fields
             assert conversation.user_id == "user-123"
@@ -113,9 +111,7 @@ class TestConversationService:
         with patch("app.services.conversation_service.get_firestore_client", return_value=mock_db):
             service = ConversationService()
 
-            messages = await service.get_message_history(
-                conversation_id="conv-123", limit=10
-            )
+            messages = await service.get_message_history(conversation_id="conv-123", limit=10)
 
             # Verify messages returned in chronological order
             assert len(messages) == 2

@@ -17,7 +17,7 @@ class ConversationService:
         self.db = get_firestore_client()
         self.conversations_collection = self.db.collection("conversations")
 
-    async def create_conversation(self, user_id: str, first_message: str) -> Conversation:
+    async def create_conversation(self, user_id: str) -> Conversation:
         """Create new conversation."""
         conversation_id = str(uuid.uuid4())
         now = datetime.now(UTC)
@@ -58,8 +58,8 @@ class ConversationService:
         )
 
         # Save to subcollection
-        messages_ref = (
-            self.conversations_collection.document(conversation_id).collection("messages")
+        messages_ref = self.conversations_collection.document(conversation_id).collection(
+            "messages"
         )
         messages_ref.document(message_id).set(message.model_dump())
 
@@ -69,9 +69,7 @@ class ConversationService:
 
         return message
 
-    async def get_message_history(
-        self, conversation_id: str, limit: int = 10
-    ) -> list[Message]:
+    async def get_message_history(self, conversation_id: str, limit: int = 10) -> list[Message]:
         """Get last N messages for conversation context."""
         messages_ref = (
             self.conversations_collection.document(conversation_id)
@@ -80,9 +78,7 @@ class ConversationService:
             .limit(limit)
         )
 
-        messages = []
-        for doc in messages_ref.stream():
-            messages.append(Message(**doc.to_dict()))
+        messages = [Message(**doc.to_dict()) for doc in messages_ref.stream()]
 
         # Return chronological order
         return list(reversed(messages))
@@ -102,11 +98,7 @@ class ConversationService:
             .limit(limit)
         )
 
-        conversations = []
-        for doc in query.stream():
-            conversations.append(Conversation(**doc.to_dict()))
-
-        return conversations
+        return [Conversation(**doc.to_dict()) for doc in query.stream()]
 
     async def generate_title(self, conversation_id: str, first_user_message: str):
         """Generate conversation title from first message (AI-powered)."""
