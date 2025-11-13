@@ -9,6 +9,7 @@ from openai import APIConnectionError, APITimeoutError, RateLimitError
 from app.models.chat import ChatRequest
 from app.services.chat_service import ChatService
 
+
 # Set dummy API key to prevent OpenAI client initialization errors
 os.environ.setdefault("OPENAI_API_KEY", "sk-test-key-for-testing-only")
 
@@ -69,9 +70,7 @@ class TestChatErrorScenarios:
 
         def model_function(messages: list[ModelMessage], info: AgentInfo):
             """Simulate rate limit error."""
-            raise RateLimitError(
-                "Rate limit exceeded", response=AsyncMock(), body=None
-            )
+            raise RateLimitError("Rate limit exceeded", response=AsyncMock(), body=None)
 
         from app.prompts.chat_agent import create_chat_agent
 
@@ -104,6 +103,7 @@ class TestChatErrorScenarios:
             """Simulate connection error."""
             # APIConnectionError requires request parameter
             from httpx import Request
+
             request = Request("POST", "https://api.openai.com")
             raise APIConnectionError(message="Connection failed", request=request)
 
@@ -121,7 +121,7 @@ class TestChatErrorScenarios:
 
     async def test_garmin_service_failure(self):
         """Verify that Garmin API failures propagate correctly."""
-        from pydantic_ai import ModelMessage, ModelResponse, ToolCallPart
+        from pydantic_ai import ModelMessage, ModelResponse, TextPart, ToolCallPart
         from pydantic_ai.models.function import AgentInfo, FunctionModel
 
         # Mock dependencies
@@ -137,7 +137,9 @@ class TestChatErrorScenarios:
         # Mock GarminService to raise error
         with patch("app.prompts.chat_agent.GarminService") as mock_service_class:
             mock_service = AsyncMock()
-            mock_service.get_activities_cached.side_effect = ConnectionError("Garmin API unavailable")
+            mock_service.get_activities_cached.side_effect = ConnectionError(
+                "Garmin API unavailable"
+            )
             mock_service_class.return_value = mock_service
 
             def model_function(messages: list[ModelMessage], info: AgentInfo):
@@ -146,9 +148,11 @@ class TestChatErrorScenarios:
                     # Agent decides to call tool
                     tool_call = ToolCallPart(
                         tool_name="garmin_activity_tool",
-                        args={"start_date": "2025-11-06", "end_date": "2025-11-13"}
+                        args={"start_date": "2025-11-06", "end_date": "2025-11-13"},
                     )
                     return ModelResponse(parts=[tool_call])
+                # Should not reach here in this test
+                return ModelResponse(parts=[TextPart("Unexpected")])
 
             from app.prompts.chat_agent import create_chat_agent
 
@@ -173,9 +177,7 @@ class TestChatErrorScenarios:
         service.conversation_service = mock_conversation_service
 
         # Test - no need for FunctionModel since error occurs before agent call
-        request = ChatRequest(
-            message="Follow up question", conversation_id="non-existent-conv"
-        )
+        request = ChatRequest(message="Follow up question", conversation_id="non-existent-conv")
 
         with pytest.raises(ValueError, match="Conversation not found"):
             await service.send_message(user_id="test-user", request=request)
@@ -200,8 +202,8 @@ class TestChatErrorScenarios:
     async def test_agent_returns_invalid_confidence(self):
         """Verify handling of agent returning out-of-range confidence."""
         from pydantic_ai import ModelMessage, ModelResponse, TextPart
-        from pydantic_ai.models.function import AgentInfo, FunctionModel
         from pydantic_ai.exceptions import UnexpectedModelBehavior
+        from pydantic_ai.models.function import AgentInfo, FunctionModel
 
         # Mock dependencies
         mock_conversation_service = AsyncMock()

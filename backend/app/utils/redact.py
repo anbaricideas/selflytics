@@ -50,6 +50,4 @@ def redact_for_logging(text: str) -> str:
     text = CC_PATTERN.sub("[REDACTED-CC]", text)
 
     # Redact UUIDs (user IDs)
-    text = UUID_PATTERN.sub("[REDACTED-UUID]", text)
-
-    return text
+    return UUID_PATTERN.sub("[REDACTED-UUID]", text)

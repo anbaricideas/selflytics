@@ -14,6 +14,7 @@ from pydantic_ai.models.function import AgentInfo, FunctionModel
 from app.models.chat import ChatRequest
 from app.services.chat_service import ChatService
 
+
 # Set dummy API key to prevent OpenAI client initialization errors
 # This allows agent creation without making actual API calls (FunctionModel will handle requests)
 os.environ.setdefault("OPENAI_API_KEY", "sk-test-key-for-testing-only")
@@ -30,7 +31,9 @@ class TestChatToolCalling:
         tool_calls_made = []
 
         # Mock GarminService.get_activities_cached (simpler than mocking the client)
-        with patch("app.services.garmin_service.GarminService.get_activities_cached") as mock_get_activities:
+        with patch(
+            "app.services.garmin_service.GarminService.get_activities_cached"
+        ) as mock_get_activities:
             mock_get_activities.return_value = [
                 {
                     "start_time_local": "2025-11-10T06:00:00",
@@ -63,19 +66,18 @@ class TestChatToolCalling:
                     return ModelResponse(parts=[tool_call])
 
                 # Second call: LLM responds after tool returns
-                else:
-                    tool_return = messages[-1].parts[0]
-                    assert tool_return.part_kind == "tool-return"
-                    return ModelResponse(
-                        parts=[
-                            TextPart(
-                                '{"message": "You had 1 run this week covering 5km.", '
-                                '"data_sources_used": ["activities"], '
-                                '"confidence": 0.9, '
-                                '"suggested_followup": "What was your average pace?"}'
-                            )
-                        ]
-                    )
+                tool_return = messages[-1].parts[0]
+                assert tool_return.part_kind == "tool-return"
+                return ModelResponse(
+                    parts=[
+                        TextPart(
+                            '{"message": "You had 1 run this week covering 5km.", '
+                            '"data_sources_used": ["activities"], '
+                            '"confidence": 0.9, '
+                            '"suggested_followup": "What was your average pace?"}'
+                        )
+                    ]
+                )
 
             # Mock conversation service
             mock_conversation_service = AsyncMock()
@@ -98,10 +100,14 @@ class TestChatToolCalling:
                 # Override the agent's model with our FunctionModel
                 with agent.override(model=FunctionModel(model_function)):
                     request = ChatRequest(message="How many runs did I do this week?")
-                    response, conv_id = await service.send_message(user_id="test-user", request=request)
+                    response, _conv_id = await service.send_message(
+                        user_id="test-user", request=request
+                    )
 
                 # Verify tool was called with correct arguments
-                assert len(tool_calls_made) == 1, "garmin_activity_tool should have been called once"
+                assert len(tool_calls_made) == 1, (
+                    "garmin_activity_tool should have been called once"
+                )
                 tool_args = tool_calls_made[0]
 
                 assert "start_date" in tool_args
@@ -140,17 +146,16 @@ class TestChatToolCalling:
                     )
                     tool_calls_made.append(tool_call.args)
                     return ModelResponse(parts=[tool_call])
-                else:
-                    return ModelResponse(
-                        parts=[
-                            TextPart(
-                                '{"message": "Your average steps: 8,500/day", '
-                                '"data_sources_used": ["metrics"], '
-                                '"confidence": 0.85, '
-                                '"suggested_followup": null}'
-                            )
-                        ]
-                    )
+                return ModelResponse(
+                    parts=[
+                        TextPart(
+                            '{"message": "Your average steps: 8,500/day", '
+                            '"data_sources_used": ["metrics"], '
+                            '"confidence": 0.85, '
+                            '"suggested_followup": null}'
+                        )
+                    ]
+                )
 
             # Mock conversation service
             mock_conversation_service = AsyncMock()
@@ -214,7 +219,7 @@ class TestChatToolCalling:
                     return ModelResponse(parts=[tool_call])
 
                 # Second call: request sleep after HR return
-                elif call_count == 1:
+                if call_count == 1:
                     call_count += 1
                     tool_call = ToolCallPart(
                         tool_name="garmin_metrics_tool",
@@ -224,17 +229,16 @@ class TestChatToolCalling:
                     return ModelResponse(parts=[tool_call])
 
                 # Third call: final response
-                else:
-                    return ModelResponse(
-                        parts=[
-                            TextPart(
-                                '{"message": "Recovery looks good: HR 65bpm, sleep 7.5hr/night", '
-                                '"data_sources_used": ["metrics"], '
-                                '"confidence": 0.88, '
-                                '"suggested_followup": null}'
-                            )
-                        ]
-                    )
+                return ModelResponse(
+                    parts=[
+                        TextPart(
+                            '{"message": "Recovery looks good: HR 65bpm, sleep 7.5hr/night", '
+                            '"data_sources_used": ["metrics"], '
+                            '"confidence": 0.88, '
+                            '"suggested_followup": null}'
+                        )
+                    ]
+                )
 
             # Mock conversation service
             mock_conversation_service = AsyncMock()
@@ -286,17 +290,16 @@ class TestChatToolCalling:
                     tool_call = ToolCallPart(tool_name="garmin_profile_tool", args={})
                     tool_calls_made.append("profile")
                     return ModelResponse(parts=[tool_call])
-                else:
-                    return ModelResponse(
-                        parts=[
-                            TextPart(
-                                '{"message": "Your profile: Test User (test@example.com)", '
-                                '"data_sources_used": ["profile"], '
-                                '"confidence": 1.0, '
-                                '"suggested_followup": null}'
-                            )
-                        ]
-                    )
+                return ModelResponse(
+                    parts=[
+                        TextPart(
+                            '{"message": "Your profile: Test User (test@example.com)", '
+                            '"data_sources_used": ["profile"], '
+                            '"confidence": 1.0, '
+                            '"suggested_followup": null}'
+                        )
+                    ]
+                )
 
             # Mock conversation service
             mock_conversation_service = AsyncMock()
