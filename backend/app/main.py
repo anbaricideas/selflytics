@@ -6,7 +6,8 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 
 from dotenv import load_dotenv
-from fastapi import FastAPI
+from fastapi import FastAPI, Request, status
+from fastapi.exceptions import HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import RedirectResponse
 
@@ -96,6 +97,27 @@ app.include_router(auth.router)
 app.include_router(chat.router)
 app.include_router(dashboard.router)
 app.include_router(garmin.router)
+
+
+# Exception handler for authentication errors
+@app.exception_handler(HTTPException)
+async def http_exception_handler(request: Request, exc: HTTPException):
+    """Handle HTTP exceptions.
+
+    For 401 Unauthorized errors on browser/HTMX requests, redirect to login page.
+    For API requests (JSON Accept header), return JSON error response.
+    """
+    if exc.status_code == status.HTTP_401_UNAUTHORIZED:
+        # Check if request is from browser/HTMX (not API)
+        accept_header = request.headers.get("accept", "")
+        hx_request = request.headers.get("HX-Request", "") == "true"
+
+        # Redirect browser requests to login page
+        if "text/html" in accept_header or hx_request:
+            return RedirectResponse(url="/login", status_code=303)
+
+    # For all other cases, raise the exception (FastAPI handles default error response)
+    raise exc
 
 
 @app.get("/")

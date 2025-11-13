@@ -69,5 +69,18 @@
     <footer role="contentinfo" class="mt-auto py-6 text-center text-sm text-gray-500">
         <p>&copy; 2025 Selflytics. All rights reserved.</p>
     </footer>
+
+    <!-- HTMX Configuration: Allow 400 error responses to swap content -->
+    <script>
+        // Configure HTMX to swap content on 400 error responses
+        // This allows form validation errors to be displayed inline
+        document.body.addEventListener('htmx:beforeSwap', function(evt) {
+            if(evt.detail.xhr.status === 400){
+                // Allow 400 responses to swap - used for form validation errors
+                evt.detail.shouldSwap = true;
+                evt.detail.isError = false;
+            }
+        });
+    </script>
 </body>
 </html>
