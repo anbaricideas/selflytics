@@ -127,25 +127,39 @@ Fix all 16 failing e2e tests and verify complete user journeys work end-to-end. 
 
 ---
 
-### ⏳ NEXT: Debug POST Submission Issue
+### ⏳ NEXT: Fix Remaining 11 E2E Test Failures
 
 **Current Problem**:
-- Test `test_new_user_links_garmin_account` fails at line 56
-- Form submits but success state `[data-testid="garmin-status-linked"]` doesn't appear
-- Need to verify if mock is intercepting POST or backend is processing it
+- 5 tests passing, 11 tests failing (out of 16 total)
+- Most failures: Timeout waiting for `[data-testid="input-garmin-username"]` (30s timeout)
+- Root cause hypothesis: Tests using `authenticated_user` fixture then setting up their own route handlers
+- Form not appearing when tests navigate to `/garmin/link` after authentication
 
-**Debug Steps**:
-1. Restart dev server: `kill <PID>; ./scripts/local-e2e-server.sh > /tmp/e2e-server.log 2>&1 &`
-2. Run test with headed mode: `uv --directory backend run pytest tests/e2e_playwright/test_garmin_linking_journey.py::TestGarminLinkingJourney::test_new_user_links_garmin_account -v --headed`
-3. Check server logs: `tail -f /tmp/e2e-server.log` (watch for POST /garmin/link)
-4. If POST appears in logs → mock not intercepting (check route pattern)
-5. If POST doesn't appear → mock intercepting but not returning correct HTML (check mock logic)
-6. Check browser console for HTMX errors during headed run
+**Failing Tests**:
+1. `test_valid_form_submits` - can't find Garmin username input
+2. `test_server_rejects_invalid_credentials` - can't find Garmin username input
+3. `test_keyboard_navigation` - can't focus on Garmin username input
+4. `test_user_can_retry_after_error` - can't find Garmin username input
+5. `test_linking_with_invalid_credentials` - can't find Garmin username input
+6. `test_unauthenticated_user_redirected` - not redirecting to /login properly
+7. `test_manual_sync_success` - can't find Garmin username input
+8. `test_link_form_uses_htmx_not_full_reload` - can't find Garmin username input
+9. `test_sync_button_htmx_request` - can't find Garmin username input
+10. `test_loading_state_during_submission` - can't find submit button
+11. `test_error_displayed_inline_no_reload` - can't find Garmin username input
 
-**Potential Fixes**:
-- Mock might need to check form data encoding (url-encoded vs multipart)
-- HTMX might not be triggering swap (check hx-swap directive)
-- Form might not have correct HTMX attributes
+**Debug Strategy**:
+1. Use debug-investigator to run one failing test in headed mode and observe:
+   - Does `/garmin/link` page load correctly?
+   - Is the user actually authenticated (check cookies/session)?
+   - Are route handlers conflicting (test's handler vs mock_garmin_api)?
+   - What HTML is actually rendered when test navigates to `/garmin/link`?
+
+2. Check if tests need to use `user_with_garmin_unlinked` fixture instead of `authenticated_user`
+
+3. Verify that navigation after authentication preserves session cookies
+
+4. Consider if tests should use `mock_garmin_api` fixture instead of setting up their own handlers
 
 ---
 
