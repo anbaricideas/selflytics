@@ -111,8 +111,7 @@ class GarminClient:
 
         # Save to Firestore (wrap synchronous operation)
         await asyncio.to_thread(
-            self.tokens_collection.document(self.user_id).set,
-            token.model_dump()
+            self.tokens_collection.document(self.user_id).set, token.model_dump()
         )
         logger.debug("Tokens saved successfully for user %s", self.user_id)
 
@@ -122,9 +121,7 @@ class GarminClient:
         Raises:
             Exception: If Firestore deletion fails
         """
-        await asyncio.to_thread(
-            self.tokens_collection.document(self.user_id).delete
-        )
+        await asyncio.to_thread(self.tokens_collection.document(self.user_id).delete)
         logger.debug("Tokens deleted for user %s", self.user_id)
 
     async def get_activities(
@@ -156,10 +153,7 @@ class GarminClient:
         while current_date <= end_date:
             try:
                 # garth API call (wrap synchronous operation)
-                day_activities = await asyncio.to_thread(
-                    garth.activities,
-                    current_date.isoformat()
-                )
+                day_activities = await asyncio.to_thread(garth.activities, current_date.isoformat())
 
                 # Parse and validate
                 for activity_data in day_activities:

@@ -134,7 +134,7 @@ class GarminDataCache:
                 "cached_at": cached_at,
                 "expires_at": expires_at,
                 "cache_key": cache_key,
-            }
+            },
         )
 
         logger.debug("Cache set: %s (expires in %s)", cache_key, ttl)

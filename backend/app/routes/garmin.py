@@ -72,7 +72,9 @@ async def sync_garmin_data(
         await service.sync_recent_data()
         return {"message": "Sync completed successfully"}
     except Exception as e:
-        logger.error("Sync failed for user %s: %s", current_user.user_id, redact_for_logging(str(e)))
+        logger.error(
+            "Sync failed for user %s: %s", current_user.user_id, redact_for_logging(str(e))
+        )
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Sync failed",
@@ -91,7 +93,9 @@ async def unlink_garmin_account(
         await service.unlink_account()
         return {"message": "Garmin account unlinked successfully"}
     except Exception as e:
-        logger.error("Failed to unlink for user %s: %s", current_user.user_id, redact_for_logging(str(e)))
+        logger.error(
+            "Failed to unlink for user %s: %s", current_user.user_id, redact_for_logging(str(e))
+        )
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to unlink Garmin account",
