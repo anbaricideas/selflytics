@@ -1,61 +1,11 @@
 """Integration tests for chat routes."""
 
-from datetime import UTC, datetime
-from unittest.mock import AsyncMock, MagicMock, Mock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from fastapi import status
-from fastapi.testclient import TestClient
 
-from app.auth.dependencies import get_user_service
-from app.main import app
 from app.models.chat import ChatResponse
-from app.models.user import User, UserProfile
-from app.services.user_service import UserService
-
-
-@pytest.fixture
-def test_user():
-    """Test user data."""
-    return {
-        "user_id": "test-user-123",
-        "email": "test@example.com",
-        "profile": {"display_name": "Test User"},
-    }
-
-
-@pytest.fixture
-def mock_user_service(test_user):
-    """Mock UserService for integration tests."""
-    mock_service = Mock(spec=UserService)
-
-    # Mock verify_token to return test user
-    mock_user = User(
-        user_id=test_user["user_id"],
-        email=test_user["email"],
-        hashed_password="hashed",  # noqa: S106 - Test fixture, not a real password
-        created_at=datetime.now(UTC),
-        updated_at=datetime.now(UTC),
-        profile=UserProfile(**test_user["profile"]),
-    )
-    mock_service.verify_token = AsyncMock(return_value=mock_user)
-
-    return mock_service
-
-
-@pytest.fixture
-def client(mock_user_service):
-    """Provide TestClient with mocked UserService."""
-    app.dependency_overrides[get_user_service] = lambda: mock_user_service
-    test_client = TestClient(app)
-    yield test_client
-    app.dependency_overrides.clear()
-
-
-@pytest.fixture
-def test_user_token():
-    """Mock JWT token for test user."""
-    return "mock-jwt-token"
 
 
 def test_send_message_new_conversation(client, test_user_token):
@@ -253,5 +203,10 @@ def test_delete_conversation(client, test_user_token):
 
     # For now, just verify it returns success
     # Full implementation would actually delete from Firestore
+    # Debug: print response if not OK
+    if response.status_code != status.HTTP_200_OK:
+        print(f"Response status: {response.status_code}")
+        print(f"Response body: {response.json()}")
+
     assert response.status_code == status.HTTP_200_OK
     assert "message" in response.json()

@@ -1,6 +1,6 @@
 """Tests for chat data models."""
 
-from datetime import datetime
+from datetime import UTC, datetime
 
 import pytest
 from pydantic import ValidationError
@@ -59,7 +59,7 @@ class TestMessage:
 
     def test_valid_message(self):
         """Test creating valid Message."""
-        now = datetime.utcnow()
+        now = datetime.now(UTC)
         message = Message(
             message_id="msg-123",
             conversation_id="conv-456",
@@ -83,7 +83,7 @@ class TestMessage:
             conversation_id="conv-456",
             role="assistant",
             content="You're doing great!",
-            timestamp=datetime.utcnow(),
+            timestamp=datetime.now(UTC),
         )
 
         assert message.metadata is None
@@ -95,7 +95,7 @@ class TestMessage:
                 conversation_id="conv-456",
                 role="user",
                 content="Test",
-                timestamp=datetime.utcnow(),
+                timestamp=datetime.now(UTC),
             )
 
 
