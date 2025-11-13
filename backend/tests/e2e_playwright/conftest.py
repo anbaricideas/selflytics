@@ -57,7 +57,7 @@ def test_user():
     test_id = uuid.uuid4().hex[:6]
     return {
         "email": f"e2e-garmin-{test_id}-{timestamp}@example.com",
-        "password": "TestPass123!",  # noqa: S105
+        "password": "TestPass123!",
         "display_name": f"E2E Test User {test_id}",
     }
 
@@ -85,7 +85,7 @@ def authenticated_user(page: Page, base_url: str, test_user: dict):
     # HTMX will receive the HX-Redirect header and navigate to /dashboard
     page.wait_for_url(f"{base_url}/dashboard", timeout=10000)
 
-    yield page
+    return page
 
     # TODO: Cleanup - delete test user from Firestore
     # Requires Firestore admin client fixture
@@ -122,7 +122,7 @@ def mock_garmin_api(page: Page):
             route.fulfill(
                 status=200,
                 content_type="text/html",
-                body='''
+                body="""
                 <div data-testid="garmin-status-linked" class="bg-green-50 border border-green-200 rounded-lg p-6">
                     <p class="text-green-800 font-semibold">Garmin account linked</p>
                     <button
@@ -134,7 +134,7 @@ def mock_garmin_api(page: Page):
                         Sync Now
                     </button>
                 </div>
-                ''',
+                """,
             )
         else:
             # Invalid credentials
@@ -150,11 +150,11 @@ def mock_garmin_api(page: Page):
         route.fulfill(
             status=200,
             content_type="text/html",
-            body='''
+            body="""
             <div data-testid="sync-success" class="text-green-600">
                 Sync completed successfully
             </div>
-            ''',
+            """,
         )
 
     # Intercept backend Garmin endpoints

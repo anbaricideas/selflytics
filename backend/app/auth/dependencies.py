@@ -2,7 +2,6 @@
 
 from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import OAuth2PasswordBearer
-from typing import Optional
 
 from app.auth.jwt import verify_token
 from app.models.user import UserResponse
@@ -26,7 +25,7 @@ def get_user_service() -> UserService:
 
 async def get_current_user(
     request: Request,
-    token: Optional[str] = Depends(oauth2_scheme),
+    token: str | None = Depends(oauth2_scheme),
     user_service: UserService = Depends(get_user_service),  # noqa: B008
 ) -> UserResponse:
     """Get current authenticated user from JWT token.
@@ -52,7 +51,11 @@ async def get_current_user(
         cookie_token = request.cookies.get("access_token")
         if cookie_token:
             # Remove "Bearer " prefix if present
-            token = cookie_token.replace("Bearer ", "") if cookie_token.startswith("Bearer ") else cookie_token
+            token = (
+                cookie_token.replace("Bearer ", "")
+                if cookie_token.startswith("Bearer ")
+                else cookie_token
+            )
 
     if not token:
         raise HTTPException(
