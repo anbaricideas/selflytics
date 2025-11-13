@@ -64,12 +64,10 @@ class ChatService:
                 message_history=message_history,
             )
 
-            response = result.data
+            response = result.output
 
             # Extract usage for cost tracking
-            usage_record = create_usage_record(
-                usage_dict=result.usage(), model="gpt-4.1-mini-2025-04-14"
-            )
+            usage_record = create_usage_record(result.usage(), model="gpt-4.1-mini-2025-04-14")
 
             # Save assistant message with metadata
             await self.conversation_service.add_message(

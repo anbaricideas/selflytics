@@ -33,20 +33,29 @@ def calculate_cost(
     )
 
 
-def create_usage_record(usage_dict: dict, model: str = "gpt-4.1-mini-2025-04-14") -> ChatUsage:
+def create_usage_record(usage_obj, model: str = "gpt-4.1-mini-2025-04-14") -> ChatUsage:
     """
-    Create ChatUsage record from API response.
+    Create ChatUsage record from Pydantic-AI RunUsage object or dict.
 
     Args:
-        usage_dict: Usage dictionary from OpenAI API response
+        usage_obj: RunUsage object from Pydantic-AI (or dict for backwards compat)
         model: Model name
 
     Returns:
         ChatUsage record with calculated cost
     """
-    input_tokens = usage_dict.get("prompt_tokens", 0)
-    output_tokens = usage_dict.get("completion_tokens", 0)
-    cached_tokens = usage_dict.get("prompt_tokens_details", {}).get("cached_tokens", 0)
+    # Handle both RunUsage objects and dict (backwards compatibility)
+    if hasattr(usage_obj, "input_tokens"):
+        # RunUsage object from Pydantic-AI
+        input_tokens = usage_obj.input_tokens or 0
+        output_tokens = usage_obj.output_tokens or 0
+        # Check for cached_input_tokens attribute
+        cached_tokens = getattr(usage_obj, "cached_input_tokens", 0) or 0
+    else:
+        # Legacy dict format
+        input_tokens = usage_obj.get("prompt_tokens", 0)
+        output_tokens = usage_obj.get("completion_tokens", 0)
+        cached_tokens = usage_obj.get("prompt_tokens_details", {}).get("cached_tokens", 0)
 
     cost = calculate_cost(
         input_tokens=input_tokens - cached_tokens,  # Non-cached input

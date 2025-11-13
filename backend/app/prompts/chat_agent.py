@@ -199,6 +199,6 @@ def create_chat_agent() -> Agent[str, ChatResponse]:
     return Agent(
         model="openai:gpt-4.1-mini-2025-04-14",
         system_prompt=CHAT_AGENT_SYSTEM_PROMPT,
-        result_type=ChatResponse,
+        output_type=ChatResponse,
         tools=[garmin_activity_tool, garmin_metrics_tool, garmin_profile_tool],
     )
