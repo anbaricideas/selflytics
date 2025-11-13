@@ -6,6 +6,8 @@ requires-python = ">=3.12"
 dependencies = [
     "garth>=0.5.19",
     "google-cloud-kms>=3.7.0",
+    "openai>=2.7.2",
+    "pydantic-ai>=1.14.0",
 ]
 
 [tool.uv.workspace]
