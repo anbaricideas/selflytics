@@ -1,7 +1,49 @@
 # Phase 4: E2E Test Fixes & User Journey Verification
 
 **Branch**: `feat/phase-4-e2e-fixes`
-**Status**: 🔄 IN PROGRESS (test quality review incorporated, pre-existing test fixes in progress)
+**Status**: 🔄 IN PROGRESS (manual testing started, 2 bugs found & fixed via TDD)
+
+---
+
+## Session 5 Summary (2025-11-14)
+
+**Completed**: 2 commits, ~2 hours
+**Progress**: Manual testing started, found 2 critical bugs, wrote tests (TDD), applied fixes
+
+### ✅ Completed Work
+
+1. **Manual Testing Runsheet Execution** (partial - Journey 1)
+   - Started guided manual testing from MANUAL_TESTING_RUNSHEET.md
+   - Successfully tested: registration → login → dashboard navigation
+   - **BUG #1 FOUND**: Dashboard links to /settings/garmin (404) instead of /garmin/link
+   - **BUG #2 FOUND**: Garmin link errors show only error div, not error + form (poor UX)
+
+2. **TDD: Wrote Failing Tests** (commit `72ff6a2`)
+   - Created test_manual_testing_bugs.py with 3 integration tests
+   - Tests demonstrate both bugs (currently FAIL as expected)
+   - Incorporated test-quality-reviewer feedback:
+     * Use Authorization header (matches project pattern)
+     * Extract test data constants
+     * Helper function for better error context
+     * Combined assertions for clarity
+
+3. **Applied Bug Fixes** (commit `541292d`)
+   - Bug #1: Changed dashboard.html line 68: /settings/garmin → /garmin/link
+   - Bug #2: Updated garmin.py error responses to include form (lines 53-144, 192-281)
+   - All 3 tests now PASS ✅
+   - Proper TDD workflow: test (fail) → implement → test (pass)
+
+### 📊 Test Results
+- Manual testing bug tests: **3/3 passing** (100%)
+- Bugs discovered via manual testing: **2 fixed**
+- TDD workflow validated: ✅
+
+### ⏸️ Paused Work
+- Manual testing runsheet incomplete (only Journey 1 partially tested)
+- Remaining journeys: Login/Chat, Error Handling, Accessibility, HTMX verification
+- Need to complete or defer remaining manual test journeys
+
+**Next Session**: Resume manual testing OR proceed with final validation and phase completion
 
 ---
 
