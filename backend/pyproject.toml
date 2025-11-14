@@ -120,7 +120,7 @@ python_files = "test_*.py"
 python_classes = "Test*"
 python_functions = "test_*"
 asyncio_mode = "auto"
-addopts = "-v --cov=app --cov-report=term-missing --cov-report=html"
+addopts = "-v --cov=app --cov-report=term-missing --cov-report=html -p no:logfire"
 markers = [
     "e2e: End-to-end tests that require external dependencies (gcloud, GCP, etc.)",
     "api: Tests that make calls to external APIs (OpenAI, Garmin, etc.)",
