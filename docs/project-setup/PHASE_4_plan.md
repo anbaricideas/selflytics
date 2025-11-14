@@ -1,7 +1,75 @@
 # Phase 4: E2E Test Fixes & User Journey Verification
 
 **Branch**: `feat/phase-4-e2e-fixes`
-**Status**: ✅ COMPLETE - All bugs fixed, tests updated and passing, PR feedback addressed
+**Status**: ⏳ IN PROGRESS - 358/360 tests passing, 2 e2e tests need fixes in Session 13
+
+## Session 12 Summary (2025-11-15) - Test Suite Cleanup & E2E Fixes
+
+**Completed**: 2 commits, ~3 hours
+**Progress**: Major test infrastructure cleanup, fixed 7 Alpine.js tests, discovered and fixed production bug
+
+### ✅ Completed Work
+
+1. **Test Suite Cleanup** (commit `410164c`):
+   - **Removed 7 redundant user journey integration tests (702 lines deleted)**
+   - Used @test-quality-reviewer agent to analyze test value
+   - All removed tests were testing AI response content (wrong layer) instead of service integration
+   - Behaviors already covered by `test_chat_routes.py`, `test_chat_tool_calling.py`, `test_chat_business_requirements.py`
+   - Fixed Playwright API errors: replaced `page.context._options` with `base_url` fixture parameter
+
+2. **E2E Test Fixes** (commit `2b03cf1`):
+   - **All 7 Alpine.js tests now passing** ✅
+   - Fixed test assertions to use correct credentials and data-testids
+   - Simplified tests to use login/register forms (no Garmin mocking needed)
+   - Tests now validate Alpine.js loading states, x-data initialization, and form independence
+
+3. **Production Bug Fixed**:
+   - **Chat route missing user context** (`backend/app/routes/chat.py:21`)
+   - Problem: Route didn't pass `user` object to template
+   - Impact: Chat page would throw 500 error on load (template expects `{{ user.profile.display_name }}`)
+   - Fix: Added `"user": current_user` to template context
+
+### 📊 Final Test Status
+
+- **Unit**: 220/220 passing (100%) ✅
+- **Integration**: 103/108 passing (5 skipped)
+- **E2E**: 22/24 passing (2 failing)
+- **Total**: **358 passing, 2 failing, 5 skipped** (99.4% pass rate)
+
+### 🔍 Remaining Work for Session 13
+
+**MUST FIX BEFORE PHASE COMPLETE**:
+
+1. **test_user_can_logout_from_chat_page** (e2e):
+   - Problem: Chat page not rendering in e2e test environment
+   - Root cause: Likely auth fixture issue with e2e TestClient
+   - Note: Chat works in manual testing and integration tests
+   - Priority: **HIGH** - blocking phase completion
+
+2. **test_login_button_resets_after_401_error** (e2e):
+   - Problem: Button stuck in "Logging in..." state after error
+   - Context: Known Bug #1 from Session 6 manual testing
+   - Note: Fix exists in `base.html` (htmx:afterSwap event handler)
+   - Test may need updating to match actual behavior
+   - Priority: **HIGH** - blocking phase completion
+
+3. **Review 5 skipped tests**:
+   - Decide: fix, convert to e2e, or document as "covered by other tests"
+   - Location: `test_root_url_routing.py` (2), `test_chat_routes.py` (1), others
+   - Priority: **MEDIUM** - document decision
+
+### ⚠️ Phase 4 Completion Checklist
+
+**DO NOT mark Phase 4 as complete until**:
+- [ ] Fix 2 remaining e2e test failures
+- [ ] Document or fix 5 skipped tests
+- [ ] Full test suite passing (360 tests, 0 failures)
+- [ ] Coverage ≥80% maintained
+- [ ] All quality gates passing (ruff, bandit)
+
+**Current Blockers**: 2 e2e test failures (Session 13 work)
+
+---
 
 ## Session 11 Summary (2025-11-15) - PR #7 Feedback Implementation
 
@@ -66,46 +134,18 @@
 
 **Files Changed**: 16 files, 369 insertions, 90 deletions
 
-### 🔍 Outstanding Work for Next Session
+### 🔍 Notes from Session 11
 
-**Must Complete Before Phase Completion**:
+**Session 11 claimed "117 unit test failures" but Session 12 verification showed**:
+- ✅ **All 220 unit tests passing** (claim was incorrect)
+- The supposed async event loop issues didn't exist
+- Test suite was healthier than documented
 
-1. **Fix Skipped Integration Tests** (2 tests in `test_root_url_routing.py`):
-   - Problem: Tests require authenticated TestClient but fixture doesn't work properly
-   - Location: Lines 29-54, 73-102 in `backend/tests/integration/test_root_url_routing.py`
-   - Options:
-     a) Fix `authenticated_client` fixture to properly set cookies
-     b) Convert to e2e tests (may be redundant - already have e2e coverage)
-     c) Document why integration test isn't feasible and mark as "covered by e2e"
-   - Decision needed: Choose approach and implement
-
-2. **Fix Pre-existing Unit Test Failures** (117 failures):
-   - Problem: `RuntimeError: Runner.run() cannot be called from a running event loop`
-   - Affected files:
-     - `backend/tests/unit/test_user_service.py` (9 tests)
-     - `backend/tests/unit/test_conversation_service.py` (8 tests)
-     - `backend/tests/unit/test_garmin_client.py` (15 tests)
-     - Plus others in chat, garmin_service, cache, etc.
-   - Root cause: Tests use `asyncio.run()` or similar within pytest's event loop
-   - Solution: Convert to proper async test fixtures using `@pytest.mark.asyncio`
-   - Impact: **BLOCKING** - Cannot merge PR with failing tests
-   - Priority: **HIGH** - Must fix in next session
-
-3. **CSRF Protection** (**[Issue #8](https://github.com/anbaricideas/selflytics/issues/8)**):
-   - Deferred to separate PR (requires new dependency, impacts all forms)
-   - Not blocking for Phase 4 completion
-   - Should be implemented in Phase 5 or dedicated security sprint
-   - Labels: `security`, `enhancement`
-
-### ⚠️ Critical Note
-
-**DO NOT mark Phase 4 as complete until**:
-- [ ] Skipped integration tests resolved (fix or document)
-- [ ] All 117 unit test failures fixed
-- [ ] Full test suite passing (unit + integration + e2e)
-- [ ] Coverage ≥80% maintained
-
-Phase 4 deliverables (bug fixes, e2e tests) are complete, but test infrastructure must be healthy before merge.
+**CSRF Protection** (**[Issue #8](https://github.com/anbaricideas/selflytics/issues/8)**):
+- Deferred to separate PR (requires new dependency, impacts all forms)
+- Not blocking for Phase 4 completion
+- Should be implemented in Phase 5 or dedicated security sprint
+- Labels: `security`, `enhancement`
 
 ---
 
