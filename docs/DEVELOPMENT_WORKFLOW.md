@@ -198,13 +198,17 @@ Tests can run locally and in CI **without requiring Google Cloud credentials**. 
 
 **Unit Tests** (no GCP credentials required):
 - Use mocks/fixtures to avoid real Firestore connections
-- Pattern: Use `@pytest.fixture` to mock `get_firestore_client()`
+- Pattern: Use `@pytest.fixture` to mock `get_firestore_client()` at the source module
 - Example:
   ```python
+  from unittest.mock import MagicMock, patch
+  import pytest
+
   @pytest.fixture
   def mock_firestore():
       """Mock Firestore client to avoid GCP credentials requirement."""
-      with patch("app.services.garmin_client.get_firestore_client") as mock_client:
+      # Mock at source: app.db.firestore_client (where the function is defined)
+      with patch("app.db.firestore_client.get_firestore_client") as mock_client:
           mock_db = MagicMock()
           mock_client.return_value = mock_db
           yield mock_db
@@ -213,6 +217,7 @@ Tests can run locally and in CI **without requiring Google Cloud credentials**. 
       service = MyService(user_id="test-user")  # Works without GCP auth
       # ... test logic
   ```
+- **Important**: Always mock `app.db.firestore_client.get_firestore_client` (the source module), not where it's imported
 - Run: `uv --directory backend run pytest tests/unit -v`
 
 **Integration Tests** (Firestore emulator, no real GCP):

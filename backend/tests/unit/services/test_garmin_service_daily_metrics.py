@@ -21,7 +21,7 @@ from app.services.garmin_service import GarminService
 @pytest.fixture
 def mock_firestore():
     """Mock Firestore client to avoid GCP credentials requirement."""
-    with patch("app.services.garmin_client.get_firestore_client") as mock_client:
+    with patch("app.db.firestore_client.get_firestore_client") as mock_client:
         mock_db = MagicMock()
         mock_client.return_value = mock_db
         yield mock_db
