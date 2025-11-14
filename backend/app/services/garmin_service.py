@@ -4,6 +4,8 @@ import logging
 from datetime import date, timedelta
 from typing import Any
 
+import garth
+
 from app.services.garmin_client import GarminClient
 from app.services.user_service import UserService
 from app.utils.cache import GarminDataCache
@@ -178,3 +180,21 @@ class GarminService:
             logger.warning("Cache set error (non-critical): %s", str(e))
 
         return metrics_dict
+
+    async def get_user_profile(self) -> dict[str, Any]:
+        """
+        Get user profile information from Garmin.
+
+        Returns:
+            Dictionary with user profile data including display_name
+
+        Note:
+            Returns "User" as default display_name if not available in garth.client.profile
+        """
+        # Load tokens to ensure garth is authenticated
+        await self.client.load_tokens()
+
+        # Access garth.client.profile for display name
+        display_name: str = garth.client.profile.get("displayName", "User")
+
+        return {"display_name": display_name}

@@ -189,7 +189,7 @@ async def garmin_profile_tool(ctx: RunContext[str]) -> dict[str, Any]:
     user_id = ctx.deps
     service = GarminService(user_id)
 
-    profile = await service.get_user_profile()  # type: ignore[attr-defined]
+    profile = await service.get_user_profile()
 
     return {
         "display_name": profile.get("display_name", "User"),
