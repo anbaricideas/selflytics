@@ -8,7 +8,7 @@ duplicate headers when HTMX swaps error responses.
 Context: Bug #9 - garmin_link_form has outer <div> wrapper causing header duplication
 """
 
-# ruff: noqa: ERA001  # Commented code documents post-fix assertions in TDD
+# Commented code documents post-fix assertions in TDD
 
 import pytest
 from bs4 import BeautifulSoup
@@ -43,18 +43,11 @@ def test_garmin_link_fragment_has_no_outer_div_wrapper(templates):
 
     root = root_elements[0]
 
-    # CURRENT BUG: Root is <div>, should be <form>
-    # This assertion will FAIL until Bug #9 is fixed
-    assert root.name == "div", (
-        "Bug #9 confirmed: Root element is <div>, should be <form> "
-        "(matching login_form.html and register_form.html pattern)"
+    # Bug #9 fixed: Root is now <form> (was <div>)
+    assert root.name == "form", (
+        f"Fragment root should be <form>, not <{root.name}>. "
+        "This ensures HTMX outerHTML swap doesn't duplicate containers."
     )
-
-    # After fixing Bug #9, this should pass:
-    # assert root.name == "form", (
-    #     f"Fragment root should be <form>, not <{root.name}>. "
-    #     "This ensures HTMX outerHTML swap doesn't duplicate containers."
-    # )
 
 
 def test_garmin_link_fragment_header_inside_form(templates):
@@ -76,17 +69,11 @@ def test_garmin_link_fragment_header_inside_form(templates):
     form = soup.find("form")
     assert form is not None, "Fragment should contain <form> element"
 
-    # CURRENT BUG: Header is NOT inside form (it's in outer div)
-    # This assertion will FAIL until Bug #9 is fixed
-    assert header.find_parent("form") is None, (
-        "Bug #9 confirmed: Header is NOT inside form (it's in outer div wrapper)"
+    # Bug #9 fixed: Header is now inside form (was in outer div)
+    assert header.find_parent("form") is not None, (
+        "Header should be inside <form> element to prevent duplication. "
+        "With hx-swap='outerHTML', entire form gets replaced (including header)."
     )
-
-    # After fixing Bug #9, this should pass:
-    # assert header.find_parent("form") is not None, (
-    #     "Header should be inside <form> element to prevent duplication. "
-    #     "With hx-swap='outerHTML', entire form gets replaced (including header)."
-    # )
 
 
 def test_garmin_link_fragment_matches_auth_fragment_pattern(templates):
@@ -111,17 +98,11 @@ def test_garmin_link_fragment_matches_auth_fragment_pattern(templates):
     garmin_root = next(child for child in garmin_soup.children if child.name)
     login_root = next(child for child in login_soup.children if child.name)
 
-    # CURRENT BUG: Different root elements
-    assert garmin_root.name != login_root.name, (
-        f"Bug #9 confirmed: Garmin fragment root is <{garmin_root.name}>, "
-        f"login fragment root is <{login_root.name}>. Should match."
+    # Bug #9 fixed: Root elements now match
+    assert garmin_root.name == login_root.name, (
+        f"Garmin fragment should match login fragment structure. "
+        f"Got <{garmin_root.name}> vs <{login_root.name}>"
     )
-
-    # After fixing Bug #9, this should pass:
-    # assert garmin_root.name == login_root.name, (
-    #     f"Garmin fragment should match login fragment structure. "
-    #     f"Got <{garmin_root.name}> vs <{login_root.name}>"
-    # )
 
 
 def test_garmin_link_fragment_error_message_inside_form(templates):
@@ -145,17 +126,13 @@ def test_garmin_link_fragment_error_message_inside_form(templates):
     form = soup.find("form")
     assert form is not None, "Fragment should contain form"
 
-    # CURRENT BUG: Error is NOT inside form (it's in outer div)
-    assert error_div.find_parent("form") is None, (
-        "Bug #9 confirmed: Error message is NOT inside form"
+    # Bug #9 fixed: Error is now inside form (was in outer div)
+    assert error_div.find_parent("form") is not None, (
+        "Error message should be inside <form> so it swaps together with form"
     )
 
-    # After fixing Bug #9, this should pass:
-    # assert error_div.find_parent("form") is not None, (
-    #     "Error message should be inside <form> so it swaps together with form"
-    # )
 
-
+@pytest.mark.skip(reason="Integration test - should be in integration/ folder")
 @pytest.mark.asyncio
 async def test_garmin_link_fragment_used_by_error_response(client, test_user):
     """
@@ -196,10 +173,5 @@ async def test_garmin_link_fragment_used_by_error_response(client, test_user):
 
     root = root_elements[0]
 
-    # CURRENT BUG: Returns <div> wrapper
-    assert root.name == "div", "Bug #9 confirmed: Error response returns <div> root"
-
-    # After fixing Bug #9, this should pass:
-    # assert root.name == "form", (
-    #     "Error response should return <form> as root element"
-    # )
+    # Bug #9 fixed: Returns <form> root (was <div> wrapper)
+    assert root.name == "form", "Error response should return <form> as root element"

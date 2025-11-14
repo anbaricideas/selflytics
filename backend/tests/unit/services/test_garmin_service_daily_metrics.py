@@ -7,7 +7,7 @@ ensuring it follows the same pattern as get_activities_cached.
 Context: Bug #8 - get_daily_metrics_cached method missing from GarminService
 """
 
-# ruff: noqa: ERA001  # Commented code documents post-fix assertions in TDD
+# Commented code documents post-fix assertions in TDD
 
 from datetime import date
 from unittest.mock import AsyncMock
@@ -24,24 +24,20 @@ async def test_get_daily_metrics_cached_method_exists():
     GarminService should have get_daily_metrics_cached method.
 
     Expected: Method exists and is callable
-    Context: Bug #8 - method was completely missing
+    Context: Bug #8 - method was completely missing (now fixed)
     """
     service = GarminService(user_id="test-user")
     target_date = date.today()
 
-    # CURRENT BUG: Calling the method raises AttributeError
-    with pytest.raises(AttributeError) as exc_info:
-        await service.get_daily_metrics_cached(target_date)
+    # Mock dependencies to prevent actual API calls
+    service.cache = AsyncMock()
+    service.cache.get.return_value = {"steps": 10000}
+    service.client = AsyncMock()
 
-    assert "'GarminService' object has no attribute 'get_daily_metrics_cached'" in str(
-        exc_info.value
-    ), f"Expected AttributeError for missing method, got: {exc_info.value}"
-
-    # Once implemented, this should pass:
-    # assert hasattr(service, "get_daily_metrics_cached")
-    # assert callable(service.get_daily_metrics_cached)
-    # result = await service.get_daily_metrics_cached(target_date)
-    # assert isinstance(result, dict)
+    assert hasattr(service, "get_daily_metrics_cached")
+    assert callable(service.get_daily_metrics_cached)
+    result = await service.get_daily_metrics_cached(target_date)
+    assert isinstance(result, dict)
 
 
 @pytest.mark.asyncio
@@ -67,18 +63,13 @@ async def test_get_daily_metrics_cached_returns_cached_data():
     service.cache = AsyncMock()
     service.cache.get.return_value = cached_metrics
 
-    # This will fail until method is implemented
-    with pytest.raises(AttributeError):
-        await service.get_daily_metrics_cached(target_date)
+    result = await service.get_daily_metrics_cached(target_date)
 
-    # Once implemented, these assertions should pass:
-    # assert result == cached_metrics
-    # assert not hasattr(result, 'model_dump'), "Should return dict, not Pydantic model"
-    # service.cache.get.assert_called_once_with(
-    #     user_id="test-user-123",
-    #     data_type="daily_metrics",
-    #     date_range=str(target_date)
-    # )
+    assert result == cached_metrics
+    assert not hasattr(result, "model_dump"), "Should return dict, not Pydantic model"
+    service.cache.get.assert_called_once_with(
+        user_id="test-user-123", data_type="daily_metrics", date_range=str(target_date)
+    )
 
 
 @pytest.mark.asyncio
@@ -107,15 +98,12 @@ async def test_get_daily_metrics_cached_fetches_from_api_on_cache_miss():
     service.client = AsyncMock()
     service.client.get_daily_metrics.return_value = mock_metrics
 
-    # This will fail until method is implemented
-    with pytest.raises(AttributeError):
-        await service.get_daily_metrics_cached(target_date)
+    result = await service.get_daily_metrics_cached(target_date)
 
-    # Once implemented, these assertions should pass:
-    # assert result["steps"] == 15000
-    # assert result["resting_heart_rate"] == 62
-    # assert isinstance(result, dict), "Should return dict, not Pydantic model"
-    # service.client.get_daily_metrics.assert_called_once_with(target_date)
+    assert result["steps"] == 15000
+    assert result["resting_heart_rate"] == 62
+    assert isinstance(result, dict), "Should return dict, not Pydantic model"
+    service.client.get_daily_metrics.assert_called_once_with(target_date)
 
 
 @pytest.mark.asyncio
@@ -144,17 +132,14 @@ async def test_get_daily_metrics_cached_caches_api_results():
     service.client = AsyncMock()
     service.client.get_daily_metrics.return_value = mock_metrics
 
-    # This will fail until method is implemented
-    with pytest.raises(AttributeError):
-        await service.get_daily_metrics_cached(target_date)
+    await service.get_daily_metrics_cached(target_date)
 
-    # Once implemented, these assertions should pass:
-    # service.cache.set.assert_called_once()
-    # call_args = service.cache.set.call_args
-    # assert call_args.kwargs["user_id"] == "test-user-123"
-    # assert call_args.kwargs["data_type"] == "daily_metrics"
-    # assert call_args.kwargs["date_range"] == str(target_date)
-    # assert "steps" in call_args.kwargs["data"]
+    service.cache.set.assert_called_once()
+    call_args = service.cache.set.call_args
+    assert call_args.kwargs["user_id"] == "test-user-123"
+    assert call_args.kwargs["data_type"] == "daily_metrics"
+    assert call_args.kwargs["date_range"] == str(target_date)
+    assert "steps" in call_args.kwargs["data"]
 
 
 @pytest.mark.asyncio
@@ -183,13 +168,10 @@ async def test_get_daily_metrics_cached_handles_cache_errors_gracefully():
     service.client = AsyncMock()
     service.client.get_daily_metrics.return_value = mock_metrics
 
-    # This will fail until method is implemented
-    with pytest.raises(AttributeError):
-        await service.get_daily_metrics_cached(target_date)
+    result = await service.get_daily_metrics_cached(target_date)
 
-    # Once implemented, these assertions should pass:
-    # assert result["steps"] == 10000  # Should still return API data
-    # service.client.get_daily_metrics.assert_called_once()
+    assert result["steps"] == 10000  # Should still return API data
+    service.client.get_daily_metrics.assert_called_once()
 
 
 @pytest.mark.asyncio
@@ -216,14 +198,11 @@ async def test_get_daily_metrics_cached_returns_dict_format():
     service.client = AsyncMock()
     service.client.get_daily_metrics.return_value = mock_metrics
 
-    # This will fail until method is implemented
-    with pytest.raises(AttributeError):
-        await service.get_daily_metrics_cached(target_date)
+    result = await service.get_daily_metrics_cached(target_date)
 
-    # Once implemented, these assertions should pass:
-    # assert isinstance(result, dict)
-    # assert "steps" in result
-    # assert "resting_heart_rate" in result
-    # assert "sleep_seconds" in result
-    # assert "avg_stress_level" in result
-    # assert result["steps"] == 12500
+    assert isinstance(result, dict)
+    assert "steps" in result
+    assert "resting_heart_rate" in result
+    assert "sleep_seconds" in result
+    assert "avg_stress_level" in result
+    assert result["steps"] == 12500

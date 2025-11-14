@@ -5,7 +5,6 @@ These tests verify that AI agent tools can successfully retrieve user metrics
 when answering questions like "How am I doing?"
 """
 
-from datetime import date
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -24,26 +23,40 @@ async def test_ai_agent_can_retrieve_daily_metrics():
     to answer questions like "How am I doing?" or "What were my steps yesterday?"
 
     Expected: garmin_metrics_tool should call an existing cached method on GarminService
-    Context: Bug #8 - get_daily_metrics_cached() was missing, causing 500 errors
+    Context: Bug #8 - get_daily_metrics_cached() was missing (now fixed)
     """
     user_id = "test-user-123"
 
-    # Create a mock RunContext (simulates Pydantic-AI context)
-    mock_ctx = MagicMock(spec=RunContext)
-    mock_ctx.deps = user_id
+    # Mock the GarminService.get_daily_metrics_cached method
+    mock_metrics = {
+        "steps": 10000,
+        "resting_heart_rate": 60,
+        "sleep_seconds": 28800,
+        "avg_stress_level": 30,
+    }
 
-    # This call should succeed (requires get_daily_metrics_cached to exist)
-    with pytest.raises(AttributeError) as exc_info:
-        await garmin_metrics_tool(
+    with patch("app.prompts.chat_agent.GarminService") as mock_service_class:
+        # Create mock service instance
+        mock_service = AsyncMock()
+        mock_service.get_daily_metrics_cached.return_value = mock_metrics
+        mock_service_class.return_value = mock_service
+
+        # Create a mock RunContext (simulates Pydantic-AI context)
+        mock_ctx = MagicMock(spec=RunContext)
+        mock_ctx.deps = user_id
+
+        # This call should succeed now that method is implemented
+        result = await garmin_metrics_tool(
             ctx=mock_ctx,
             metric_type="steps",
             days=7,
         )
 
-    # Verify the missing method is identified
-    assert "get_daily_metrics_cached" in str(exc_info.value), (
-        f"Expected AttributeError mentioning 'get_daily_metrics_cached', got: {exc_info.value}"
-    )
+        # Verify result structure
+        assert "metric_type" in result
+        assert "days" in result
+        assert "data" in result
+        assert mock_service.get_daily_metrics_cached.called
 
 
 @pytest.mark.asyncio
@@ -52,22 +65,15 @@ async def test_garmin_service_has_daily_metrics_cache_method():
     GarminService should have a method to retrieve cached daily metrics.
 
     Expected: get_daily_metrics_cached() method exists on GarminService
-    Context: Bug #8 - method was missing, causing AI agent queries to fail
+    Context: Bug #8 - method was missing (now fixed)
     """
     service = GarminService(user_id="test-user")
 
     # Method should exist on GarminService
-    assert not hasattr(service, "get_daily_metrics_cached"), (
-        "GarminService unexpectedly has get_daily_metrics_cached - bug may be fixed"
+    assert hasattr(service, "get_daily_metrics_cached"), (
+        "GarminService should have get_daily_metrics_cached method"
     )
-
-    # Calling non-existent method should raise AttributeError
-    with pytest.raises(AttributeError) as exc_info:
-        await service.get_daily_metrics_cached(date.today())
-
-    assert "'GarminService' object has no attribute 'get_daily_metrics_cached'" in str(
-        exc_info.value
-    )
+    assert callable(service.get_daily_metrics_cached), "get_daily_metrics_cached should be callable"
 
 
 @pytest.mark.asyncio
@@ -87,13 +93,12 @@ async def test_garmin_service_has_activities_cache_method_for_comparison():
 
 
 @pytest.mark.asyncio
-@pytest.mark.skip(reason="Requires implementation of get_daily_metrics_cached method")
 async def test_ai_agent_retrieves_daily_metrics_successfully_after_fix():
     """
     AI agent should successfully retrieve daily metrics after method is implemented.
 
-    This test is SKIPPED until get_daily_metrics_cached is implemented.
-    After implementation, this test should pass and validate the fix.
+    Expected: Tool returns structured data with metrics
+    Context: Bug #8 fixed - get_daily_metrics_cached now implemented
     """
     user_id = "test-user-123"
 

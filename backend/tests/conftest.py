@@ -25,6 +25,7 @@ def test_user():
     return {
         "user_id": "test-user-123",
         "email": "test@example.com",
+        "password": "TestPassword123!",  # Used by integration tests that do actual login
         "profile": {"display_name": "Test User"},
         "garmin_linked": False,
     }
@@ -33,19 +34,29 @@ def test_user():
 @pytest.fixture
 def mock_user_service(test_user):
     """Mock UserService for integration tests."""
+    from app.auth.password import hash_password
+
     mock_service = Mock(spec=UserService)
 
     # Mock get_user_by_id to return test user
     mock_user = User(
         user_id=test_user["user_id"],
         email=test_user["email"],
-        hashed_password="hashed",  # noqa: S106 - Test fixture, not a real password
+        hashed_password=hash_password(test_user["password"]),
         created_at=datetime.now(UTC),
         updated_at=datetime.now(UTC),
         profile=UserProfile(**test_user["profile"]),
         garmin_linked=test_user["garmin_linked"],
     )
     mock_service.get_user_by_id = AsyncMock(return_value=mock_user)
+
+    # Mock authenticate method for login tests
+    async def mock_authenticate(email: str, password: str):
+        if email == test_user["email"] and password == test_user["password"]:
+            return mock_user
+        return None
+
+    mock_service.authenticate = mock_authenticate
 
     return mock_service
 
@@ -124,3 +135,18 @@ def mock_user_service_override():
             app.dependency_overrides.clear()
 
     return _override
+
+
+@pytest.fixture
+def templates():
+    """Provide Jinja2 template environment for unit testing templates directly."""
+    from pathlib import Path
+
+    from jinja2 import Environment, FileSystemLoader, select_autoescape
+
+    # Get the templates directory from the app
+    template_dir = Path(__file__).parent.parent / "app" / "templates"
+    return Environment(
+        loader=FileSystemLoader(str(template_dir)),
+        autoescape=select_autoescape(["html", "xml"]),  # Security: Enable autoescape for HTML
+    )

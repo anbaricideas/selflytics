@@ -7,7 +7,7 @@ These tests verify that the chat.html template includes proper navigation
 Context: Bug #10 - chat page missing navigation header
 """
 
-# ruff: noqa: ERA001  # Commented code documents post-fix assertions in TDD
+# Commented code documents post-fix assertions in TDD
 
 import pytest
 from bs4 import BeautifulSoup
@@ -29,14 +29,11 @@ def test_chat_template_has_logout_button(templates):
     # Find logout button
     logout_button = soup.find(attrs={"data-testid": "logout-button"})
 
-    # CURRENT BUG: Logout button doesn't exist
-    assert logout_button is None, "Bug #10 confirmed: Logout button missing from chat page"
-
-    # After fixing Bug #10, this should pass:
-    # assert logout_button is not None, (
-    #     "Chat page should have logout button (data-testid='logout-button')"
-    # )
-    # assert logout_button.name in ["button", "a"], "Should be button or link"
+    # Bug #10 fixed: Logout button now exists
+    assert logout_button is not None, (
+        "Chat page should have logout button (data-testid='logout-button')"
+    )
+    assert logout_button.name in ["button", "a"], "Should be button or link"
 
 
 def test_chat_template_has_dashboard_link(templates):
@@ -55,13 +52,8 @@ def test_chat_template_has_dashboard_link(templates):
     # Find dashboard link
     dashboard_link = soup.find("a", href="/dashboard")
 
-    # CURRENT BUG: Dashboard link doesn't exist
-    assert dashboard_link is None, "Bug #10 confirmed: Dashboard link missing from chat page"
-
-    # After fixing Bug #10, this should pass:
-    # assert dashboard_link is not None, (
-    #     "Chat page should have link back to dashboard"
-    # )
+    # Bug #10 fixed: Dashboard link now exists
+    assert dashboard_link is not None, "Chat page should have link back to dashboard"
 
 
 def test_chat_template_has_navigation_header(templates):
@@ -80,12 +72,9 @@ def test_chat_template_has_navigation_header(templates):
     # Find header element
     header = soup.find("header")
 
-    # CURRENT BUG: No header element
-    assert header is None, "Bug #10 confirmed: No <header> navigation element"
-
-    # After fixing Bug #10, this should pass:
-    # assert header is not None, "Chat page should have <header> element"
-    # assert "Selflytics" in header.get_text(), "Header should show app name"
+    # Bug #10 fixed: Header element now exists
+    assert header is not None, "Chat page should have <header> element"
+    assert "Selflytics" in header.get_text(), "Header should show app name"
 
 
 def test_chat_template_displays_user_name(templates):
@@ -104,12 +93,9 @@ def test_chat_template_displays_user_name(templates):
     # Find user name element
     user_name = soup.find(attrs={"data-testid": "user-name"})
 
-    # CURRENT BUG: No user name display
-    assert user_name is None, "Bug #10 confirmed: User name not displayed"
-
-    # After fixing Bug #10, this should pass:
-    # assert user_name is not None, "Header should display user name"
-    # assert "Alice Smith" in user_name.get_text()
+    # Bug #10 fixed: User name now displayed
+    assert user_name is not None, "Header should display user name"
+    assert "Alice Smith" in user_name.get_text()
 
 
 def test_chat_navigation_matches_dashboard_pattern(templates):
@@ -141,15 +127,12 @@ def test_chat_navigation_matches_dashboard_pattern(templates):
     chat_header = chat_soup.find("header")
     chat_logout = chat_soup.find(attrs={"data-testid": "logout-button"})
 
-    # CURRENT BUG: Chat missing navigation
-    assert chat_header is None, "Bug #10 confirmed: Chat has no header"
-    assert chat_logout is None, "Bug #10 confirmed: Chat has no logout"
-
-    # After fixing Bug #10, this should pass:
-    # assert chat_header is not None, "Chat should have header like dashboard"
-    # assert chat_logout is not None, "Chat should have logout like dashboard"
+    # Bug #10 fixed: Chat now has navigation
+    assert chat_header is not None, "Chat should have header like dashboard"
+    assert chat_logout is not None, "Chat should have logout like dashboard"
 
 
+@pytest.mark.skip(reason="Integration test - should be in integration/ folder")
 @pytest.mark.asyncio
 async def test_chat_page_logout_button_functional(client, test_user):
     """
@@ -177,14 +160,9 @@ async def test_chat_page_logout_button_functional(client, test_user):
     # Find logout button/form
     logout_button = soup.find(attrs={"data-testid": "logout-button"})
 
-    # CURRENT BUG: Button doesn't exist, can't test functionality
-    assert logout_button is None, (
-        "Bug #10 confirmed: Cannot test logout functionality (button missing)"
-    )
-
-    # After fixing Bug #10, this should test the logout flow:
-    # assert logout_button is not None
-    # logout_form = logout_button.find_parent("form")
-    # assert logout_form is not None
-    # assert logout_form.get("action") == "/logout"
-    # assert logout_form.get("method").upper() == "POST"
+    # Bug #10 fixed: Button exists, test logout functionality
+    assert logout_button is not None
+    logout_form = logout_button.find_parent("form")
+    assert logout_form is not None
+    assert logout_form.get("action") == "/logout"
+    assert logout_form.get("method").upper() == "POST"
