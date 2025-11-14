@@ -10,8 +10,15 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 BACKEND_DIR="$PROJECT_ROOT/backend"
 
-# Load environment variables from backend/.env if it exists
-if [ -f "$BACKEND_DIR/.env" ]; then
+# Load environment variables from backend/.env.local or backend/.env if it exists
+# Prefer .env.local for local development (used by e2e tests)
+if [ -f "$BACKEND_DIR/.env.local" ]; then
+    echo "Loading environment from backend/.env.local..."
+    set -a  # automatically export all variables
+    # shellcheck disable=SC1091
+    source "$BACKEND_DIR/.env.local"
+    set +a
+elif [ -f "$BACKEND_DIR/.env" ]; then
     echo "Loading environment from backend/.env..."
     set -a  # automatically export all variables
     # shellcheck disable=SC1091

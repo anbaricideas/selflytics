@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pytest
 from dotenv import load_dotenv
-from playwright.sync_api import Page
+from playwright.async_api import Page
 
 
 @pytest.fixture(scope="session")
@@ -24,10 +24,14 @@ def base_url():
     if test_url:
         return test_url.rstrip("/")
 
-    # Load from .env for local testing
+    # Load from .env.local (preferred) or .env for local testing
     backend_dir = Path(__file__).parent.parent.parent
+    env_local_file = backend_dir / ".env.local"
     env_file = backend_dir / ".env"
-    if env_file.exists():
+
+    if env_local_file.exists():
+        load_dotenv(env_local_file)
+    elif env_file.exists():
         load_dotenv(env_file)
 
     # Check for explicit BASE_URL first
@@ -63,27 +67,27 @@ def test_user():
 
 
 @pytest.fixture
-def authenticated_user(page: Page, base_url: str, test_user: dict):
+async def authenticated_user(page: Page, base_url: str, test_user: dict):
     """Register and login a test user.
 
     Returns:
         Page object with authenticated session
     """
     # Navigate to registration
-    page.goto(base_url)
-    page.click('[data-testid="register-link"]')
-    page.wait_for_selector('[data-testid="register-form"]', state="visible")
+    await page.goto(base_url)
+    await page.click('[data-testid="register-link"]')
+    await page.wait_for_selector('[data-testid="register-form"]', state="visible")
 
     # Fill registration form with data-testid selectors
-    page.fill('[data-testid="input-display-name"]', test_user["display_name"])
-    page.fill('[data-testid="input-email"]', test_user["email"])
-    page.fill('[data-testid="input-password"]', test_user["password"])
-    page.fill('input[name="confirm_password"]', test_user["password"])
-    page.click('[data-testid="submit-register"]')
+    await page.fill('[data-testid="input-display-name"]', test_user["display_name"])
+    await page.fill('[data-testid="input-email"]', test_user["email"])
+    await page.fill('[data-testid="input-password"]', test_user["password"])
+    await page.fill('input[name="confirm_password"]', test_user["password"])
+    await page.click('[data-testid="submit-register"]')
 
     # Wait for HTMX redirect (HX-Redirect header triggers client-side navigation)
     # HTMX will receive the HX-Redirect header and navigate to /dashboard
-    page.wait_for_url(f"{base_url}/dashboard", timeout=10000)
+    await page.wait_for_url(f"{base_url}/dashboard", timeout=10000)
 
     return page
 
@@ -103,23 +107,42 @@ def user_with_garmin_unlinked(authenticated_user: Page):
 
 
 @pytest.fixture
-def mock_garmin_api(page: Page):
+async def mock_garmin_api(page: Page):
     """Mock Garmin API responses for testing without real credentials.
 
     This uses Playwright's route interception to mock HTTP responses.
     Returns HTML fragments for HTMX responses.
     """
 
-    def handle_garmin_link(route):
-        """Mock successful Garmin link endpoint."""
-        # Check if it's a successful link (credentials match expected mock values)
+    async def handle_garmin_link(route):
+        """Mock successful Garmin link endpoint.
+
+        Only intercepts POST requests. GET requests are passed through to the
+        real backend to render the form template.
+        """
         request = route.request
+
+        # Let GET requests through to real backend
+        if request.method == "GET":
+            await route.continue_()
+            return
+
+        # Handle POST requests
         post_data = request.post_data
 
         # Simple mock: accept test@garmin.com, reject others
-        if post_data and b"test@garmin.com" in post_data:
+        # Note: post_data can be bytes or string depending on Playwright version
+        # Check for both raw and URL-encoded email (@ becomes %40 in form data)
+        has_test_email = (
+            isinstance(post_data, bytes)
+            and (b"test@garmin.com" in post_data or b"test%40garmin.com" in post_data)
+        ) or (
+            isinstance(post_data, str)
+            and ("test@garmin.com" in post_data or "test%40garmin.com" in post_data)
+        )
+        if post_data and has_test_email:
             # Return HTML fragment for HTMX swap (outerHTML)
-            route.fulfill(
+            await route.fulfill(
                 status=200,
                 content_type="text/html",
                 body="""
@@ -138,16 +161,16 @@ def mock_garmin_api(page: Page):
             )
         else:
             # Invalid credentials
-            route.fulfill(
+            await route.fulfill(
                 status=400,
                 content_type="text/html",
                 body='<div class="error" data-testid="error-message">Failed to link Garmin account. Invalid credentials.</div>',
             )
 
-    def handle_garmin_sync(route):
+    async def handle_garmin_sync(route):
         """Mock successful Garmin sync endpoint."""
         # Simulate brief delay
-        route.fulfill(
+        await route.fulfill(
             status=200,
             content_type="text/html",
             body="""
@@ -158,7 +181,7 @@ def mock_garmin_api(page: Page):
         )
 
     # Intercept backend Garmin endpoints
-    page.route("**/garmin/link", handle_garmin_link)
-    page.route("**/garmin/sync", handle_garmin_sync)
+    await page.route("**/garmin/link", handle_garmin_link)
+    await page.route("**/garmin/sync", handle_garmin_sync)
 
     return page

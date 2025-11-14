@@ -54,7 +54,8 @@ def client(test_user, mock_garmin_service, monkeypatch):
 
     monkeypatch.setattr("app.routes.garmin.GarminService", mock_garmin_service_init)
 
-    test_client = TestClient(app)
+    # Create test client (raise_server_exceptions=False allows testing error responses)
+    test_client = TestClient(app, raise_server_exceptions=False)
 
     yield test_client
 
@@ -66,7 +67,7 @@ class TestGarminLinkPage:
 
     def test_link_page_requires_auth(self):
         """Test that link page requires authentication."""
-        client = TestClient(app)
+        client = TestClient(app, raise_server_exceptions=False)
         response = client.get("/garmin/link")
 
         # Should return 401 without auth
@@ -85,9 +86,9 @@ class TestLinkGarminAccount:
 
     def test_link_requires_auth(self):
         """Test that linking requires authentication."""
-        client = TestClient(app)
+        client = TestClient(app, raise_server_exceptions=False)
         response = client.post(
-            "/garmin/link", json={"username": "test@garmin.com", "password": "password123"}
+            "/garmin/link", data={"username": "test@garmin.com", "password": "password123"}
         )
 
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
@@ -95,11 +96,12 @@ class TestLinkGarminAccount:
     def test_link_account_success(self, client, mock_garmin_service):
         """Test successful Garmin account linking."""
         response = client.post(
-            "/garmin/link", json={"username": "test@garmin.com", "password": "password123"}
+            "/garmin/link", data={"username": "test@garmin.com", "password": "password123"}
         )
 
         assert response.status_code == status.HTTP_200_OK
-        assert response.json()["message"] == "Garmin account linked successfully"
+        assert "text/html" in response.headers.get("content-type", "")
+        assert "Garmin account linked" in response.text
 
         mock_garmin_service.link_account.assert_called_once_with(
             username="test@garmin.com",
@@ -111,21 +113,22 @@ class TestLinkGarminAccount:
         mock_garmin_service.link_account = AsyncMock(return_value=False)
 
         response = client.post(
-            "/garmin/link", json={"username": "test@garmin.com", "password": "wrong_password"}
+            "/garmin/link", data={"username": "test@garmin.com", "password": "wrong_password"}
         )
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
-        assert "Failed to link Garmin account" in response.json()["detail"]
+        assert "text/html" in response.headers.get("content-type", "")
+        assert "Failed to link" in response.text
 
     def test_link_account_missing_username(self, client):
         """Test linking with missing username."""
-        response = client.post("/garmin/link", json={"password": "password123"})
+        response = client.post("/garmin/link", data={"password": "password123"})
 
         assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
 
     def test_link_account_missing_password(self, client):
         """Test linking with missing password."""
-        response = client.post("/garmin/link", json={"username": "test@garmin.com"})
+        response = client.post("/garmin/link", data={"username": "test@garmin.com"})
 
         assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
 
@@ -135,7 +138,7 @@ class TestSyncGarminData:
 
     def test_sync_requires_auth(self):
         """Test that sync requires authentication."""
-        client = TestClient(app)
+        client = TestClient(app, raise_server_exceptions=False)
         response = client.post("/garmin/sync")
 
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
@@ -145,7 +148,8 @@ class TestSyncGarminData:
         response = client.post("/garmin/sync")
 
         assert response.status_code == status.HTTP_200_OK
-        assert response.json()["message"] == "Sync completed successfully"
+        assert "text/html" in response.headers.get("content-type", "")
+        assert "Sync completed successfully" in response.text
 
         mock_garmin_service.sync_recent_data.assert_called_once()
 
@@ -158,7 +162,8 @@ class TestSyncGarminData:
         response = client.post("/garmin/sync")
 
         assert response.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR
-        assert "Sync failed" in response.json()["detail"]
+        assert "text/html" in response.headers.get("content-type", "")
+        assert "Sync failed" in response.text
 
 
 class TestGarminStatus:
@@ -166,7 +171,7 @@ class TestGarminStatus:
 
     def test_status_requires_auth(self):
         """Test that status requires authentication."""
-        client = TestClient(app)
+        client = TestClient(app, raise_server_exceptions=False)
         response = client.get("/garmin/status")
 
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
@@ -188,7 +193,7 @@ class TestRouterConfiguration:
 
     def test_router_prefix(self):
         """Test that Garmin routes have correct prefix."""
-        client = TestClient(app)
+        client = TestClient(app, raise_server_exceptions=False)
 
         # Even unauthenticated, should recognize the route (return 401, not 404)
         response = client.get("/garmin/status")

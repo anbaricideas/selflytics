@@ -70,9 +70,10 @@ async def register(
     # Validate password confirmation if provided
     if confirm_password and password != confirm_password:
         if request.headers.get("HX-Request"):
+            # Return form fragment only (not full page) to avoid nesting with hx-swap="outerHTML"
             return templates.TemplateResponse(
                 request=request,
-                name="register.html",
+                name="fragments/register_form.html",
                 context={
                     "errors": {"password": "Passwords do not match"},
                     "email": email,
@@ -95,13 +96,17 @@ async def register(
     # Check if email already exists
     existing_user = await user_service.get_user_by_email(user_data.email)
     if existing_user:
-        # For HTMX requests, return error HTML fragment
+        # Use generic error to prevent user enumeration (privacy/GDPR compliance)
+        # Same pattern as login endpoint - don't reveal if email exists
+        generic_error = "Unable to create account. Please try a different email or contact support."
+
+        # For HTMX requests, return form fragment only (not full page)
         if request.headers.get("HX-Request"):
             return templates.TemplateResponse(
                 request=request,
-                name="register.html",
+                name="fragments/register_form.html",
                 context={
-                    "errors": {"email": "Email already registered"},
+                    "errors": {"general": generic_error},
                     "email": user_data.email,
                     "display_name": user_data.display_name,
                 },
@@ -111,7 +116,7 @@ async def register(
         # For API requests, raise HTTPException
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Email already registered",
+            detail=generic_error,
         )
 
     # Create new user
@@ -175,11 +180,11 @@ async def login(
     # Get user by email (OAuth2 uses 'username' field for email)
     user = await user_service.get_user_by_email(form_data.username)
     if not user or not verify_password(form_data.password, user.hashed_password):
-        # For HTMX requests, return error HTML fragment
+        # For HTMX requests, return form fragment only (not full page)
         if request.headers.get("HX-Request"):
             return templates.TemplateResponse(
                 request=request,
-                name="login.html",
+                name="fragments/login_form.html",
                 context={
                     "errors": {"general": "Incorrect email or password"},
                     "email": form_data.username,
@@ -215,6 +220,22 @@ async def login(
 
     # For API requests, return JSON
     return {"access_token": access_token, "token_type": "bearer"}
+
+
+@router.post("/logout")
+async def logout():
+    """Logout user by clearing authentication cookie.
+
+    Returns:
+        Redirect to login page with cleared cookie
+    """
+    response = Response(status_code=status.HTTP_303_SEE_OTHER)
+    response.headers["Location"] = "/login"
+
+    # Clear the access_token cookie
+    response.delete_cookie(key="access_token")
+
+    return response
 
 
 @router.get("/auth/me", response_model=UserResponse)

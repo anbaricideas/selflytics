@@ -132,3 +132,46 @@ class GarminService:
             logger.warning("Cache set error (non-critical): %s", str(e))
 
         return [activity.model_dump() for activity in activities]
+
+    async def get_daily_metrics_cached(self, target_date: date) -> dict:
+        """
+        Get daily metrics with caching.
+
+        Args:
+            target_date: Date for which to fetch metrics
+
+        Returns:
+            Dict with daily metrics (steps, resting_heart_rate, sleep_seconds, avg_stress_level)
+        """
+        date_range = str(target_date)
+
+        # Check cache
+        try:
+            cached = await self.cache.get(
+                user_id=self.user_id, data_type="daily_metrics", date_range=date_range
+            )
+
+            if cached:
+                logger.debug("Cache hit for daily metrics %s", date_range)
+                return cached
+        except Exception as e:
+            logger.warning("Cache get error, falling back to API: %s", str(e))
+
+        # Fetch from API
+        metrics = await self.client.get_daily_metrics(target_date)
+
+        # Convert to dict for caching
+        metrics_dict = metrics.model_dump()
+
+        # Cache results
+        try:
+            await self.cache.set(
+                user_id=self.user_id,
+                data_type="daily_metrics",
+                data=metrics_dict,
+                date_range=date_range,
+            )
+        except Exception as e:
+            logger.warning("Cache set error (non-critical): %s", str(e))
+
+        return metrics_dict

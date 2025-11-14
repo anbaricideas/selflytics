@@ -14,4 +14,6 @@ dependencies = [
 members = ["spike"]
 
 [dependency-groups]
-dev = []
+dev = [
+    "beautifulsoup4>=4.14.2",
+]

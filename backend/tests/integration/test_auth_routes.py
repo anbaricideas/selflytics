@@ -34,8 +34,8 @@ def client(mock_user_service):
     # Override the get_user_service dependency
     app.dependency_overrides[get_user_service] = lambda: mock_user_service
 
-    # Create test client
-    test_client = TestClient(app)
+    # Create test client (raise_server_exceptions=False allows testing error responses)
+    test_client = TestClient(app, raise_server_exceptions=False)
 
     yield test_client
 
@@ -87,7 +87,10 @@ class TestRegisterEndpoint:
         assert "hashed_password" not in data
 
     def test_register_duplicate_email(self, client, mock_user_service, existing_user):
-        """Test registration with existing email returns 400."""
+        """Test registration with existing email returns 400 with generic error.
+
+        Uses generic error message to prevent user enumeration (security/privacy).
+        """
         # Mock service to return existing user
         mock_user_service.get_user_by_email = AsyncMock(return_value=existing_user)
 
@@ -101,7 +104,10 @@ class TestRegisterEndpoint:
         )
 
         assert response.status_code == 400
-        assert "already registered" in response.json()["detail"]
+        # Generic error to prevent user enumeration
+        assert "Unable to create account" in response.json()["detail"]
+        # Should NOT reveal if email exists
+        assert "already registered" not in response.json()["detail"].lower()
 
     def test_register_invalid_email(self, client):
         """Test registration with invalid email returns 422."""
@@ -298,6 +304,42 @@ class TestMeEndpoint:
 
         assert response.status_code == 401
         assert "User not found" in response.json()["detail"]
+
+
+class TestLogoutEndpoint:
+    """Test POST /logout endpoint."""
+
+    def test_logout_clears_cookie_and_redirects(self, client, mock_user_service, existing_user):
+        """Test POST /logout clears authentication cookie and redirects to /login."""
+        # First login with HTMX to get a cookie
+        mock_user_service.get_user_by_email = AsyncMock(return_value=existing_user)
+        login_response = client.post(
+            "/auth/login",
+            data={
+                "username": "existing@example.com",
+                "password": "password",
+            },
+            headers={"HX-Request": "true"},
+        )
+        assert login_response.status_code == 200
+        assert login_response.headers.get("HX-Redirect") == "/dashboard"
+
+        # Verify cookie was set
+        cookies = client.cookies
+        assert "access_token" in cookies
+
+        # Logout
+        logout_response = client.post("/logout", follow_redirects=False)
+
+        # Verify redirect to /login
+        assert logout_response.status_code == 303
+        assert logout_response.headers["location"] == "/login"
+
+        # Verify Set-Cookie header instructs browser to clear the cookie
+        set_cookie = logout_response.headers.get("set-cookie", "")
+        assert "access_token" in set_cookie
+        # Cookie should have max-age=0 or expires in the past
+        assert "max-age=0" in set_cookie.lower() or "expires=" in set_cookie.lower()
 
 
 class TestAuthFlowIntegration:
