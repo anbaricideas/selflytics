@@ -77,6 +77,31 @@ git log --oneline main..HEAD --format="%ad" --date=format:"%Y-%m-%d %H:00" | uni
 4. **Track progress**: Update checkboxes in phase plan as you complete steps
 5. **Commit often**: Clear conventional commit messages after each major step
 
+### CRITICAL: Blocked Step Protocol
+
+**When you encounter ANY step you cannot complete autonomously:**
+
+1. **STOP immediately** - do not proceed to the next step
+2. **Use AskUserQuestion tool** with explicit options:
+   - Execute this step now (with my help)
+   - Defer this step (document reason and come back later)
+   - Skip permanently (mark as WON'T DO with approval)
+   - Other approach (user specifies)
+3. **Wait for explicit user choice** - NEVER assume or infer intent
+4. **Document the decision** in the phase plan before proceeding
+
+**Pre-flight check before moving to next step:**
+- ✅ Did I complete this step fully?
+- ❌ If NO: Did I get explicit user approval to skip/defer?
+- 🛑 If NO approval: STOP and use AskUserQuestion
+
+**Example scenarios requiring AskUserQuestion:**
+- Step requires user to execute manual testing
+- Step requires external tool/access I don't have
+- Step requires user decision between multiple approaches
+- Step unclear or contradicts other information
+- Any situation where I'm tempted to "skip for now"
+
 ### Phase Completion Verification
 
 **BEFORE claiming a phase complete**, verify ALL of the following:
