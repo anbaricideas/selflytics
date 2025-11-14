@@ -87,7 +87,7 @@ def test_register_success_without_htmx_returns_json(unauthenticated_client, crea
 def test_register_validation_error_returns_html_fragment(unauthenticated_client, create_mock_user):
     """POST /auth/register with HTMX and validation error should return HTML error fragment."""
     mock_svc = AsyncMock()
-    # Mock existing user to trigger "email already registered" error
+    # Mock existing user to trigger email-already-exists error
     mock_svc.get_user_by_email.return_value = create_mock_user(
         user_id="existing-user",
         email="existing@example.com",
@@ -110,9 +110,10 @@ def test_register_validation_error_returns_html_fragment(unauthenticated_client,
         assert response.status_code == status.HTTP_400_BAD_REQUEST
         assert "text/html" in response.headers.get("content-type", "")
 
-        # Should contain specific error message
+        # Should contain generic error (not revealing if email exists - user enumeration prevention)
         html = response.text
-        assert "Email already registered" in html
+        assert "Unable to create account" in html
+        assert "Email already registered" not in html  # Should NOT reveal email exists
 
     finally:
         app.dependency_overrides.clear()

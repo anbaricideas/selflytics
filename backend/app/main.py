@@ -13,6 +13,7 @@ from fastapi.responses import JSONResponse, RedirectResponse
 
 from app.auth.jwt import verify_token
 from app.config import get_settings
+from app.dependencies import templates
 from app.middleware.telemetry import TelemetryMiddleware
 from app.routes import auth, chat, dashboard, garmin
 from app.telemetry_config import setup_telemetry, teardown_telemetry
@@ -100,24 +101,45 @@ app.include_router(dashboard.router)
 app.include_router(garmin.router)
 
 
-# Exception handler for authentication errors
+# Exception handler for HTTP errors
 @app.exception_handler(HTTPException)
 async def http_exception_handler(request: Request, exc: HTTPException):
     """Handle HTTP exceptions.
 
-    For 401 Unauthorized errors on browser/HTMX requests, redirect to login page.
+    For browser/HTMX requests:
+    - 401: Redirect to login
+    - 403/404/500: Show friendly error template
     For API requests (JSON Accept header), return JSON error response.
     """
-    if exc.status_code == status.HTTP_401_UNAUTHORIZED:
-        # Check if request is from browser/HTMX (not API)
-        accept_header = request.headers.get("accept", "")
-        hx_request = request.headers.get("HX-Request", "") == "true"
+    # Check if request is from browser/HTMX (not API)
+    accept_header = request.headers.get("accept", "")
+    hx_request = request.headers.get("HX-Request", "") == "true"
+    is_browser = "text/html" in accept_header or hx_request
 
-        # Redirect browser requests to login page
-        if "text/html" in accept_header or hx_request:
+    if is_browser:
+        # 401: Redirect to login
+        if exc.status_code == status.HTTP_401_UNAUTHORIZED:
             return RedirectResponse(url="/login", status_code=303)
 
-    # For all other cases, return proper JSON error response
+        # 403: Show forbidden error template
+        if exc.status_code == status.HTTP_403_FORBIDDEN:
+            return templates.TemplateResponse(
+                request=request, name="error/403.html", status_code=403
+            )
+
+        # 404: Show not found error template
+        if exc.status_code == status.HTTP_404_NOT_FOUND:
+            return templates.TemplateResponse(
+                request=request, name="error/404.html", status_code=404
+            )
+
+        # 500+: Show server error template
+        if exc.status_code >= 500:
+            return templates.TemplateResponse(
+                request=request, name="error/500.html", status_code=exc.status_code
+            )
+
+    # For API requests or other status codes, return JSON error response
     return JSONResponse(
         status_code=exc.status_code,
         content={"detail": exc.detail},
@@ -132,24 +154,27 @@ async def root(request: Request) -> RedirectResponse:
     - Authenticated users → /dashboard
     - Unauthenticated users → /login
     """
-    # Check for JWT token in cookie
+    # Fast path: Check if token exists before attempting verification
+    # This prevents DoS attacks from overwhelming server with JWT verification
     token = request.cookies.get("access_token")
 
-    if token:
-        # Remove "Bearer " prefix if present
-        token = token.replace("Bearer ", "") if token.startswith("Bearer ") else token
+    if not token:
+        # No token - redirect to login immediately without expensive verification
+        return RedirectResponse(url="/login", status_code=303)
 
-        try:
-            # Validate token
-            verify_token(token)
-            # Token is valid - redirect to dashboard
-            return RedirectResponse(url="/dashboard", status_code=303)
-        except ValueError:
-            # Invalid token - redirect to login
-            pass
+    # Remove "Bearer " prefix if present
+    token = token.replace("Bearer ", "") if token.startswith("Bearer ") else token
 
-    # No token or invalid token - redirect to login
-    return RedirectResponse(url="/login", status_code=303)
+    try:
+        # Validate token
+        verify_token(token)
+        # Token is valid - redirect to dashboard
+        return RedirectResponse(url="/dashboard", status_code=303)
+    except ValueError:
+        # Invalid token - clear it and redirect to login
+        response = RedirectResponse(url="/login", status_code=303)
+        response.delete_cookie(key="access_token")
+        return response
 
 
 @app.get("/health")
@@ -160,3 +185,28 @@ async def health_check():
         Health status and service name
     """
     return {"status": "healthy", "service": "selflytics"}
+
+
+# Catch-all route for 404 errors (must be last)
+# This handles routes not matched by any other endpoint
+@app.api_route("/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH"])
+async def catch_all(request: Request, path: str):  # noqa: ARG001
+    """Catch-all handler for 404 errors.
+
+    For browser requests, shows friendly HTML 404 template.
+    For API requests, returns JSON error.
+
+    Args:
+        request: FastAPI request object
+        path: Captured path (unused but required by route pattern)
+    """
+    # Check if request is from browser/HTMX
+    accept_header = request.headers.get("accept", "")
+    hx_request = request.headers.get("HX-Request", "") == "true"
+    is_browser = "text/html" in accept_header or hx_request
+
+    if is_browser:
+        return templates.TemplateResponse(request=request, name="error/404.html", status_code=404)
+
+    # API request - return JSON
+    return JSONResponse(status_code=404, content={"detail": "Not Found"})

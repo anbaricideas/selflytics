@@ -96,13 +96,17 @@ async def register(
     # Check if email already exists
     existing_user = await user_service.get_user_by_email(user_data.email)
     if existing_user:
+        # Use generic error to prevent user enumeration (privacy/GDPR compliance)
+        # Same pattern as login endpoint - don't reveal if email exists
+        generic_error = "Unable to create account. Please try a different email or contact support."
+
         # For HTMX requests, return form fragment only (not full page)
         if request.headers.get("HX-Request"):
             return templates.TemplateResponse(
                 request=request,
                 name="fragments/register_form.html",
                 context={
-                    "errors": {"email": "Email already registered"},
+                    "errors": {"general": generic_error},
                     "email": user_data.email,
                     "display_name": user_data.display_name,
                 },
@@ -112,7 +116,7 @@ async def register(
         # For API requests, raise HTTPException
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Email already registered",
+            detail=generic_error,
         )
 
     # Create new user

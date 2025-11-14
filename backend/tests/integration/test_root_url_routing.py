@@ -70,6 +70,28 @@ def test_root_with_invalid_token_redirects_to_login(client: TestClient):
     assert response.headers["location"] == "/login"
 
 
+def test_root_with_invalid_token_clears_cookie(client: TestClient):
+    """
+    Root URL with invalid JWT should clear the invalid cookie.
+
+    Expected: GET / with bad token → 303 redirect + Set-Cookie to delete access_token
+    Context: Cookie hygiene - prevent invalid tokens from persisting
+    """
+    # Use invalid token
+    bad_cookies = {"access_token": "invalid.jwt.token"}
+
+    response = client.get("/", cookies=bad_cookies, follow_redirects=False)
+
+    assert response.status_code == 303
+    assert response.headers["location"] == "/login"
+
+    # Verify cookie is cleared (Set-Cookie header with Max-Age=0 or expires in past)
+    set_cookie = response.headers.get("set-cookie", "")
+    assert "access_token" in set_cookie.lower(), "Should clear access_token cookie"
+    # Cookie deletion is indicated by Max-Age=0 or expires timestamp in the past
+    assert "max-age=0" in set_cookie.lower() or "expires=" in set_cookie.lower()
+
+
 @pytest.mark.skip(reason="Requires complete auth flow - fixture needs rework")
 def test_root_follows_redirect_chain_correctly(client: TestClient, test_user: dict):
     """
