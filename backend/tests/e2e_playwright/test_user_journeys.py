@@ -18,8 +18,8 @@ class TestChatPageNavigation:
         Expected: Logout button visible and functional from chat page.
         Context: Bug #10 - users reported being trapped on chat page.
         """
-        # Navigate to chat page
-        authenticated_user.goto(f"{base_url}/chat")
+        # Navigate to chat page (trailing slash required for FastAPI router)
+        authenticated_user.goto(f"{base_url}/chat/")
 
         # Wait for chat page to fully load - check for header first
         expect(authenticated_user.locator('[data-testid="chat-header"]')).to_be_visible(
