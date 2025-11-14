@@ -10,7 +10,7 @@ Context: Bug #8 - get_daily_metrics_cached method missing from GarminService
 # Commented code documents post-fix assertions in TDD
 
 from datetime import date
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
@@ -18,8 +18,17 @@ from app.models.garmin_data import DailyMetrics
 from app.services.garmin_service import GarminService
 
 
+@pytest.fixture
+def mock_firestore():
+    """Mock Firestore client to avoid GCP credentials requirement."""
+    with patch("app.services.garmin_client.get_firestore_client") as mock_client:
+        mock_db = MagicMock()
+        mock_client.return_value = mock_db
+        yield mock_db
+
+
 @pytest.mark.asyncio
-async def test_get_daily_metrics_cached_method_exists():
+async def test_get_daily_metrics_cached_method_exists(mock_firestore):
     """
     GarminService should have get_daily_metrics_cached method.
 
@@ -41,7 +50,7 @@ async def test_get_daily_metrics_cached_method_exists():
 
 
 @pytest.mark.asyncio
-async def test_get_daily_metrics_cached_returns_cached_data():
+async def test_get_daily_metrics_cached_returns_cached_data(mock_firestore):
     """
     get_daily_metrics_cached should return cached data when available.
 
@@ -73,7 +82,7 @@ async def test_get_daily_metrics_cached_returns_cached_data():
 
 
 @pytest.mark.asyncio
-async def test_get_daily_metrics_cached_fetches_from_api_on_cache_miss():
+async def test_get_daily_metrics_cached_fetches_from_api_on_cache_miss(mock_firestore):
     """
     get_daily_metrics_cached should fetch from Garmin API on cache miss.
 
@@ -107,7 +116,7 @@ async def test_get_daily_metrics_cached_fetches_from_api_on_cache_miss():
 
 
 @pytest.mark.asyncio
-async def test_get_daily_metrics_cached_caches_api_results():
+async def test_get_daily_metrics_cached_caches_api_results(mock_firestore):
     """
     get_daily_metrics_cached should cache API results after fetch.
 
@@ -143,7 +152,7 @@ async def test_get_daily_metrics_cached_caches_api_results():
 
 
 @pytest.mark.asyncio
-async def test_get_daily_metrics_cached_handles_cache_errors_gracefully():
+async def test_get_daily_metrics_cached_handles_cache_errors_gracefully(mock_firestore):
     """
     get_daily_metrics_cached should continue on cache errors.
 
@@ -175,7 +184,7 @@ async def test_get_daily_metrics_cached_handles_cache_errors_gracefully():
 
 
 @pytest.mark.asyncio
-async def test_get_daily_metrics_cached_returns_dict_format():
+async def test_get_daily_metrics_cached_returns_dict_format(mock_firestore):
     """
     get_daily_metrics_cached should return dict, not Pydantic model.
 

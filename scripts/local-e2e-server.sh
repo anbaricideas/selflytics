@@ -47,6 +47,7 @@ fi
 
 # Load .env.local early to get configuration
 set -a
+# shellcheck source=/dev/null
 source "$ENV_LOCAL"
 set +a
 
