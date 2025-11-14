@@ -305,27 +305,38 @@
 
 ## Sign-Off
 
-**Tester**: _________________
-**Date**: _________________
+**Tester**: Bryn (with Claude Code)
+**Date**: 2025-11-14
 **Environment**: Local (http://localhost:8042)
-**All Journeys Passed**: ☐ Yes  ☐ No
+**All Journeys Passed**: ☐ Yes  ☑ No (7 bugs found)
 
 **Journeys Completed**:
-- [ ] Journey 1: New User Registration → Garmin Linking
-- [ ] Journey 2: Returning User Login → Chat
-- [ ] Journey 3: Error Handling & Recovery
-- [ ] Journey 4: Accessibility & Keyboard Navigation
-- [ ] Journey 5: HTMX Partial Updates
+- [x] Journey 1: New User Registration → Garmin Linking (✅ partial - registration works, Garmin blocked by bugs)
+- [x] Journey 2: Returning User Login → Chat (✅ partial - login works, chat not linked, API key issue)
+- [x] Journey 3: Error Handling & Recovery (⚠️ validation works but UX bugs)
+- [x] Journey 4: Accessibility & Keyboard Navigation (✅ excellent - full keyboard support)
+- [x] Journey 5: HTMX Partial Updates (✅ HTMX working, but response fragments cause nesting)
 
-**Issues Found**:
-1. _____________________________________
-2. _____________________________________
-3. _____________________________________
+**Issues Found (CRITICAL)**:
+1. **Login button stuck after 401** - Loading state not reset on error, blocks retry (CRITICAL UX)
+2. **Garmin link returns 401** - Mock credentials fail, unexpected authentication error
+3. **Nested/duplicate forms in error responses** - HTMX swaps full container causing duplication (Garmin, Registration)
+4. **Logout returns 404** - Logout works but shows error page instead of redirecting to /login
+5. **Chat not linked from dashboard** - Card says "Coming in Phase 3" but chat exists at /chat
+6. **Chat OpenAI API key invalid** - .env.local has "test-key" which fails API validation
+7. **Chat page layout** - Need to scroll to see message input field
+
+**HTMX Observations**:
+- ✅ HX-Redirect working correctly for registration/login (no full page reloads)
+- ✅ Partial swaps working (fragments returned, not full HTML pages)
+- ⚠️ Error response fragments include full container (`<div class="bg-white border...">`) causing nested forms when swapped
 
 **Notes**:
-_____________________________________
-_____________________________________
-_____________________________________
+- Registration flow works perfectly (except password mismatch shows nested form)
+- Keyboard accessibility is excellent (tab order, focus indicators, Enter submission)
+- Core user journeys are functional but error handling UX needs improvement
+- Most bugs are HTMX error response formatting issues (systematic problem across endpoints)
+- Recommend fixing Bug #1 (login stuck), #3 (nested forms), and #5 (chat link) as highest priority
 
 ---
 
