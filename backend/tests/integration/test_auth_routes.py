@@ -87,7 +87,10 @@ class TestRegisterEndpoint:
         assert "hashed_password" not in data
 
     def test_register_duplicate_email(self, client, mock_user_service, existing_user):
-        """Test registration with existing email returns 400."""
+        """Test registration with existing email returns 400 with generic error.
+
+        Uses generic error message to prevent user enumeration (security/privacy).
+        """
         # Mock service to return existing user
         mock_user_service.get_user_by_email = AsyncMock(return_value=existing_user)
 
@@ -101,7 +104,10 @@ class TestRegisterEndpoint:
         )
 
         assert response.status_code == 400
-        assert "already registered" in response.json()["detail"]
+        # Generic error to prevent user enumeration
+        assert "Unable to create account" in response.json()["detail"]
+        # Should NOT reveal if email exists
+        assert "already registered" not in response.json()["detail"].lower()
 
     def test_register_invalid_email(self, client):
         """Test registration with invalid email returns 422."""
