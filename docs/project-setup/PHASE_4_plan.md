@@ -1030,9 +1030,10 @@ E2E tests run in GitHub Actions on:
   uv run ruff check .
   uv run ruff format --check .
   ```
-- [ ] Run type checking:
+- [ ] Run type checking (SKIPPED - mypy not installed, tracked in #6):
   ```bash
-  uv run mypy backend/app --strict
+  # See: https://github.com/anbaricideas/selflytics/issues/6
+  # uv run mypy backend/app --strict
   ```
 - [ ] Run security scan:
   ```bash

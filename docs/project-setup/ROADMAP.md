@@ -114,12 +114,12 @@ Start from: wherever marked as ⏳ NEXT
 | [1](./PHASE_1_plan.md) | Infrastructure Foundation | ✅ DONE | 7 hours | `feat/phase-1-infrastructure` | - |
 | [2](./PHASE_2_plan.md) | Garmin Integration | ✅ DONE | 5 hours | `feat/phase-2-garmin` | - |
 | [3](./PHASE_3_plan.md) | Chat + AI Agent | ✅ DONE | 6 hours | `feat/phase-3-chat-ai` | - |
-| [4](./PHASE_4_plan.md) | E2E Test Fixes & User Journeys | ⏳ IN PROGRESS | ~4 hours so far | `feat/phase-4-e2e-fixes` | - |
+| [4](./PHASE_4_plan.md) | E2E Test Fixes & User Journeys | ⏳ IN PROGRESS | ~7 hours so far | `feat/phase-4-e2e-fixes` | - |
 | 5 | Visualization Generation | 📅 PLANNED | - | TBD | - |
 | 6 | Goals & Polish | 📅 PLANNED | - | TBD | - |
 | 7 | Launch Preparation | 📅 PLANNED | - | TBD | - |
 
-**Current Phase**: ⏳ Phase 4 In Progress → [Phase 4 Plan](./PHASE_4_plan.md) (~25% complete - core fixes done, documentation/validation incomplete)
+**Current Phase**: ⏳ Phase 4 In Progress → [Phase 4 Plan](./PHASE_4_plan.md) (integration tests fixed, all 303 tests passing)
 
 ---
 
