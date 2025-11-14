@@ -176,11 +176,11 @@ async def login(
     # Get user by email (OAuth2 uses 'username' field for email)
     user = await user_service.get_user_by_email(form_data.username)
     if not user or not verify_password(form_data.password, user.hashed_password):
-        # For HTMX requests, return error HTML fragment
+        # For HTMX requests, return form fragment only (not full page)
         if request.headers.get("HX-Request"):
             return templates.TemplateResponse(
                 request=request,
-                name="login.html",
+                name="fragments/login_form.html",
                 context={
                     "errors": {"general": "Incorrect email or password"},
                     "email": form_data.username,
