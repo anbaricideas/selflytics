@@ -86,10 +86,17 @@
         // Fixes bug where login button stays in "Logging in..." state after 401 error
         // Uses data-attribute pattern to avoid Alpine.js internal API (_x_dataStack)
         document.body.addEventListener('htmx:afterSwap', function(evt) {
-            // Find all elements marked for loading state reset
-            evt.detail.target.querySelectorAll('[data-reset-loading-on-swap]').forEach(function(el) {
+            const target = evt.detail.target;
+            // Reset loading state on the swapped element itself
+            if (target.hasAttribute && target.hasAttribute('data-reset-loading-on-swap') && window.Alpine) {
+                const data = Alpine.$data(target);
+                if (data && data.hasOwnProperty('loading')) {
+                    data.loading = false;
+                }
+            }
+            // Also reset on any descendants
+            target.querySelectorAll('[data-reset-loading-on-swap]').forEach(function(el) {
                 if (window.Alpine) {
-                    // Use Alpine's public $data API instead of internal _x_dataStack
                     const data = Alpine.$data(el);
                     if (data && data.hasOwnProperty('loading')) {
                         data.loading = false;
