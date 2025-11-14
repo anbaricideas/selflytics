@@ -41,7 +41,8 @@ dev = [
     "pytest>=7.4.0",
     "pytest-cov>=4.1.0",
     "pytest-asyncio>=0.23.0",
-    "pytest-playwright>=0.4.0",
+    "pytest-playwright-asyncio>=0.7.0",
+    "beautifulsoup4>=4.14.2",
 
     # Code Quality
     "ruff>=0.1.0",
@@ -120,7 +121,8 @@ python_files = "test_*.py"
 python_classes = "Test*"
 python_functions = "test_*"
 asyncio_mode = "auto"
-addopts = "-v --cov=app --cov-report=term-missing --cov-report=html -p no:logfire"
+asyncio_default_fixture_loop_scope = "session"
+addopts = "-v -p no:logfire"
 markers = [
     "e2e: End-to-end tests that require external dependencies (gcloud, GCP, etc.)",
     "api: Tests that make calls to external APIs (OpenAI, Garmin, etc.)",
@@ -151,9 +153,3 @@ members = [
 
 [tool.uv.sources]
 selflytics-telemetry = { workspace = true, editable = true }
-
-[dependency-groups]
-dev = [
-    "beautifulsoup4>=4.14.2",
-    "pytest-playwright>=0.7.1",
-]

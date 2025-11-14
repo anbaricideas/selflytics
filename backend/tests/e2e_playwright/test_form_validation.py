@@ -7,13 +7,13 @@ Focuses on:
 - Accessibility (keyboard navigation, focus states)
 """
 
-from playwright.sync_api import Page, expect
+from playwright.async_api import Page, expect
 
 
 class TestHTML5ClientValidation:
     """Test HTML5 and client-side validation."""
 
-    def test_required_fields_validation(self, authenticated_user: Page, base_url: str):
+    async def test_required_fields_validation(self, authenticated_user: Page, base_url: str):
         """Test that required fields prevent submission when empty.
 
         Validates:
@@ -22,18 +22,18 @@ class TestHTML5ClientValidation:
         - Form doesn't submit with empty fields
         """
         page = authenticated_user
-        page.goto(f"{base_url}/garmin/link")
+        await page.goto(f"{base_url}/garmin/link")
 
         # Try to submit empty form
-        page.click('[data-testid="submit-link-garmin"]')
+        await page.click('[data-testid="submit-link-garmin"]')
 
         # Form should still be visible (HTML5 validation prevented submission)
-        expect(page.locator('[data-testid="form-link-garmin"]')).to_be_visible()
+        await expect(page.locator('[data-testid="form-link-garmin"]')).to_be_visible()
 
         # Success state should not appear
-        expect(page.locator('[data-testid="garmin-status-linked"]')).not_to_be_visible()
+        await expect(page.locator('[data-testid="garmin-status-linked"]')).not_to_be_visible()
 
-    def test_email_format_validation(self, authenticated_user: Page, base_url: str):
+    async def test_email_format_validation(self, authenticated_user: Page, base_url: str):
         """Test email format validation on username field.
 
         Validates:
@@ -41,20 +41,20 @@ class TestHTML5ClientValidation:
         - Invalid formats prevented
         """
         page = authenticated_user
-        page.goto(f"{base_url}/garmin/link")
+        await page.goto(f"{base_url}/garmin/link")
 
         # Fill with invalid email
         username_input = page.locator('[data-testid="input-garmin-username"]')
-        username_input.fill("not-an-email")
+        await username_input.fill("not-an-email")
 
         # Fill password
-        page.fill('[data-testid="input-garmin-password"]', "password123")
+        await page.fill('[data-testid="input-garmin-password"]', "password123")
 
         # Try to submit
-        page.click('[data-testid="submit-link-garmin"]')
+        await page.click('[data-testid="submit-link-garmin"]')
 
         # Check HTML5 validity using JavaScript
-        is_valid = page.evaluate(
+        is_valid = await page.evaluate(
             """() => {
                 const input = document.querySelector('[data-testid="input-garmin-username"]');
                 return input.checkValidity();
@@ -64,7 +64,7 @@ class TestHTML5ClientValidation:
         # Input should be invalid
         assert not is_valid, "Invalid email should fail HTML5 validation"
 
-    def test_valid_form_submits(self, authenticated_user: Page, base_url: str):
+    async def test_valid_form_submits(self, authenticated_user: Page, base_url: str):
         """Test that valid form passes client validation and submits.
 
         Validates:
@@ -75,37 +75,41 @@ class TestHTML5ClientValidation:
         page = authenticated_user
 
         # Mock successful response
-        def handle_link(route):
+        async def handle_link(route):
             # Let GET requests through to render the form
             if route.request.method == "GET":
-                route.continue_()
+                await route.continue_()
                 return
 
-            route.fulfill(
+            await route.fulfill(
                 status=200,
                 content_type="text/html",
                 body='<div data-testid="garmin-status-linked">Linked!</div>',
             )
 
-        page.route("**/garmin/link", handle_link)
+        await page.route("**/garmin/link", handle_link)
 
-        page.goto(f"{base_url}/garmin/link")
+        await page.goto(f"{base_url}/garmin/link")
 
         # Fill valid data
-        page.fill('[data-testid="input-garmin-username"]', "valid@garmin.com")
-        page.fill('[data-testid="input-garmin-password"]', "ValidPassword123")
+        await page.fill('[data-testid="input-garmin-username"]', "valid@garmin.com")
+        await page.fill('[data-testid="input-garmin-password"]', "ValidPassword123")
 
         # Submit
-        page.click('[data-testid="submit-link-garmin"]')
+        await page.click('[data-testid="submit-link-garmin"]')
 
         # Verify submission succeeded
-        expect(page.locator('[data-testid="garmin-status-linked"]')).to_be_visible(timeout=5000)
+        await expect(page.locator('[data-testid="garmin-status-linked"]')).to_be_visible(
+            timeout=5000
+        )
 
 
 class TestServerSideValidation:
     """Test server-side validation responses."""
 
-    def test_server_rejects_invalid_credentials(self, authenticated_user: Page, base_url: str):
+    async def test_server_rejects_invalid_credentials(
+        self, authenticated_user: Page, base_url: str
+    ):
         """Test server validates credentials and returns error.
 
         Validates:
@@ -116,13 +120,13 @@ class TestServerSideValidation:
         page = authenticated_user
 
         # Mock server validation error
-        def handle_invalid_credentials(route):
+        async def handle_invalid_credentials(route):
             # Let GET requests through to render the form
             if route.request.method == "GET":
-                route.continue_()
+                await route.continue_()
                 return
 
-            route.fulfill(
+            await route.fulfill(
                 status=400,
                 content_type="text/html",
                 body="""
@@ -132,25 +136,25 @@ class TestServerSideValidation:
                 """,
             )
 
-        page.route("**/garmin/link", handle_invalid_credentials)
+        await page.route("**/garmin/link", handle_invalid_credentials)
 
-        page.goto(f"{base_url}/garmin/link")
+        await page.goto(f"{base_url}/garmin/link")
 
         # Submit valid format but wrong credentials
-        page.fill('[data-testid="input-garmin-username"]', "wrong@garmin.com")
-        page.fill('[data-testid="input-garmin-password"]', "wrong_password")
-        page.click('[data-testid="submit-link-garmin"]')
+        await page.fill('[data-testid="input-garmin-username"]', "wrong@garmin.com")
+        await page.fill('[data-testid="input-garmin-password"]', "wrong_password")
+        await page.click('[data-testid="submit-link-garmin"]')
 
         # Verify error message
         error = page.locator('[data-testid="error-message"]')
-        expect(error).to_be_visible(timeout=5000)
-        expect(error).to_contain_text("check your credentials")
+        await expect(error).to_be_visible(timeout=5000)
+        await expect(error).to_contain_text("check your credentials")
 
 
 class TestInputBehaviorAndAccessibility:
     """Test input field behavior and accessibility."""
 
-    def test_password_field_masked(self, authenticated_user: Page, base_url: str):
+    async def test_password_field_masked(self, authenticated_user: Page, base_url: str):
         """Test password input is properly masked.
 
         Validates:
@@ -158,18 +162,18 @@ class TestInputBehaviorAndAccessibility:
         - Input is visually masked
         """
         page = authenticated_user
-        page.goto(f"{base_url}/garmin/link")
+        await page.goto(f"{base_url}/garmin/link")
 
         password_input = page.locator('[data-testid="input-garmin-password"]')
 
         # Verify type attribute
-        expect(password_input).to_have_attribute("type", "password")
+        await expect(password_input).to_have_attribute("type", "password")
 
         # Fill and verify still masked
-        password_input.fill("MySecretPassword123")
-        expect(password_input).to_have_attribute("type", "password")
+        await password_input.fill("MySecretPassword123")
+        await expect(password_input).to_have_attribute("type", "password")
 
-    def test_keyboard_navigation(self, authenticated_user: Page, base_url: str):
+    async def test_keyboard_navigation(self, authenticated_user: Page, base_url: str):
         """Test form is fully keyboard accessible.
 
         Validates:
@@ -180,45 +184,47 @@ class TestInputBehaviorAndAccessibility:
         page = authenticated_user
 
         # Mock response
-        def handle_link(route):
+        async def handle_link(route):
             # Let GET requests through to render the form
             if route.request.method == "GET":
-                route.continue_()
+                await route.continue_()
                 return
 
-            route.fulfill(
+            await route.fulfill(
                 status=200,
                 content_type="text/html",
                 body='<div data-testid="garmin-status-linked">Linked!</div>',
             )
 
-        page.route("**/garmin/link", handle_link)
+        await page.route("**/garmin/link", handle_link)
 
-        page.goto(f"{base_url}/garmin/link")
+        await page.goto(f"{base_url}/garmin/link")
 
         # Focus username input
         username_input = page.locator('[data-testid="input-garmin-username"]')
-        username_input.focus()
-        expect(username_input).to_be_focused()
+        await username_input.focus()
+        await expect(username_input).to_be_focused()
 
         # Type email
-        page.keyboard.type("test@garmin.com")
+        await page.keyboard.type("test@garmin.com")
 
         # Tab to password
-        page.keyboard.press("Tab")
+        await page.keyboard.press("Tab")
         password_input = page.locator('[data-testid="input-garmin-password"]')
-        expect(password_input).to_be_focused()
+        await expect(password_input).to_be_focused()
 
         # Type password
-        page.keyboard.type("password123")
+        await page.keyboard.type("password123")
 
         # Submit with Enter
-        page.keyboard.press("Enter")
+        await page.keyboard.press("Enter")
 
         # Verify submission
-        expect(page.locator('[data-testid="garmin-status-linked"]')).to_be_visible(timeout=5000)
+        await expect(page.locator('[data-testid="garmin-status-linked"]')).to_be_visible(
+            timeout=5000
+        )
 
-    def test_focus_visible_on_inputs(self, authenticated_user: Page, base_url: str):
+    async def test_focus_visible_on_inputs(self, authenticated_user: Page, base_url: str):
         """Test focus states are visible for accessibility.
 
         Validates:
@@ -226,15 +232,15 @@ class TestInputBehaviorAndAccessibility:
         - Focus outline visible
         """
         page = authenticated_user
-        page.goto(f"{base_url}/garmin/link")
+        await page.goto(f"{base_url}/garmin/link")
 
         username_input = page.locator('[data-testid="input-garmin-username"]')
 
         # Focus input
-        username_input.focus()
+        await username_input.focus()
 
         # Verify focused
-        expect(username_input).to_be_focused()
+        await expect(username_input).to_be_focused()
 
         # Note: Visual focus ring validation would require screenshot comparison
         # For now, we verify programmatic focus works
@@ -243,7 +249,7 @@ class TestInputBehaviorAndAccessibility:
 class TestErrorRecoveryFlows:
     """Test error recovery and retry behavior."""
 
-    def test_user_can_retry_after_error(self, authenticated_user: Page, base_url: str):
+    async def test_user_can_retry_after_error(self, authenticated_user: Page, base_url: str):
         """Test user can correct errors and retry submission.
 
         Validates:
@@ -254,52 +260,52 @@ class TestErrorRecoveryFlows:
         page = authenticated_user
 
         # First attempt: error
-        def handle_first_attempt(route):
+        async def handle_first_attempt(route):
             # Let GET requests through to render the form
             if route.request.method == "GET":
-                route.continue_()
+                await route.continue_()
                 return
 
-            route.fulfill(
+            await route.fulfill(
                 status=400,
                 content_type="text/html",
                 body='<div data-testid="error-message">Invalid credentials</div>',
             )
 
-        page.route("**/garmin/link", handle_first_attempt)
+        await page.route("**/garmin/link", handle_first_attempt)
 
-        page.goto(f"{base_url}/garmin/link")
+        await page.goto(f"{base_url}/garmin/link")
 
         # Submit wrong credentials
-        page.fill('[data-testid="input-garmin-username"]', "wrong@garmin.com")
-        page.fill('[data-testid="input-garmin-password"]', "wrong")
-        page.click('[data-testid="submit-link-garmin"]')
+        await page.fill('[data-testid="input-garmin-username"]', "wrong@garmin.com")
+        await page.fill('[data-testid="input-garmin-password"]', "wrong")
+        await page.click('[data-testid="submit-link-garmin"]')
 
         # Verify error
-        expect(page.locator('[data-testid="error-message"]')).to_be_visible(timeout=5000)
+        await expect(page.locator('[data-testid="error-message"]')).to_be_visible(timeout=5000)
 
         # Remove error route, add success route
-        page.unroute("**/garmin/link")
+        await page.unroute("**/garmin/link")
 
-        def handle_second_attempt(route):
+        async def handle_second_attempt(route):
             # Let GET requests through to render the form
             if route.request.method == "GET":
-                route.continue_()
+                await route.continue_()
                 return
 
-            route.fulfill(
+            await route.fulfill(
                 status=200,
                 content_type="text/html",
                 body='<div data-testid="garmin-status-linked">Success!</div>',
             )
 
-        page.route("**/garmin/link", handle_second_attempt)
+        await page.route("**/garmin/link", handle_second_attempt)
 
         # Note: If error swaps outerHTML, form is gone and retry requires page reload
         # This test assumes error doesn't replace the form completely
         # In real implementation, we'd need to verify actual HTMX swap strategy
 
-    def test_login_button_resets_after_401_error(self, page: Page, base_url: str):
+    async def test_login_button_resets_after_401_error(self, page: Page, base_url: str):
         """Test login button loading state resets after authentication error.
 
         Bug: Login button gets stuck in 'Logging in...' state after 401 error,
@@ -315,12 +321,12 @@ class TestErrorRecoveryFlows:
         """
 
         # Mock 401 error response with Alpine.js attributes to match real template
-        def handle_login_error(route):
+        async def handle_login_error(route):
             if route.request.method == "GET":
-                route.continue_()
+                await route.continue_()
                 return
 
-            route.fulfill(
+            await route.fulfill(
                 status=401,
                 content_type="text/html",
                 body="""<div data-testid="error-message" class="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
@@ -347,46 +353,46 @@ class TestErrorRecoveryFlows:
                 </form>""",
             )
 
-        page.route("**/auth/login", handle_login_error)
+        await page.route("**/auth/login", handle_login_error)
 
         # Navigate to login page
-        page.goto(f"{base_url}/login")
+        await page.goto(f"{base_url}/login")
 
         # Fill login form with wrong credentials
-        page.fill('[data-testid="input-email"]', "test@example.com")
-        page.fill('[data-testid="input-password"]', "WrongPassword123")
+        await page.fill('[data-testid="input-email"]', "test@example.com")
+        await page.fill('[data-testid="input-password"]', "WrongPassword123")
 
         # Submit form
         submit_button = page.locator('[data-testid="submit-login"]')
-        submit_button.click()
+        await submit_button.click()
 
         # FIRST: Verify loading state appears (proves Alpine.js @submit event fired)
-        expect(submit_button).to_contain_text("Logging in", timeout=1000)
+        await expect(submit_button).to_contain_text("Logging in", timeout=1000)
         # NOTE: Skip disabled check - Alpine.js :disabled binding not detected by Playwright
         # The text change proves loading state is working
 
         # Wait for error to appear (triggers htmx:afterSwap which resets loading state)
-        expect(page.locator('[data-testid="error-message"]')).to_be_visible(timeout=5000)
+        await expect(page.locator('[data-testid="error-message"]')).to_be_visible(timeout=5000)
 
         # CRITICAL TEST: Verify user can retry after error
         # This validates the fix in base.html - if loading state doesn't reset,
         # the button would remain disabled and retry would fail.
 
         # Wait a moment for Alpine.js to process the swapped form
-        page.wait_for_timeout(100)
+        await page.wait_for_timeout(100)
 
         # Verify button is clickable again by changing password and clicking
         # If the loading state didn't reset, this click would be blocked
-        page.fill('[data-testid="input-password"]', "RetryPassword123")
+        await page.fill('[data-testid="input-password"]', "RetryPassword123")
 
         # The ability to click proves the fix works - button not stuck in loading state
-        submit_button.click()
+        await submit_button.click()
 
         # Verify form submitted (we expect another error since we didn't change the mock,
         # but the point is the button was clickable)
-        expect(page.locator('[data-testid="error-message"]')).to_be_visible(timeout=2000)
+        await expect(page.locator('[data-testid="error-message"]')).to_be_visible(timeout=2000)
 
-    def test_registration_error_no_nested_forms(self, page: Page, base_url: str):
+    async def test_registration_error_no_nested_forms(self, page: Page, base_url: str):
         """Test that registration errors don't create nested/duplicate forms.
 
         Bug #3: When HTMX swaps error response, the full template (including page
@@ -402,33 +408,33 @@ class TestErrorRecoveryFlows:
         Note: Uses `page` fixture since testing registration (unauthenticated).
         """
         # Navigate to registration page
-        page.goto(f"{base_url}/register")
+        await page.goto(f"{base_url}/register")
 
         # Count initial page elements
-        initial_titles = page.locator('h1:has-text("Create Your Account")').count()
+        initial_titles = await page.locator('h1:has-text("Create Your Account")').count()
         assert initial_titles == 1, "Should have exactly one title initially"
 
         # Submit form with mismatched passwords (trigger validation error)
-        page.fill('[data-testid="input-display-name"]', "Test User")
-        page.fill('[data-testid="input-email"]', "test@example.com")
-        page.fill('[data-testid="input-password"]', "Password123")
-        page.fill('[data-testid="input-confirm-password"]', "DifferentPassword456")
+        await page.fill('[data-testid="input-display-name"]', "Test User")
+        await page.fill('[data-testid="input-email"]', "test@example.com")
+        await page.fill('[data-testid="input-password"]', "Password123")
+        await page.fill('[data-testid="input-confirm-password"]', "DifferentPassword456")
 
-        page.click('[data-testid="submit-register"]')
+        await page.click('[data-testid="submit-register"]')
 
         # Wait for error to appear
-        expect(page.locator('text="Passwords do not match"')).to_be_visible(timeout=5000)
+        await expect(page.locator('text="Passwords do not match"')).to_be_visible(timeout=5000)
 
         # CRITICAL: Title should NOT be duplicated after error swap
-        titles_after_error = page.locator('h1:has-text("Create Your Account")').count()
+        titles_after_error = await page.locator('h1:has-text("Create Your Account")').count()
         assert titles_after_error == 1, (
             f"Expected 1 title after error, found {titles_after_error} (Bug #3: nested form)"
         )
 
         # Verify form still exists and is editable
-        expect(page.locator('[data-testid="register-form"]')).to_be_visible()
-        expect(page.locator('[data-testid="input-password"]')).to_be_editable()
+        await expect(page.locator('[data-testid="register-form"]')).to_be_visible()
+        await expect(page.locator('[data-testid="input-password"]')).to_be_editable()
 
         # Verify we can correct and retry
-        page.fill('[data-testid="input-confirm-password"]', "Password123")
+        await page.fill('[data-testid="input-confirm-password"]', "Password123")
         # Note: We don't actually submit since we'd need mock/real backend

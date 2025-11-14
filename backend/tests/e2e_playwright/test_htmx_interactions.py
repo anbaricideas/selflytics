@@ -6,13 +6,15 @@ Focuses on key HTMX behaviors:
 - Content swapping strategies
 """
 
-from playwright.sync_api import Page, expect
+from playwright.async_api import Page, expect
 
 
 class TestHTMXPartialUpdates:
     """Test HTMX partial page updates without full page reload."""
 
-    def test_link_form_uses_htmx_not_full_reload(self, authenticated_user: Page, base_url: str):
+    async def test_link_form_uses_htmx_not_full_reload(
+        self, authenticated_user: Page, base_url: str
+    ):
         """Test that linking form uses HTMX (no full page reload).
 
         Validates:
@@ -23,39 +25,41 @@ class TestHTMXPartialUpdates:
         page = authenticated_user
 
         # Mock successful link response
-        def handle_link(route):
+        async def handle_link(route):
             # Let GET requests through to render the form
             if route.request.method == "GET":
-                route.continue_()
+                await route.continue_()
                 return
 
-            route.fulfill(
+            await route.fulfill(
                 status=200,
                 content_type="text/html",
                 body='<div data-testid="garmin-status-linked">Successfully linked!</div>',
             )
 
-        page.route("**/garmin/link", handle_link)
+        await page.route("**/garmin/link", handle_link)
 
         # Navigate to Garmin settings
-        page.goto(f"{base_url}/garmin/link")
+        await page.goto(f"{base_url}/garmin/link")
         initial_url = page.url
 
         # Fill and submit form
-        page.fill('[data-testid="input-garmin-username"]', "test@garmin.com")
-        page.fill('[data-testid="input-garmin-password"]', "password123")
-        page.click('[data-testid="submit-link-garmin"]')
+        await page.fill('[data-testid="input-garmin-username"]', "test@garmin.com")
+        await page.fill('[data-testid="input-garmin-password"]', "password123")
+        await page.click('[data-testid="submit-link-garmin"]')
 
         # Wait for HTMX response
-        expect(page.locator('[data-testid="garmin-status-linked"]')).to_be_visible(timeout=5000)
+        await expect(page.locator('[data-testid="garmin-status-linked"]')).to_be_visible(
+            timeout=5000
+        )
 
         # Verify URL unchanged (no full page navigation)
         assert page.url == initial_url, "URL should not change with HTMX"
 
         # Verify form replaced (hx-swap="outerHTML")
-        expect(page.locator('[data-testid="form-link-garmin"]')).not_to_be_visible()
+        await expect(page.locator('[data-testid="form-link-garmin"]')).not_to_be_visible()
 
-    def test_sync_button_htmx_request(self, authenticated_user: Page, base_url: str):
+    async def test_sync_button_htmx_request(self, authenticated_user: Page, base_url: str):
         """Test sync button triggers HTMX without page reload.
 
         Validates:
@@ -66,13 +70,13 @@ class TestHTMXPartialUpdates:
         page = authenticated_user
 
         # Mock linked state with sync button
-        def handle_link(route):
+        async def handle_link(route):
             # Let GET requests through to render the form
             if route.request.method == "GET":
-                route.continue_()
+                await route.continue_()
                 return
 
-            route.fulfill(
+            await route.fulfill(
                 status=200,
                 content_type="text/html",
                 body="""
@@ -84,37 +88,37 @@ class TestHTMXPartialUpdates:
                 """,
             )
 
-        def handle_sync(route):
+        async def handle_sync(route):
             # Let GET requests through (sync is POST-only, but include for consistency)
             if route.request.method == "GET":
-                route.continue_()
+                await route.continue_()
                 return
 
-            route.fulfill(
+            await route.fulfill(
                 status=200,
                 content_type="text/html",
                 body='<div data-testid="sync-success">Sync completed</div>',
             )
 
-        page.route("**/garmin/link", handle_link)
-        page.route("**/garmin/sync", handle_sync)
+        await page.route("**/garmin/link", handle_link)
+        await page.route("**/garmin/sync", handle_sync)
 
         # Link account
-        page.goto(f"{base_url}/garmin/link")
-        page.fill('[data-testid="input-garmin-username"]', "test@garmin.com")
-        page.fill('[data-testid="input-garmin-password"]', "password123")
-        page.click('[data-testid="submit-link-garmin"]')
+        await page.goto(f"{base_url}/garmin/link")
+        await page.fill('[data-testid="input-garmin-username"]', "test@garmin.com")
+        await page.fill('[data-testid="input-garmin-password"]', "password123")
+        await page.click('[data-testid="submit-link-garmin"]')
 
         # Wait for linked state
-        expect(page.locator('[data-testid="button-sync-garmin"]')).to_be_visible(timeout=5000)
+        await expect(page.locator('[data-testid="button-sync-garmin"]')).to_be_visible(timeout=5000)
 
         initial_url = page.url
 
         # Click sync
-        page.click('[data-testid="button-sync-garmin"]')
+        await page.click('[data-testid="button-sync-garmin"]')
 
         # Verify sync response
-        expect(page.locator('[data-testid="sync-success"]')).to_be_visible(timeout=5000)
+        await expect(page.locator('[data-testid="sync-success"]')).to_be_visible(timeout=5000)
 
         # Verify URL unchanged
         assert page.url == initial_url
@@ -123,7 +127,7 @@ class TestHTMXPartialUpdates:
 class TestAlpineJSLoadingStates:
     """Test Alpine.js loading state management."""
 
-    def test_loading_state_during_submission(self, authenticated_user: Page, base_url: str):
+    async def test_loading_state_during_submission(self, authenticated_user: Page, base_url: str):
         """Test Alpine.js shows loading state during form submission.
 
         Validates:
@@ -134,47 +138,49 @@ class TestAlpineJSLoadingStates:
         page = authenticated_user
 
         # Mock with artificial delay to observe loading state
-        def handle_link_slow(route):
+        async def handle_link_slow(route):
             # Let GET requests through to render the form
             if route.request.method == "GET":
-                route.continue_()
+                await route.continue_()
                 return
 
-            import time
+            import asyncio
 
-            time.sleep(1)  # 1 second delay
-            route.fulfill(
+            await asyncio.sleep(1)  # 1 second delay
+            await route.fulfill(
                 status=200,
                 content_type="text/html",
                 body='<div data-testid="garmin-status-linked">Linked!</div>',
             )
 
-        page.route("**/garmin/link", handle_link_slow)
+        await page.route("**/garmin/link", handle_link_slow)
 
-        page.goto(f"{base_url}/garmin/link")
+        await page.goto(f"{base_url}/garmin/link")
 
         submit_button = page.locator('[data-testid="submit-link-garmin"]')
 
         # Verify initial state
-        expect(submit_button).to_be_enabled()
-        expect(submit_button).to_contain_text("Link")
+        await expect(submit_button).to_be_enabled()
+        await expect(submit_button).to_contain_text("Link")
 
         # Fill form
-        page.fill('[data-testid="input-garmin-username"]', "test@garmin.com")
-        page.fill('[data-testid="input-garmin-password"]', "password123")
+        await page.fill('[data-testid="input-garmin-username"]', "test@garmin.com")
+        await page.fill('[data-testid="input-garmin-password"]', "password123")
 
         # Submit
-        submit_button.click()
+        await submit_button.click()
 
         # During submission: button disabled and shows "Linking..."
         # This happens very fast with mocks, so we just verify completion
-        expect(page.locator('[data-testid="garmin-status-linked"]')).to_be_visible(timeout=5000)
+        await expect(page.locator('[data-testid="garmin-status-linked"]')).to_be_visible(
+            timeout=5000
+        )
 
 
 class TestHTMXErrorHandling:
     """Test HTMX error response handling."""
 
-    def test_error_displayed_inline_no_reload(self, authenticated_user: Page, base_url: str):
+    async def test_error_displayed_inline_no_reload(self, authenticated_user: Page, base_url: str):
         """Test HTMX displays errors inline without page reload.
 
         Validates:
@@ -185,30 +191,30 @@ class TestHTMXErrorHandling:
         page = authenticated_user
 
         # Mock error response
-        def handle_link_error(route):
+        async def handle_link_error(route):
             # Let GET requests through to render the form
             if route.request.method == "GET":
-                route.continue_()
+                await route.continue_()
                 return
 
-            route.fulfill(
+            await route.fulfill(
                 status=400,
                 content_type="text/html",
                 body='<div data-testid="error-message" class="error">Invalid credentials</div>',
             )
 
-        page.route("**/garmin/link", handle_link_error)
+        await page.route("**/garmin/link", handle_link_error)
 
-        page.goto(f"{base_url}/garmin/link")
+        await page.goto(f"{base_url}/garmin/link")
         initial_url = page.url
 
         # Submit form
-        page.fill('[data-testid="input-garmin-username"]', "wrong@email.com")
-        page.fill('[data-testid="input-garmin-password"]', "wrong_password")
-        page.click('[data-testid="submit-link-garmin"]')
+        await page.fill('[data-testid="input-garmin-username"]', "wrong@email.com")
+        await page.fill('[data-testid="input-garmin-password"]', "wrong_password")
+        await page.click('[data-testid="submit-link-garmin"]')
 
         # Verify error displayed
-        expect(page.locator('[data-testid="error-message"]')).to_be_visible(timeout=5000)
+        await expect(page.locator('[data-testid="error-message"]')).to_be_visible(timeout=5000)
 
         # Verify URL unchanged (HTMX handled error)
         assert page.url == initial_url

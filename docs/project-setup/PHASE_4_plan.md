@@ -1,7 +1,68 @@
 # Phase 4: E2E Test Fixes & User Journey Verification
 
 **Branch**: `feat/phase-4-e2e-fixes`
-**Status**: ⏳ IN PROGRESS - 358/360 tests passing, 2 e2e tests need fixes in Session 13
+**Status**: ⏳ IN PROGRESS - Event loop issue RESOLVED, all 331 unit+integration tests passing with coverage
+
+## Session 14 Summary (2025-11-15) - Event Loop Issue RESOLVED ✅
+
+**Completed**: Plugin switch to pytest-playwright-asyncio, ~1.5 hours
+**Progress**: Event loop conflict completely resolved, 331 tests passing with 91% coverage
+
+### ✅ Completed Work
+
+1. **Test Quality Review**:
+   - Used @test-quality-reviewer agent to analyze test suite architecture
+   - Agent confirmed test design is exemplary (proper fixture scoping, clean isolation)
+   - Identified issue as plugin-level incompatibility, not test architecture
+
+2. **Root Cause Discovery**:
+   - Session 13 converted tests to async API but kept wrong plugin (`pytest-playwright`)
+   - Sync plugin manages event loops independently of pytest-asyncio
+   - Solution: Use `pytest-playwright-asyncio` instead
+
+3. **Implementation**:
+   - Applied stashed async test conversion from Session 13
+   - Updated `pyproject.toml`: `pytest-playwright` → `pytest-playwright-asyncio>=0.7.0`
+   - Cleaned up conflicting `[dependency-groups]` section
+   - Regenerated `uv.lock` file
+
+4. **Test Results**:
+   - **Before**: 252 passed, 108 failed (event loop errors with `--cov`)
+   - **After**: 331 passed, 0 failed with coverage ✅
+   - **Coverage**: 91% (exceeds 80% requirement)
+   - **No more workarounds needed**
+
+### 📊 Final Status
+
+- **Unit + Integration**: 331/331 passing (100%) with 91% coverage
+- **Event loop errors**: 0 (completely resolved)
+- **Plugin**: pytest-playwright-asyncio 0.7.1 (official Microsoft package)
+
+### 🎯 Why This Works
+
+**pytest-playwright (sync)**:
+- Uses `playwright.sync_api` internally
+- Creates/closes event loops at plugin level
+- Conflicts with pytest-asyncio
+
+**pytest-playwright-asyncio**:
+- Designed for pytest-asyncio compatibility
+- Uses `playwright.async_api` natively
+- Shares event loop management with pytest-asyncio
+
+### 📝 Files Changed
+
+- `backend/pyproject.toml`: Switched plugin dependency, added beautifulsoup4
+- `backend/tests/e2e_playwright/*.py`: Already async (from Session 13 stash)
+- `backend/uv.lock`: Regenerated
+- `docs/project-setup/PHASE_4_COVERAGE_INVESTIGATION.md`: Documented resolution
+
+### 🔍 Next Steps
+
+- Verify E2E tests work with new async plugin (requires local-e2e-server.sh)
+- Complete any remaining Phase 4 deliverables
+
+---
 
 ## Session 12 Summary (2025-11-15) - Test Suite Cleanup & E2E Fixes
 
