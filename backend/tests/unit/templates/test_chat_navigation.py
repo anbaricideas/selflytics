@@ -178,7 +178,9 @@ async def test_chat_page_logout_button_functional(client, test_user):
     logout_button = soup.find(attrs={"data-testid": "logout-button"})
 
     # CURRENT BUG: Button doesn't exist, can't test functionality
-    assert logout_button is None, "Bug #10 confirmed: Cannot test logout functionality (button missing)"
+    assert logout_button is None, (
+        "Bug #10 confirmed: Cannot test logout functionality (button missing)"
+    )
 
     # After fixing Bug #10, this should test the logout flow:
     # assert logout_button is not None

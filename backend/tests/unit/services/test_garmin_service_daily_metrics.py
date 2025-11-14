@@ -14,7 +14,7 @@ from unittest.mock import AsyncMock
 
 import pytest
 
-from app.models.garmin import DailySummary
+from app.models.garmin_data import DailyMetrics
 from app.services.garmin_service import GarminService
 
 
@@ -97,7 +97,7 @@ async def test_get_daily_metrics_cached_fetches_from_api_on_cache_miss():
     service.cache.get.return_value = None
 
     # Mock Garmin API response
-    mock_summary = DailySummary(
+    mock_metrics = DailyMetrics(
         date=target_date,
         steps=15000,
         resting_heart_rate=62,
@@ -105,7 +105,7 @@ async def test_get_daily_metrics_cached_fetches_from_api_on_cache_miss():
         avg_stress_level=35,
     )
     service.client = AsyncMock()
-    service.client.get_daily_summary.return_value = mock_summary
+    service.client.get_daily_metrics.return_value = mock_metrics
 
     # This will fail until method is implemented
     with pytest.raises(AttributeError):
@@ -115,7 +115,7 @@ async def test_get_daily_metrics_cached_fetches_from_api_on_cache_miss():
     # assert result["steps"] == 15000
     # assert result["resting_heart_rate"] == 62
     # assert isinstance(result, dict), "Should return dict, not Pydantic model"
-    # service.client.get_daily_summary.assert_called_once_with(target_date)
+    # service.client.get_daily_metrics.assert_called_once_with(target_date)
 
 
 @pytest.mark.asyncio
@@ -134,7 +134,7 @@ async def test_get_daily_metrics_cached_caches_api_results():
     service.cache.get.return_value = None
 
     # Mock API response
-    mock_summary = DailySummary(
+    mock_metrics = DailyMetrics(
         date=target_date,
         steps=15000,
         resting_heart_rate=62,
@@ -142,7 +142,7 @@ async def test_get_daily_metrics_cached_caches_api_results():
         avg_stress_level=35,
     )
     service.client = AsyncMock()
-    service.client.get_daily_summary.return_value = mock_summary
+    service.client.get_daily_metrics.return_value = mock_metrics
 
     # This will fail until method is implemented
     with pytest.raises(AttributeError):
@@ -173,7 +173,7 @@ async def test_get_daily_metrics_cached_handles_cache_errors_gracefully():
     service.cache.get.side_effect = Exception("Firestore timeout")
 
     # Mock API response
-    mock_summary = DailySummary(
+    mock_metrics = DailyMetrics(
         date=target_date,
         steps=10000,
         resting_heart_rate=60,
@@ -181,7 +181,7 @@ async def test_get_daily_metrics_cached_handles_cache_errors_gracefully():
         avg_stress_level=30,
     )
     service.client = AsyncMock()
-    service.client.get_daily_summary.return_value = mock_summary
+    service.client.get_daily_metrics.return_value = mock_metrics
 
     # This will fail until method is implemented
     with pytest.raises(AttributeError):
@@ -189,7 +189,7 @@ async def test_get_daily_metrics_cached_handles_cache_errors_gracefully():
 
     # Once implemented, these assertions should pass:
     # assert result["steps"] == 10000  # Should still return API data
-    # service.client.get_daily_summary.assert_called_once()
+    # service.client.get_daily_metrics.assert_called_once()
 
 
 @pytest.mark.asyncio
@@ -204,7 +204,7 @@ async def test_get_daily_metrics_cached_returns_dict_format():
     target_date = date(2025, 11, 14)
 
     # Mock API response
-    mock_summary = DailySummary(
+    mock_metrics = DailyMetrics(
         date=target_date,
         steps=12500,
         resting_heart_rate=64,
@@ -214,7 +214,7 @@ async def test_get_daily_metrics_cached_returns_dict_format():
     service.cache = AsyncMock()
     service.cache.get.return_value = None
     service.client = AsyncMock()
-    service.client.get_daily_summary.return_value = mock_summary
+    service.client.get_daily_metrics.return_value = mock_metrics
 
     # This will fail until method is implemented
     with pytest.raises(AttributeError):

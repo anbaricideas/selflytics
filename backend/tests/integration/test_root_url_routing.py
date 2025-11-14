@@ -124,7 +124,9 @@ def test_root_route_handles_missing_cookie_gracefully(client: TestClient):
 
 
 @pytest.mark.asyncio
-async def test_root_route_checks_jwt_validity_not_just_existence(client: TestClient, test_user: dict):
+async def test_root_route_checks_jwt_validity_not_just_existence(
+    client: TestClient, test_user: dict
+):
     """
     Root URL should validate JWT token, not just check if it exists.
 
@@ -175,8 +177,6 @@ def test_dashboard_route_requires_authentication_for_comparison(client: TestClie
     response = client.get("/dashboard", follow_redirects=False)
 
     # Dashboard requires auth - should redirect or return 401
-    assert response.status_code in [303, 401], (
-        "Dashboard should require authentication"
-    )
+    assert response.status_code in [303, 401], "Dashboard should require authentication"
     if response.status_code == 303:
         assert response.headers["location"] == "/login"
