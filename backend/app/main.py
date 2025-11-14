@@ -9,7 +9,7 @@ from dotenv import load_dotenv
 from fastapi import FastAPI, Request, status
 from fastapi.exceptions import HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import RedirectResponse
+from fastapi.responses import JSONResponse, RedirectResponse
 
 from app.config import get_settings
 from app.middleware.telemetry import TelemetryMiddleware
@@ -116,8 +116,12 @@ async def http_exception_handler(request: Request, exc: HTTPException):
         if "text/html" in accept_header or hx_request:
             return RedirectResponse(url="/login", status_code=303)
 
-    # For all other cases, raise the exception (FastAPI handles default error response)
-    raise exc
+    # For all other cases, return proper JSON error response
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={"detail": exc.detail},
+        headers=exc.headers,
+    )
 
 
 @app.get("/")

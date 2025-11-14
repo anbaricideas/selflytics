@@ -34,8 +34,8 @@ def client(mock_user_service):
     # Override the get_user_service dependency
     app.dependency_overrides[get_user_service] = lambda: mock_user_service
 
-    # Create test client
-    test_client = TestClient(app)
+    # Create test client (raise_server_exceptions=False allows testing error responses)
+    test_client = TestClient(app, raise_server_exceptions=False)
 
     yield test_client
 
