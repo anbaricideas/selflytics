@@ -466,17 +466,20 @@ Fix all 16 failing e2e tests and verify complete user journeys work end-to-end. 
 
 **Verify all 16 tests pass:**
 
+**CRITICAL**: E2E tests require the local server environment running first!
+
 - [ ] Start fresh environment:
   ```bash
-  # Terminal 1: Emulators
-  ./scripts/start-emulators.sh
+  # Terminal 1: Start Firestore emulator + dev server together
+  ./scripts/local-e2e-server.sh
 
-  # Terminal 2: Dev server
-  ./scripts/dev-server.sh
+  # Wait for "Ready for e2e tests!" message
 
-  # Terminal 3: E2E tests
-  uv run pytest backend/tests/e2e_playwright -v --tb=short
+  # Terminal 2: Run E2E tests
+  uv --directory backend run pytest tests/e2e_playwright -v --no-cov
   ```
+
+  **Note**: `local-e2e-server.sh` starts both the Firestore emulator (port 8092) and dev server (port 8042) with correct configuration for e2e testing.
 - [ ] Document results in `docs/development/e2e-test-results.md`:
   - [ ] Screenshot of all tests passing
   - [ ] Timing information (slowest tests)
