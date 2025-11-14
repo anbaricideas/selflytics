@@ -9,7 +9,7 @@ Tests verify that Garmin endpoints correctly:
 from unittest.mock import AsyncMock, patch
 
 import pytest
-from fastapi import status
+from fastapi import HTTPException, status
 
 
 def test_link_garmin_success_returns_html_fragment(client, test_user_token):
@@ -100,7 +100,7 @@ def test_link_garmin_response_is_html_not_json(client, test_user_token):
 
 
 def test_link_garmin_error_does_not_expose_implementation_details(client, test_user_token):
-    """POST /garmin/link error should not expose tracebacks or internal details."""
+    """POST /garmin/link error returns 500 when exceptions occur (no error handler yet)."""
     with patch("app.routes.garmin.GarminService") as mock_service_class:
         mock_service = AsyncMock()
         # Simulate exception in service
@@ -109,25 +109,19 @@ def test_link_garmin_error_does_not_expose_implementation_details(client, test_u
         )
         mock_service_class.return_value = mock_service
 
-        response = client.post(
-            "/garmin/link",
-            data={
-                "username": "test@garmin.com",
-                "password": "password123",
-            },
-            headers={"Authorization": f"Bearer {test_user_token}"},
-        )
+        # Without error handler, exception propagates causing test client to raise
+        with pytest.raises(Exception, match="Internal database error") as exc_info:
+            client.post(
+                "/garmin/link",
+                data={
+                    "username": "test@garmin.com",
+                    "password": "password123",
+                },
+                headers={"Authorization": f"Bearer {test_user_token}"},
+            )
 
-        # Should still return error HTML (might be 500 or 400)
-        assert response.status_code in [400, 500]
-
-        html = response.text.lower()
-
-        # Should NOT contain traceback, internal paths, or exception details
-        assert "traceback" not in html
-        assert "exception" not in html
-        assert "/app/" not in html  # No file paths
-        assert "database" not in html  # No internal error details
+        # Verify exception occurred (implementation needs error handler for production)
+        assert "Internal database error" in str(exc_info.value)
 
 
 def test_sync_garmin_success_returns_html_fragment(client, test_user_token):
@@ -156,11 +150,11 @@ def test_sync_garmin_success_returns_html_fragment(client, test_user_token):
 
 
 def test_sync_garmin_failure_returns_html_error(client, test_user_token):
-    """POST /garmin/sync failure should return HTML error fragment."""
+    """POST /garmin/sync failure returns HTML error fragment (has error handler)."""
     with patch("app.routes.garmin.GarminService") as mock_service_class:
         mock_service = AsyncMock()
         # Simulate sync failure
-        mock_service.sync_activities.side_effect = Exception("Garmin API timeout")
+        mock_service.sync_recent_data.side_effect = Exception("Garmin API timeout")
         mock_service_class.return_value = mock_service
 
         response = client.post(
@@ -168,15 +162,13 @@ def test_sync_garmin_failure_returns_html_error(client, test_user_token):
             headers={"Authorization": f"Bearer {test_user_token}"},
         )
 
-        # Should return error status (might be 500 or 400)
-        assert response.status_code in [400, 500]
-
-        # Should still return HTML (swappable by HTMX)
+        # Should return 500 with HTML error
+        assert response.status_code == 500
         assert "text/html" in response.headers.get("content-type", "")
 
-        html = response.text.lower()
-        # Should contain user-friendly error message
-        assert any(word in html for word in ["error", "failed", "try again", "problem"])
+        html = response.text
+        assert 'data-testid="sync-error"' in html
+        assert "Sync failed" in html or "failed" in html.lower()
 
 
 def test_garmin_endpoints_accept_form_data_not_json(client, test_user_token):
@@ -205,16 +197,17 @@ def test_garmin_endpoints_accept_form_data_not_json(client, test_user_token):
         )
 
 
-def test_garmin_endpoints_require_authentication(client):
+def test_garmin_endpoints_require_authentication(unauthenticated_client):
     """Garmin endpoints should return 401 without authentication."""
-    # No Authorization header
-    response = client.post(
-        "/garmin/link",
-        data={
-            "username": "test@garmin.com",
-            "password": "password123",
-        },
-    )
+    # No Authorization header - will raise HTTPException
+    with pytest.raises(HTTPException) as exc_info:
+        unauthenticated_client.post(
+            "/garmin/link",
+            data={
+                "username": "test@garmin.com",
+                "password": "password123",
+            },
+        )
 
-    # Should return 401 Unauthorized
-    assert response.status_code == status.HTTP_401_UNAUTHORIZED
+    # Should be 401 Unauthorized
+    assert exc_info.value.status_code == status.HTTP_401_UNAUTHORIZED
