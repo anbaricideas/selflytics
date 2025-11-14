@@ -70,9 +70,10 @@ async def register(
     # Validate password confirmation if provided
     if confirm_password and password != confirm_password:
         if request.headers.get("HX-Request"):
+            # Return form fragment only (not full page) to avoid nesting with hx-swap="outerHTML"
             return templates.TemplateResponse(
                 request=request,
-                name="register.html",
+                name="fragments/register_form.html",
                 context={
                     "errors": {"password": "Passwords do not match"},
                     "email": email,
@@ -95,11 +96,11 @@ async def register(
     # Check if email already exists
     existing_user = await user_service.get_user_by_email(user_data.email)
     if existing_user:
-        # For HTMX requests, return error HTML fragment
+        # For HTMX requests, return form fragment only (not full page)
         if request.headers.get("HX-Request"):
             return templates.TemplateResponse(
                 request=request,
-                name="register.html",
+                name="fragments/register_form.html",
                 context={
                     "errors": {"email": "Email already registered"},
                     "email": user_data.email,

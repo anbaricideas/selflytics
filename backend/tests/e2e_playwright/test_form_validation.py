@@ -395,3 +395,50 @@ class TestErrorRecoveryFlows:
 
         # Should redirect to dashboard
         page.wait_for_url(f"{base_url}/dashboard", timeout=5000)
+
+    def test_registration_error_no_nested_forms(self, page: Page, base_url: str):
+        """Test that registration errors don't create nested/duplicate forms.
+
+        Bug #3: When HTMX swaps error response, the full template (including page
+        wrapper and header) gets nested inside the existing page, creating duplicate
+        "Create Your Account" headers and nested form containers.
+
+        Validates:
+        - Error response only contains form element (not full page wrapper)
+        - No duplicate page title/header after error
+        - Form remains properly structured for retry
+        - No nested containers that break layout
+
+        Note: Uses `page` fixture since testing registration (unauthenticated).
+        """
+        # Navigate to registration page
+        page.goto(f"{base_url}/register")
+
+        # Count initial page elements
+        initial_titles = page.locator('h1:has-text("Create Your Account")').count()
+        assert initial_titles == 1, "Should have exactly one title initially"
+
+        # Submit form with mismatched passwords (trigger validation error)
+        page.fill('[data-testid="input-display-name"]', "Test User")
+        page.fill('[data-testid="input-email"]', "test@example.com")
+        page.fill('[data-testid="input-password"]', "Password123")
+        page.fill('[data-testid="input-confirm-password"]', "DifferentPassword456")
+
+        page.click('[data-testid="submit-register"]')
+
+        # Wait for error to appear
+        expect(page.locator('text="Passwords do not match"')).to_be_visible(timeout=5000)
+
+        # CRITICAL: Title should NOT be duplicated after error swap
+        titles_after_error = page.locator('h1:has-text("Create Your Account")').count()
+        assert titles_after_error == 1, (
+            f"Expected 1 title after error, found {titles_after_error} (Bug #3: nested form)"
+        )
+
+        # Verify form still exists and is editable
+        expect(page.locator('[data-testid="register-form"]')).to_be_visible()
+        expect(page.locator('[data-testid="input-password"]')).to_be_editable()
+
+        # Verify we can correct and retry
+        page.fill('[data-testid="input-confirm-password"]', "Password123")
+        # Note: We don't actually submit since we'd need mock/real backend
