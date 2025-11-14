@@ -145,12 +145,49 @@ docs: update API documentation
 - 30% integration tests (moderate speed, test component interactions)
 - 10% e2e tests (slower, test complete user flows)
 
+### Type Checking
+
+**Static type checking with mypy** is enforced to catch type errors before runtime:
+
+```bash
+# Run mypy type checking
+uv --directory backend run mypy app --strict
+
+# Type checking is also run by:
+# - Pre-commit hooks (before each commit)
+# - CI pipeline (on all PRs and pushes)
+```
+
+**Type checking requirements**:
+- All function signatures must have type hints
+- Use modern type syntax: `list[str]` not `List[str]`
+- Import `TYPE_CHECKING` for circular dependency resolution
+- Third-party libraries without stubs are configured to be ignored
+
+**Common type checking patterns**:
+
+```python
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from app.models.user import User  # Avoid circular imports
+
+def get_user(user_id: str) -> User | None:
+    """Type hints required for all public functions."""
+    ...
+
+async def process_data(items: list[dict[str, str]]) -> bool:
+    """Use modern type syntax (Python 3.12+)."""
+    ...
+```
+
 ### Quality Gates
 
 Before marking work complete:
 - ✅ All tests pass (unit + integration + e2e)
 - ✅ 80%+ code coverage maintained
-- ✅ No linting or type check errors
+- ✅ No linting errors (ruff check)
+- ✅ No type check errors (mypy --strict)
 - ✅ All e2e tests pass locally
 - ✅ Manual runsheet completed (if applicable)
 

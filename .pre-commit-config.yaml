@@ -19,6 +19,19 @@ repos:
         name: ruff (format)
         pass_filenames: false
 
+  # Type checking
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.14.1
+    hooks:
+      - id: mypy
+        args: [--config-file=backend/pyproject.toml, backend/app/]
+        pass_filenames: false
+        additional_dependencies:
+          - types-python-jose
+          - types-passlib
+          - pydantic>=2.5.0
+          - fastapi>=0.109.0
+
   # Security checks
   - repo: https://github.com/PyCQA/bandit
     rev: 1.8.6
