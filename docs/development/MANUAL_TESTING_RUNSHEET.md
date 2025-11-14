@@ -50,20 +50,28 @@
 - [ ] Verify form shows: "Link Your Garmin Account"
 - [ ] Verify form has username and password fields
 
-### 7. Link Garmin Account (Mock Credentials)
-- [ ] Enter Garmin Email: "test@garmin.com"
-- [ ] Enter Garmin Password: "password123"
+### 7. Link Garmin Account ⚠️ REQUIRES REAL CREDENTIALS
+> **Note**: Manual testing hits the real Garmin API (not mocked). You have two options:
+> - **Option A (Recommended)**: SKIP this step - Garmin linking is thoroughly tested in e2e tests with mocked API
+> - **Option B**: Use your own real Garmin account credentials to test the full flow
+
+**If using real credentials (Option B)**:
+- [ ] Enter your real Garmin Connect email
+- [ ] Enter your real Garmin Connect password
 - [ ] Click "Link Account" button
 - [ ] Verify button shows loading state ("Linking..." with spinner)
 - [ ] Verify success message appears: "Garmin account linked"
 - [ ] Verify form is replaced with success status (HTMX swap - no full page reload)
 - [ ] Verify "Sync Now" button appears
 
-### 8. Manual Sync
-- [ ] Click "Sync Now" button
+**If skipping (Option A)**:
+- [ ] SKIPPED - Garmin linking tested in automated e2e tests
+
+### 8. Manual Sync (only if linked in step 7)
+- [ ] Click "Sync Now" button (if Garmin linked)
 - [ ] Verify loading indicator appears
 - [ ] Verify success message: "Sync completed successfully"
-- [ ] Note: No activities will appear (mock data)
+- [ ] Verify recent activities appear (if using real Garmin account)
 
 **Expected Result**: ✅ User registered, logged in, linked Garmin, and synced data successfully
 
@@ -158,23 +166,30 @@
 - [ ] Verify successful login to dashboard
 - [ ] Verify error message is gone
 
-### 5. Garmin Link with Invalid Credentials
+### 5. Garmin Link with Invalid Credentials ⚠️ OPTIONAL (requires real Garmin account)
+> **Note**: This test requires a real Garmin account. If you don't have one, SKIP to step 6.
+
 - [ ] Navigate to /garmin/link or /settings/garmin
 - [ ] If already linked, skip this section
-- [ ] Enter: "wrong@garmin.com"
+- [ ] Enter: "wrong@garmin.com" (or any invalid email)
 - [ ] Enter: "wrongpassword"
 - [ ] Click "Link Account"
 - [ ] Verify error message appears (HTMX swap)
 - [ ] Verify error mentions invalid credentials or similar
 - [ ] Verify form remains visible for retry
 
-### 6. Retry with Valid Credentials
-- [ ] Enter: "test@garmin.com"
-- [ ] Enter: "password123"
+### 6. Retry with Valid Credentials ⚠️ OPTIONAL
+> **Note**: Only if you're testing with a real Garmin account
+
+- [ ] Enter your real Garmin email
+- [ ] Enter your real Garmin password
 - [ ] Click "Link Account"
 - [ ] Verify success message
 - [ ] Verify error message is gone
 - [ ] Verify "Sync Now" button appears
+
+**OR if skipping Garmin tests**:
+- [ ] SKIPPED - Garmin error handling tested in automated e2e tests
 
 **Expected Result**: ✅ All errors displayed clearly, user able to recover without page refreshes
 
