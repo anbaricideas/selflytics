@@ -218,6 +218,22 @@ async def login(
     return {"access_token": access_token, "token_type": "bearer"}
 
 
+@router.post("/logout")
+async def logout():
+    """Logout user by clearing authentication cookie.
+
+    Returns:
+        Redirect to login page with cleared cookie
+    """
+    response = Response(status_code=status.HTTP_303_SEE_OTHER)
+    response.headers["Location"] = "/login"
+
+    # Clear the access_token cookie
+    response.delete_cookie(key="access_token")
+
+    return response
+
+
 @router.get("/auth/me", response_model=UserResponse)
 async def get_me(current_user: UserResponse = Depends(get_current_user)):
     """Get current user information.
