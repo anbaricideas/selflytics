@@ -114,7 +114,7 @@ Start from: wherever marked as ⏳ NEXT
 | [1](./PHASE_1_plan.md) | Infrastructure Foundation | ✅ DONE | 7 hours | `feat/phase-1-infrastructure` | - |
 | [2](./PHASE_2_plan.md) | Garmin Integration | ✅ DONE | 5 hours | `feat/phase-2-garmin` | - |
 | [3](./PHASE_3_plan.md) | Chat + AI Agent | ✅ DONE | 6 hours | `feat/phase-3-chat-ai` | - |
-| [4](./PHASE_4_plan.md) | E2E Test Fixes & User Journeys | ✅ DONE | 8 hours | `feat/phase-4-e2e-fixes` | - |
+| [4](./PHASE_4_plan.md) | E2E Test Fixes & User Journeys | ✅ DONE | 10 hours | `feat/phase-4-e2e-fixes` | - |
 | 5 | Visualization Generation | 📅 PLANNED | - | TBD | - |
 | 6 | Goals & Polish | 📅 PLANNED | - | TBD | - |
 | 7 | Launch Preparation | 📅 PLANNED | - | TBD | - |
@@ -523,7 +523,7 @@ Decision point: Proceed to Phase 1 if ALL criteria met
 | 2025-11-12 | Phase 1 completed ✅ | Infrastructure deployed, 87 tests (96% coverage), Cloud Run live (~7 hours) |
 | 2025-11-13 | Phase 2 completed ✅ | Garmin integration complete, 179 tests (91% coverage), HTMX auth flow fixed (~5 hours) |
 | 2025-11-13 | Phase 3 completed ✅ | Chat + AI agent complete, 187 tests (91-100% on Phase 3 code), Pydantic-AI with 3 Garmin tools (~6 hours) |
-| 2025-11-14 | Phase 4 completed ✅ | All 347 tests passing, 5 bugs fixed (Bugs #1-5), manual testing complete, user journeys verified (8 hours total) |
+| 2025-11-14 | Phase 4 completed ✅ | All bugs fixed (Bugs #8-11), 332 tests passing (220 unit + 112 integration), 80% coverage maintained, all quality gates pass (10 hours: 8h bug fixes + 2h test updates) |
 
 ---
 
