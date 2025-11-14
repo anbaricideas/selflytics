@@ -60,7 +60,7 @@ def client(mock_user_service, test_user):
         # Override UserService dependency
         app.dependency_overrides[get_user_service] = lambda: mock_user_service
 
-        test_client = TestClient(app)
+        test_client = TestClient(app, raise_server_exceptions=False)
         yield test_client
 
         app.dependency_overrides.clear()
@@ -98,7 +98,7 @@ def unauthenticated_client():
     """Provide TestClient without authentication for testing auth flows."""
     # Clear any existing overrides
     app.dependency_overrides.clear()
-    test_client = TestClient(app)
+    test_client = TestClient(app, raise_server_exceptions=False)
     yield test_client
     app.dependency_overrides.clear()
 
