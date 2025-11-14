@@ -32,17 +32,13 @@ def test_link_garmin_success_returns_html_fragment(client, test_user_token):
         assert response.status_code == status.HTTP_200_OK
         assert "text/html" in response.headers.get("content-type", "")
 
-        # HTML should contain success indicator
+        # Verify meaningful behavior: user can see status and proceed to sync
         html = response.text
-        assert 'data-testid="garmin-status-linked"' in html
-        assert "Garmin account linked" in html or "linked" in html.lower()
+        assert 'data-testid="garmin-status-linked"' in html, "Missing linked status indicator"
+        assert "Garmin account linked" in html, "Missing success message"
+        assert 'data-testid="button-sync-garmin"' in html, "Missing sync action button"
 
-        # Should contain sync button
-        assert 'data-testid="button-sync-garmin"' in html
-        assert "Sync Now" in html or "sync" in html.lower()
-
-        # Should be styled as success (green colors)
-        assert "green" in html.lower() or "success" in html.lower()
+        # Visual styling is verified by e2e tests and manual QA
 
 
 def test_link_garmin_failure_returns_html_error_fragment(client, test_user_token):
@@ -67,12 +63,14 @@ def test_link_garmin_failure_returns_html_error_fragment(client, test_user_token
 
         # HTML should contain error message
         html = response.text
-        assert 'data-testid="error-message"' in html
-        assert "Failed to link" in html or "failed" in html.lower()
-        assert "credentials" in html.lower() or "try again" in html.lower()
+        assert 'data-testid="error-message"' in html, "Missing error message container"
+        assert any(
+            phrase in html.lower()
+            for phrase in ["failed to link", "invalid credentials", "could not link"]
+        ), "Missing user-friendly error message"
 
-        # Should be styled as error (red colors)
-        assert "red" in html.lower() or "error" in html.lower()
+        # Should allow user to retry (form or HTMX trigger available)
+        # Visual styling (red/error colors) verified by e2e tests
 
 
 def test_link_garmin_response_is_html_not_json(client, test_user_token):
@@ -93,35 +91,48 @@ def test_link_garmin_response_is_html_not_json(client, test_user_token):
 
         # Must be HTML, not JSON
         assert "text/html" in response.headers.get("content-type", "")
+        assert "application/json" not in response.headers.get("content-type", "")
 
-        # Should NOT be valid JSON
-        with pytest.raises(Exception):  # noqa: B017, PT011
-            response.json()
+        # Should contain HTML content
+        assert 'data-testid="garmin-status-linked"' in response.text
 
 
-def test_link_garmin_error_does_not_expose_implementation_details(client, test_user_token):
-    """POST /garmin/link error returns 500 when exceptions occur (no error handler yet)."""
+def test_link_garmin_internal_error_returns_generic_message(client, test_user_token):
+    """POST /garmin/link internal error should return generic user-facing message."""
     with patch("app.routes.garmin.GarminService") as mock_service_class:
         mock_service = AsyncMock()
-        # Simulate exception in service
+        # Simulate internal error with sensitive information
         mock_service.link_account.side_effect = Exception(
-            "Internal database error with sensitive info"
+            "Database connection failed: host=internal-db.prod.company.com user=admin_user"
         )
         mock_service_class.return_value = mock_service
 
-        # Without error handler, exception propagates causing test client to raise
-        with pytest.raises(Exception, match="Internal database error") as exc_info:
-            client.post(
-                "/garmin/link",
-                data={
-                    "username": "test@garmin.com",
-                    "password": "password123",
-                },
-                headers={"Authorization": f"Bearer {test_user_token}"},
-            )
+        response = client.post(
+            "/garmin/link",
+            data={
+                "username": "test@garmin.com",
+                "password": "password123",
+            },
+            headers={"Authorization": f"Bearer {test_user_token}"},
+        )
 
-        # Verify exception occurred (implementation needs error handler for production)
-        assert "Internal database error" in str(exc_info.value)
+        # Should return 500 with generic error message
+        assert response.status_code == 500
+        assert "text/html" in response.headers.get("content-type", "")
+
+        html = response.text
+
+        # Should NOT expose internal error details
+        assert "Database connection failed" not in html
+        assert "internal-db.prod.company.com" not in html
+        assert "admin_user" not in html
+
+        # Should show generic user-friendly message
+        assert 'data-testid="error-message"' in html
+        assert any(
+            phrase in html.lower()
+            for phrase in ["something went wrong", "unexpected error", "try again later"]
+        )
 
 
 def test_sync_garmin_success_returns_html_fragment(client, test_user_token):

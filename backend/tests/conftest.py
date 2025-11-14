@@ -101,3 +101,26 @@ def unauthenticated_client():
     test_client = TestClient(app)
     yield test_client
     app.dependency_overrides.clear()
+
+
+@pytest.fixture
+def mock_user_service_override():
+    """Fixture for temporarily overriding user service dependency.
+
+    Usage:
+        with mock_user_service_override(mock_service):
+            response = client.post(...)
+
+    Automatically clears overrides after use.
+    """
+    from contextlib import contextmanager
+
+    @contextmanager
+    def _override(mock_service):
+        app.dependency_overrides[get_user_service] = lambda: mock_service
+        try:
+            yield
+        finally:
+            app.dependency_overrides.clear()
+
+    return _override

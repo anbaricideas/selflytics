@@ -15,7 +15,9 @@ from app.auth.password import hash_password
 from app.main import app
 
 
-def test_register_success_returns_hx_redirect_header(unauthenticated_client, create_mock_user):
+def test_register_success_returns_hx_redirect_header(
+    unauthenticated_client, create_mock_user, mock_user_service_override
+):
     """POST /auth/register success with HX-Request header should return HX-Redirect to /dashboard."""
     # Mock user service without conflicting with fixture
     mock_svc = AsyncMock()
@@ -25,9 +27,7 @@ def test_register_success_returns_hx_redirect_header(unauthenticated_client, cre
         email="newuser@example.com",
     )
 
-    app.dependency_overrides[get_user_service] = lambda: mock_svc
-
-    try:
+    with mock_user_service_override(mock_svc):
         response = unauthenticated_client.post(
             "/auth/register",
             data={
@@ -47,9 +47,6 @@ def test_register_success_returns_hx_redirect_header(unauthenticated_client, cre
         # Should set authentication cookie
         assert "access_token" in response.cookies
         # Cookie attributes are set correctly (verified by e2e tests)
-
-    finally:
-        app.dependency_overrides.clear()
 
 
 def test_register_success_without_htmx_returns_json(unauthenticated_client, create_mock_user):
@@ -203,9 +200,14 @@ def test_login_invalid_credentials_returns_html_error(unauthenticated_client, cr
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
         assert "text/html" in response.headers.get("content-type", "")
 
-        # Should contain error message (without exposing which field is wrong)
+        # Should contain generic error message (without exposing which field is wrong)
         html = response.text.lower()
-        assert "incorrect" in html or "invalid" in html or "password" in html
+        assert "incorrect" in html or "invalid" in html
+
+        # Should NOT expose which specific field was wrong (prevents user enumeration)
+        assert "password incorrect" not in html
+        assert "username not found" not in html
+        assert "email not found" not in html
 
     finally:
         app.dependency_overrides.clear()
