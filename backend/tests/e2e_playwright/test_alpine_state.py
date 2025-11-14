@@ -89,21 +89,19 @@ def test_alpine_loading_spinner_appears_during_submission(page: Page, base_url: 
     # Start at login page (unauthenticated)
     page.goto(f"{base_url}/login")
 
-    # Fill form with valid-looking data
-    page.fill('[data-testid="input-email"]', "test@example.com")
-    page.fill('[data-testid="input-password"]', "TestPassword123!")
+    # Fill form with invalid credentials to trigger error response
+    page.fill('[data-testid="input-email"]', "nonexistent@example.com")
+    page.fill('[data-testid="input-password"]', "WrongPassword123!")
 
-    # Look for loading spinner element (it's hidden by x-show initially)
-    # When we click submit, Alpine should toggle loading=true and show spinner
-
-    # Click submit
+    # Click submit - Alpine should show loading spinner briefly
     page.click('[data-testid="submit-login"]')
 
-    # The loading text should appear briefly (or success/error message appears)
-    # We verify by checking that SOMETHING happens (not stuck)
-    expect(
-        page.locator('text="Incorrect"').or_(page.locator('[data-testid="welcome-section"]'))
-    ).to_be_visible(timeout=5000)
+    # Wait for response - should get error message from HTMX swap
+    # The error text is "Incorrect email or password"
+    expect(page.locator('text="Incorrect email or password"')).to_be_visible(timeout=5000)
+
+    # Verify form is still present (HTMX swapped the form with error)
+    expect(page.locator('[data-testid="login-form"]')).to_be_visible()
 
 
 def test_form_remains_editable_after_alpine_loads(page: Page, base_url: str):

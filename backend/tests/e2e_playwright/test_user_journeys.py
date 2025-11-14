@@ -21,16 +21,21 @@ class TestChatPageNavigation:
         # Navigate to chat page
         authenticated_user.goto(f"{base_url}/chat")
 
-        # Wait for page to load - chat page has "Conversations" sidebar
-        expect(authenticated_user.locator("h2")).to_contain_text("Conversations", timeout=5000)
+        # Wait for chat page to fully load - check for header first
+        expect(authenticated_user.locator('[data-testid="chat-header"]')).to_be_visible(
+            timeout=5000
+        )
 
         # User should be able to logout from chat
         logout_button = authenticated_user.locator('[data-testid="logout-button"]')
         expect(logout_button).to_be_visible(timeout=2000)
 
         # User should be able to navigate to dashboard from chat
-        dashboard_link = authenticated_user.locator('[data-testid="nav-dashboard"]')
+        dashboard_link = authenticated_user.locator('[data-testid="link-dashboard"]')
         expect(dashboard_link).to_be_visible(timeout=2000)
+
+        # Verify sidebar loaded (Conversations heading)
+        expect(authenticated_user.locator("text=Conversations")).to_be_visible(timeout=2000)
 
 
 class TestAuthenticatedUserNavigation:

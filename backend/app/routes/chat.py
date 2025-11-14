@@ -16,9 +16,9 @@ router = APIRouter(prefix="/chat", tags=["chat"])
 
 
 @router.get("/", response_class=HTMLResponse)
-async def chat_page(request: Request, _current_user: UserResponse = Depends(get_current_user)):
+async def chat_page(request: Request, current_user: UserResponse = Depends(get_current_user)):
     """Render chat interface page."""
-    return templates.TemplateResponse("chat.html", {"request": request})
+    return templates.TemplateResponse("chat.html", {"request": request, "user": current_user})
 
 
 @router.post("/send")
