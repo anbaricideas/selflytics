@@ -8,8 +8,7 @@ Tests verify that Garmin endpoints correctly:
 
 from unittest.mock import AsyncMock, patch
 
-import pytest
-from fastapi import HTTPException, status
+from fastapi import status
 
 
 def test_link_garmin_success_returns_html_fragment(client, test_user_token):
@@ -210,15 +209,15 @@ def test_garmin_endpoints_accept_form_data_not_json(client, test_user_token):
 
 def test_garmin_endpoints_require_authentication(unauthenticated_client):
     """Garmin endpoints should return 401 without authentication."""
-    # No Authorization header - will raise HTTPException
-    with pytest.raises(HTTPException) as exc_info:
-        unauthenticated_client.post(
-            "/garmin/link",
-            data={
-                "username": "test@garmin.com",
-                "password": "password123",
-            },
-        )
+    # No Authorization header - should return 401 JSON response
+    response = unauthenticated_client.post(
+        "/garmin/link",
+        data={
+            "username": "test@garmin.com",
+            "password": "password123",
+        },
+    )
 
-    # Should be 401 Unauthorized
-    assert exc_info.value.status_code == status.HTTP_401_UNAUTHORIZED
+    # Should be 401 Unauthorized with JSON error
+    assert response.status_code == status.HTTP_401_UNAUTHORIZED
+    assert response.json()["detail"] == "Not authenticated"

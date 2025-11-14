@@ -8,8 +8,7 @@ Tests verify that 401 Unauthorized errors are handled differently for:
 
 from unittest.mock import AsyncMock, patch
 
-import pytest
-from fastapi import HTTPException, status
+from fastapi import status
 
 
 def test_401_with_browser_accept_header_redirects_to_login(unauthenticated_client):
@@ -41,15 +40,14 @@ def test_401_with_htmx_request_header_redirects_to_login(unauthenticated_client)
     assert response.headers["location"] == "/login"
 
 
-def test_401_without_browser_headers_raises_exception(unauthenticated_client):
-    """API request without browser headers receiving 401 should raise HTTPException."""
-    # Without Accept: text/html or HX-Request, the exception handler re-raises
-    # TestClient will raise the exception instead of returning a response
-    with pytest.raises(HTTPException) as exc_info:
-        unauthenticated_client.get("/garmin/link")
+def test_401_without_browser_headers_returns_json_error(unauthenticated_client):
+    """API request without browser headers receiving 401 should return JSON error."""
+    # Without Accept: text/html or HX-Request, the exception handler returns JSON
+    response = unauthenticated_client.get("/garmin/link")
 
-    # Verify exception is 401
-    assert exc_info.value.status_code == status.HTTP_401_UNAUTHORIZED
+    # Verify response is 401 with JSON error
+    assert response.status_code == status.HTTP_401_UNAUTHORIZED
+    assert response.json()["detail"] == "Not authenticated"
 
 
 def test_dashboard_without_auth_redirects_to_login(unauthenticated_client):
