@@ -131,26 +131,27 @@ Fix all 16 failing e2e tests and verify complete user journeys work end-to-end. 
 ## Deliverables
 
 ### Investigation Outputs
-- ⚠️ Test failure analysis (done informally, no document created)
+- 🚫 WON'T DO: Test failure analysis document (fixes done, not documented)
 - ✅ Root cause identification (URL encoding, route handlers, HTMX swapping, auth redirects)
-- ❌ Missing `data-testid` inventory (not created)
+- 🚫 WON'T DO: Missing `data-testid` inventory document (verified via tests instead)
 
 ### Code Changes
-- ✅ All templates have proper `data-testid` attributes (verified existing)
+- ✅ All templates have proper `data-testid` attributes (verified existing + added confirm password)
 - ✅ E2E test infrastructure improvements (port config, mock fixes)
 - ✅ Test reliability fixes (URL encoding, GET passthrough, HTMX error swap, 401 redirect)
 - ✅ All 16 e2e tests passing (100% pass rate)
-- ❌ Additional unit/integration tests for HTMX (not created)
-- ❌ Template rendering tests (not created)
-- ❌ Alpine.js state tests (not created)
+- ⏳ IN PROGRESS: Additional unit/integration tests for HTMX (51 tests added, pending quality review)
+  - ✅ 33 HTMX integration tests (auth, middleware, Garmin) - all passing
+  - ✅ 10 template rendering tests - all passing
+  - ✅ 8 Alpine.js state tests - added, not yet run
 
 ### Documentation
 - ✅ E2E testing workflow added to CLAUDE.md
 - ✅ Agent-first debugging guidelines documented
-- ❌ Manual testing runsheet (not created)
-- ❌ Comprehensive E2E testing guide (not created)
-- ❌ E2E debugging log (not created)
-- ❌ E2E test results document (not created)
+- ✅ Manual testing runsheet created (5 user journeys)
+- 🚫 WON'T DO: Comprehensive E2E testing guide (basic guidance in CLAUDE.md sufficient)
+- 🚫 WON'T DO: E2E debugging log (fixes documented in commits)
+- 🚫 WON'T DO: E2E test results document (test output is the documentation)
 
 ---
 
@@ -401,68 +402,67 @@ Fix all 16 failing e2e tests and verify complete user journeys work end-to-end. 
 
 ---
 
-### Step 5: Create Unit/Integration Tests with @agent-test-quality-reviewer (❌ NOT DONE)
+### Step 5: Create Unit/Integration Tests with @agent-test-quality-reviewer (⏳ IN PROGRESS)
 
 **Goal**: Add tests to cover gaps in coverage revealed by e2e test scenarios
 
+**Status**: Tests written and committed, pending quality review and revision
+
 #### Test 5a: HTMX Response Format Tests
 
-**File**: `backend/tests/integration/routers/test_garmin_htmx.py`
+**Files**:
+- `backend/tests/integration/test_auth_htmx.py` (8 tests)
+- `backend/tests/integration/test_auth_middleware.py` (8 tests)
+- `backend/tests/integration/test_garmin_htmx.py` (9 tests)
+- `backend/tests/unit/test_template_data_testids.py` (8 tests)
 
-- [ ] Write tests for HTMX-specific responses:
-  - [ ] Test `/garmin/link` POST returns HTML fragment (not JSON)
-  - [ ] Test response has `data-testid` attributes
-  - [ ] Test response has correct `hx-swap` targets
-  - [ ] Test error responses return HTML fragments with error classes
-- [ ] Review with @agent-test-quality-reviewer:
-  - Check test scenarios cover all HTMX endpoints
-  - Verify assertions check `Content-Type: text/html`
-  - Ensure error cases tested (invalid credentials, Garmin API down)
-- [ ] Verify tests fail (no implementation changes yet)
-- [ ] Run tests: `uv run pytest backend/tests/integration/routers/test_garmin_htmx.py -v`
-- [ ] Commit: "test: add HTMX response format integration tests"
+- [x] Write 33 HTMX integration tests covering:
+  - [x] Auth endpoints: HX-Redirect headers, HTML fragments vs JSON
+  - [x] Middleware: 401 handling for browser/HTMX/API requests
+  - [x] Garmin endpoints: HTML responses, error handling, form data
+  - [x] Template test IDs: Verify data-testid attributes
+- [x] Initial quality review completed (agent identified issues)
+- [x] Critical fixes applied (fixture conflicts, exception handling)
+- [x] All 33 tests passing (100%)
+- [ ] **PENDING**: Quality review of revised tests
+- [x] Commits: `ae87deb`, `d9a9621`
 
 #### Test 5b: Template Rendering Tests
 
-**File**: `backend/tests/unit/test_template_rendering.py`
+**File**: `backend/tests/unit/test_template_rendering.py` (10 tests)
 
-- [ ] Write tests for template `data-testid` attributes:
-  - [ ] Test login template has all required test IDs
-  - [ ] Test register template has all required test IDs
-  - [ ] Test settings_garmin template has all required test IDs
-  - [ ] Test dashboard template has all required test IDs
-- [ ] Use FastAPI TestClient to render templates:
-  ```python
-  def test_login_template_has_register_link(client):
-      response = client.get("/login")
-      assert response.status_code == 200
-      assert 'data-testid="register-link"' in response.text
-  ```
-- [ ] Review with @agent-test-quality-reviewer
-- [ ] Run tests: `uv run pytest backend/tests/unit/test_template_rendering.py -v`
-- [ ] Commit: "test: add template rendering validation tests"
+- [x] Write tests for template rendering:
+  - [x] Login/register/dashboard/Garmin templates render successfully
+  - [x] Templates include HTMX, Alpine.js, Tailwind CSS
+  - [x] HTML5 structure validation
+  - [x] Error templates display validation errors
+  - [x] Accessible labels for inputs
+- [x] All 10 tests passing (100%)
+- [ ] **PENDING**: Quality review
+- [x] Commit: `a152967`
 
 #### Test 5c: Alpine.js State Management Tests
 
-**File**: `backend/tests/e2e_playwright/test_alpine_state.py`
+**File**: `backend/tests/e2e_playwright/test_alpine_state.py` (8 tests)
 
-- [ ] Write tests for Alpine.js reactive state:
-  - [ ] Test form `loading` state toggles button text
-  - [ ] Test form `loading` state disables inputs
-  - [ ] Test Alpine `x-show` directives work correctly
-- [ ] Use Playwright to evaluate JavaScript state:
-  ```python
-  def test_alpine_loading_state(authenticated_user: Page):
-      # Fill form but don't submit
-      page.fill('[data-testid="input-garmin-username"]', "test@example.com")
+- [x] Write tests for Alpine.js reactive state:
+  - [x] Loading state toggles button text
+  - [x] Loading state disables inputs
+  - [x] x-show directive conditional display
+  - [x] x-data initialization
+  - [x] Loading spinner appearance
+  - [x] Forms remain editable after Alpine loads
+  - [x] Independent Alpine state per form
+- [x] Tests written and committed
+- [ ] **PENDING**: E2E test execution (requires local-e2e-server.sh)
+- [ ] **PENDING**: Quality review
+- [x] Commit: `a152967`
 
-      # Check Alpine state
-      loading_state = page.evaluate("() => Alpine.store('formState')?.loading")
-      assert loading_state is False
-  ```
-- [ ] Review with @agent-test-quality-reviewer
-- [ ] Run tests: `uv run pytest backend/tests/e2e_playwright/test_alpine_state.py -v`
-- [ ] Commit: "test: add Alpine.js state management e2e tests"
+**Next Actions**:
+1. Review tests with @agent-test-quality-reviewer
+2. Incorporate feedback and revisions
+3. Run Alpine.js e2e tests with local server
+4. Mark step complete when all tests reviewed and passing
 
 ---
 
@@ -531,11 +531,23 @@ backend/tests/e2e_playwright/test_form_validation.py::TestErrorRecoveryFlows::te
 
 ---
 
-### Step 8: Create Manual Testing Runsheet (❌ NOT DONE)
+### Step 8: Create Manual Testing Runsheet (✅ DONE)
 
 **File**: `docs/development/MANUAL_TESTING_RUNSHEET.md`
 
-- [ ] Create comprehensive manual test checklist:
+- [x] Created comprehensive manual test checklist with 5 user journeys:
+  - Journey 1: New User Registration → Garmin Linking
+  - Journey 2: Returning User Login → Chat
+  - Journey 3: Error Handling & Recovery
+  - Journey 4: Accessibility & Keyboard Navigation
+  - Journey 5: HTMX Partial Updates
+- [x] Checkbox format for easy execution
+- [x] Step-by-step instructions with expected outcomes
+- [x] Network tab verification for HTMX behavior
+- [x] Sign-off section for formal testing
+- [x] Commit: `a152967`
+
+**Original plan content** (replaced by actual runsheet):
 
 ```markdown
 # Manual Testing Runsheet - User Journeys
@@ -1102,12 +1114,12 @@ This phase provides the foundation for testing those features.
 - ✅ Corrected premature completion claims
 
 **Remaining Work**:
-- ❌ Step 1: Create test failure analysis document
-- ❌ Step 4: Create data-testid inventory document
-- ❌ Step 5: Create unit/integration tests for HTMX
-- ❌ Step 7: Create e2e test results document
-- ❌ Step 8: Create manual testing runsheet
-- ❌ Step 9: Execute manual testing runsheet
-- ❌ Step 10: Create comprehensive E2E testing guide
-- ❌ Step 11: Run final validation (all test suites)
-- ❌ Step 12: Update ROADMAP.md
+- 🚫 Step 1: WON'T DO - Test failure analysis document (fixes documented in commits)
+- 🚫 Step 4: WON'T DO - data-testid inventory document (verified via tests)
+- ⏳ Step 5: IN PROGRESS - Unit/integration tests for HTMX (51 tests written, pending quality review)
+- 🚫 Step 7: WON'T DO - E2e test results document (test output is documentation)
+- ✅ Step 8: DONE - Manual testing runsheet created
+- ⏸️ Step 9: DEFERRED - Execute manual testing runsheet (can be done anytime)
+- 🚫 Step 10: WON'T DO - Comprehensive E2E testing guide (basic guidance in CLAUDE.md)
+- ⏸️ Step 11: PENDING - Run final validation (all test suites, coverage, lint, security)
+- ⏸️ Step 12: PENDING - Update ROADMAP.md (mark Phase 4 complete)
