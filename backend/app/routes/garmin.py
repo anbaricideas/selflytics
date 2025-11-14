@@ -1,9 +1,8 @@
 """Garmin integration routes."""
 
 import logging
-from typing import Any
 
-from fastapi import APIRouter, Depends, Form, HTTPException, Request, status
+from fastapi import APIRouter, Depends, Form, HTTPException, Request, Response, status
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from telemetry.logging_utils import redact_for_logging
@@ -24,7 +23,7 @@ async def garmin_link_page(
     request: Request,
     current_user: UserResponse = Depends(get_current_user),
     templates: Jinja2Templates = Depends(get_templates),
-) -> Any:
+) -> Response:
     """Display Garmin account linking form."""
     return templates.TemplateResponse(
         request=request,
@@ -40,7 +39,7 @@ async def link_garmin_account(
     password: str = Form(...),
     current_user: UserResponse = Depends(get_current_user),
     templates: Jinja2Templates = Depends(get_templates),
-) -> Any:
+) -> Response:
     """Link Garmin account to user.
 
     Returns HTML fragment for HTMX swap (outerHTML).
@@ -99,7 +98,7 @@ async def sync_garmin_data(
     request: Request,
     current_user: UserResponse = Depends(get_current_user),
     templates: Jinja2Templates = Depends(get_templates),
-) -> Any:
+) -> Response:
     """Manually trigger Garmin data sync.
 
     Returns HTML fragment for HTMX swap (outerHTML).

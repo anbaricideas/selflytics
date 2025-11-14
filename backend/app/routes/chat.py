@@ -2,7 +2,7 @@
 
 from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 
@@ -20,7 +20,7 @@ router = APIRouter(prefix="/chat", tags=["chat"])
 @router.get("/", response_class=HTMLResponse)
 async def chat_page(
     request: Request, current_user: UserResponse = Depends(get_current_user)
-) -> Any:
+) -> Response:
     """Render chat interface page."""
     return templates.TemplateResponse("chat.html", {"request": request, "user": current_user})
 

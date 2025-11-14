@@ -1,6 +1,9 @@
-# MyPy Type Checking Setup - Manual Instructions
+# MyPy Type Checking Setup - Migration Notes
 
-This document contains instructions for completing the mypy type checking setup for Selflytics.
+> **Note**: This document describes the mypy migration process (completed in PR #9).
+> See `docs/DEVELOPMENT_WORKFLOW.md` for current type checking guidelines.
+
+This document contains historical notes from the mypy type checking setup for Selflytics.
 
 ## What Has Been Done
 
