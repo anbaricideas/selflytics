@@ -321,37 +321,43 @@
 ## Sign-Off
 
 **Tester**: Bryn (with Claude Code)
-**Date**: 2025-11-14
+**Date**: 2025-11-14 (Session 1) & 2025-11-14 (Session 2 - Re-test)
 **Environment**: Local (http://localhost:8042)
-**All Journeys Passed**: ☐ Yes  ☑ No (7 bugs found)
+**All Journeys Passed**: ☐ Yes  ☑ No (5 new bugs found)
 
-**Journeys Completed**:
-- [x] Journey 1: New User Registration → Garmin Linking (✅ partial - registration works, Garmin blocked by bugs)
-- [x] Journey 2: Returning User Login → Chat (✅ partial - login works, chat not linked, API key issue)
-- [x] Journey 3: Error Handling & Recovery (⚠️ validation works but UX bugs)
+**Journeys Completed (Session 2 - Re-test)**:
+- [x] Journey 1: New User Registration → Garmin Linking (✅ registration perfect, ⚠️ Garmin has duplicate header bug)
+- [x] Journey 2: Returning User Login → Chat (✅ login/chat work, ⚠️ AI tool calling bug, navigation issues)
+- [x] Journey 3: Error Handling & Recovery (✅ validation working correctly, no form duplication)
 - [x] Journey 4: Accessibility & Keyboard Navigation (✅ excellent - full keyboard support)
-- [x] Journey 5: HTMX Partial Updates (✅ HTMX working, but response fragments cause nesting)
+- [x] Journey 5: HTMX Partial Updates (✅ HTMX redirects working, ⚠️ Garmin error swap has duplicate containers)
 
-**Issues Found (CRITICAL)**:
-1. **Login button stuck after 401** - Loading state not reset on error, blocks retry (CRITICAL UX)
-2. **Garmin link returns 401** - Mock credentials fail, unexpected authentication error
-3. **Nested/duplicate forms in error responses** - HTMX swaps full container causing duplication (Garmin, Registration)
-4. **Logout returns 404** - Logout works but shows error page instead of redirecting to /login
-5. **Chat not linked from dashboard** - Card says "Coming in Phase 3" but chat exists at /chat
-6. **Chat OpenAI API key invalid** - .env.local has "test-key" which fails API validation
-7. **Chat page layout** - Need to scroll to see message input field
+**Previously Fixed (from Session 1)**:
+- ✅ Bug #1: Login button stuck after 401 - FIXED
+- ✅ Bug #3: Nested forms in registration/login - FIXED
+- ✅ Bug #4: Logout returns 404 - FIXED
+- ✅ Bug #5: Chat not linked from dashboard - FIXED
+
+**Issues Found (NEW - Session 2)**:
+1. **Garmin error response duplicate headers** ⚠️ CRITICAL UX - When Garmin link fails, duplicate "Link Your Garmin Account" headers appear (outer container duplicated on HTMX swap)
+2. **Dashboard shows wrong user name** ⚠️ NEEDS INVESTIGATION - After logging in as different user, dashboard may show previous user's name
+3. **AI tool calling missing method** 🔴 CRITICAL - Asking "How am I doing?" triggers 500 error: `'GarminService' object has no attribute 'get_daily_metrics_cached'`
+4. **Chat page has no navigation** ⚠️ UX - No logout button, no link to dashboard, user is trapped on chat page
+5. **Root URL redirects to login when authenticated** ⚠️ UX - Visiting `/` redirects to `/login` even for logged-in users (should go to `/dashboard`)
 
 **HTMX Observations**:
-- ✅ HX-Redirect working correctly for registration/login (no full page reloads)
+- ✅ HX-Redirect working correctly for registration/login (no full page reloads, smooth navigation)
 - ✅ Partial swaps working (fragments returned, not full HTML pages)
-- ⚠️ Error response fragments include full container (`<div class="bg-white border...">`) causing nested forms when swapped
+- ⚠️ Garmin error response includes outer container div causing duplicate headers (Bug #1 above)
+- ✅ Login/registration error handling works correctly (no duplication, form stays editable)
 
 **Notes**:
-- Registration flow works perfectly (except password mismatch shows nested form)
-- Keyboard accessibility is excellent (tab order, focus indicators, Enter submission)
-- Core user journeys are functional but error handling UX needs improvement
-- Most bugs are HTMX error response formatting issues (systematic problem across endpoints)
-- Recommend fixing Bug #1 (login stuck), #3 (nested forms), and #5 (chat link) as highest priority
+- **Major improvements from Session 1**: Login/registration error handling now perfect, logout works, chat linked
+- **Regression**: Garmin form still has duplicate container issue (Bug #3 fix incomplete or reverted)
+- **New critical bug**: AI agent tool calling broken for metrics queries (get_daily_metrics_cached missing)
+- **UX issues**: Chat page isolated (no nav), root URL redirect logic needs fixing
+- Keyboard accessibility remains excellent (tab order, focus indicators, Enter submission)
+- Recommend fixing: Bug #1 (Garmin duplication), Bug #3 (AI tool calling), Bug #4 (chat navigation) as highest priority
 
 ---
 

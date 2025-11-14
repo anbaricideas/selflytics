@@ -1,11 +1,117 @@
 # Phase 4: E2E Test Fixes & User Journey Verification
 
 **Branch**: `feat/phase-4-e2e-fixes`
-**Status**: ✅ COMPLETE (all critical bugs fixed, test suite passing, Phase 4 deliverables met)
+**Status**: ⚠️ IN PROGRESS - 4 bugs confirmed via automated tests, ready for fixes in Session 9
+
+## 🚨 Outstanding Issues (Session 8)
+
+**Critical Priority** (Must Fix):
+- 🔴 Bug #8: AI tool calling broken - `get_daily_metrics_cached` method missing from `GarminService`
+  - ✅ Test created: `test_ai_agent_can_retrieve_daily_metrics` (FAILS - reproduces bug)
+
+**High Priority** (Should Fix):
+- ⚠️ Bug #9: Garmin error response shows duplicate headers (regression of Bug #3)
+  - ✅ Test created: `test_garmin_link_error_displays_without_duplicating_page_structure` (FAILS - finds 2 headers)
+- ⚠️ Bug #10: Chat page has no navigation (users cannot logout or return to dashboard)
+  - ✅ Test created: `test_user_can_logout_from_chat_page` (FAILS - navigation missing)
+
+**Medium Priority** (Can Defer):
+- ⚠️ Bug #11: Root URL `/` redirects to login for authenticated users
+  - ✅ Test created: `test_authenticated_user_visiting_root_url_sees_dashboard` (FAILS - redirects to login)
+
+**Eliminated**:
+- ❌ Bug #12: Dashboard wrong user name - FALSE POSITIVE (test passes, bug doesn't exist)
+
+**Progress**: All 4 confirmed bugs have automated tests ✅. Ready to add unit/integration tests + implement fixes in Session 9 ✅.
 
 ---
 
-## Session 7 Summary (2025-11-14) - FINAL
+## Session 8 Summary (2025-11-14) - Manual Re-test
+
+**Completed**: Manual testing runsheet re-execution (all 5 journeys), created automated tests for all bugs
+**Progress**: Verified previous bug fixes, discovered 5 new bugs (4 confirmed, 1 false positive), wrote tests to reproduce bugs
+
+### 🐛 New Bugs Found (Session 8)
+
+#### 🔴 CRITICAL (1 bug)
+**Bug #8: AI Tool Calling Missing Method**
+- **Symptom**: Asking "How am I doing?" triggers 500 error: `'GarminService' object has no attribute 'get_daily_metrics_cached'`
+- **Impact**: Core AI analysis feature broken - users cannot query their metrics
+- **Status**: NOT FIXED - must resolve before phase complete
+
+#### ⚠️ HIGH PRIORITY (2 bugs)
+**Bug #9: Garmin Error Response Duplicate Headers (Regression)**
+- **Symptom**: When Garmin link fails (401 from real API), duplicate "Link Your Garmin Account" headers appear
+- **Root Cause**: `fragments/garmin_link_form.html` includes outer container div, HTMX `outerHTML` swap causes duplication
+- **Impact**: Regression of Bug #3 - fix incomplete for Garmin form (login/registration work correctly)
+- **Status**: NOT FIXED - systematic HTMX fragment pattern issue
+
+**Bug #10: Chat Page Missing Navigation**
+- **Symptom**: No logout button or dashboard link on /chat page - users trapped
+- **Impact**: Blocks legitimate user workflow (cannot navigate away from chat)
+- **Status**: NOT FIXED
+
+#### ⚠️ MEDIUM PRIORITY (2 bugs)
+**Bug #11: Root URL Redirects to Login When Authenticated**
+- **Symptom**: Visiting `/` redirects to `/login` even for logged-in users (should go to `/dashboard`)
+- **Impact**: Minor UX inconvenience
+- **Status**: NOT FIXED
+
+**Bug #12: Dashboard May Show Wrong User Name**
+- **Symptom**: After logging in as different user, dashboard may display previous user's name
+- **Impact**: Potential session/caching issue
+- **Status**: ❌ FALSE POSITIVE - automated test confirms dashboard correctly shows current user (test passes)
+
+### ✅ Verified Fixes from Previous Sessions
+- ✅ Bug #1: Login button stuck after 401 - CONFIRMED FIXED
+- ✅ Bug #3: Nested forms in registration/login - CONFIRMED FIXED (but Garmin has regression)
+- ✅ Bug #4: Logout returns 404 - CONFIRMED FIXED
+- ✅ Bug #5: Chat not linked from dashboard - CONFIRMED FIXED
+
+### 📊 Manual Test Results (Session 8)
+- Journey 1 (Registration → Garmin): ✅ Registration perfect, ⚠️ Garmin has Bug #9
+- Journey 2 (Login → Chat): ✅ Login/chat work, ❌ Bug #8 (critical), ⚠️ Bug #10
+- Journey 3 (Error Handling): ✅ All error handling working correctly
+- Journey 4 (Accessibility): ✅ Excellent (keyboard nav, focus indicators)
+- Journey 5 (HTMX Partial Updates): ✅ HTMX redirects work, ⚠️ Bug #9 in Garmin swap
+
+### 📝 Tests Created (Session 8)
+
+**Integration Tests**: `backend/tests/integration/test_chat_agent_tools.py` (4 tests)
+- ✅ `test_ai_agent_can_retrieve_daily_metrics` - Reproduces Bug #8 (AttributeError)
+- ✅ `test_garmin_service_has_daily_metrics_cache_method` - Verifies method missing
+- ✅ `test_garmin_service_has_activities_cache_method_for_comparison` - Shows pattern
+- ⏭️ `test_ai_agent_retrieves_daily_metrics_successfully_after_fix` - Post-fix validation (skipped)
+
+**E2E Tests**: `backend/tests/e2e_playwright/test_user_journeys.py` (4 test classes, 4 tests)
+- ❌ `TestChatPageNavigation::test_user_can_logout_from_chat_page` - Reproduces Bug #10 (FAILS as expected)
+- ❌ `TestAuthenticatedUserNavigation::test_authenticated_user_visiting_root_url_sees_dashboard` - Reproduces Bug #11 (FAILS as expected)
+- ✅ `TestUserSessionManagement::test_dashboard_displays_correct_user_after_switching_accounts` - Bug #12 is false positive (PASSES)
+- ❌ `TestGarminErrorHandling::test_garmin_link_error_displays_without_duplicating_page_structure` - Reproduces Bug #9 (FAILS - finds 2 headers)
+
+**Test Results**:
+- Integration: 3 passed, 1 skipped ✅
+- E2E: 1 passed (Bug #12 disproven), 3 failed (Bugs #9, #10, #11 confirmed) ✅
+
+### 🎯 Required Actions Before Phase Complete
+
+**Session 9 (Next)**: Add unit/integration tests + implement fixes
+1. ✅ Tests created for all bugs (Session 8)
+2. [ ] Write unit/integration tests for Bug #10 (chat navigation)
+3. [ ] Write unit/integration tests for Bug #11 (root URL redirect)
+4. [ ] Write unit/integration tests for Bug #9 (Garmin fragment pattern)
+5. [ ] Fix Bug #8 (CRITICAL): Implement `get_daily_metrics_cached` method in GarminService
+6. [ ] Fix Bug #10 (HIGH): Add navigation to chat page template
+7. [ ] Fix Bug #9 (HIGH): Correct Garmin fragment pattern
+8. [ ] Fix Bug #11 (MEDIUM): Update root URL redirect logic
+9. [ ] Verify all e2e tests pass after fixes
+10. [ ] Update Phase 4 status to COMPLETE
+
+**Estimated Effort**: 2-4 hours (4 bugs to fix, Bug #12 eliminated)
+
+---
+
+## Session 7 Summary (2025-11-14)
 
 **Completed**: 3 commits, ~1 hour
 **Progress**: Fixed remaining bugs (#2, #4, #5), validated full test suite, marked Phase 4 complete
@@ -49,16 +155,27 @@
 - Security: ✅ No issues
 - Formatting: ✅ Compliant
 
-### ✅ Phase 4 Success Criteria Met
+### ⚠️ Phase 4 Success Criteria Status
+
+**Automated Testing** (Passing ✅):
 - [x] All 25 e2e tests passing locally (100% pass rate)
 - [x] E2E tests documented in CLAUDE.md with debugging guidelines
 - [x] Templates have required data-testid attributes
-- [x] User can register → login → link Garmin → sync (verified via e2e)
-- [x] Error handling graceful (HTMX partial swaps, clear messages)
 - [x] Keyboard navigation works (verified in e2e tests)
 - [x] Manual testing runsheet created with clear instructions
 
-### 🐛 Bugs Fixed (All Sessions)
+**Manual User Journey Verification** (Failing ❌):
+- [x] User can register → login (✅ working)
+- [ ] User can link Garmin account (⚠️ works but has duplicate header bug #9)
+- [ ] User can sync Garmin data (⚠️ works but has duplicate header bug #9)
+- [ ] User can query AI about metrics (❌ BROKEN - bug #8 critical)
+- [ ] User can navigate from chat back to dashboard (❌ BROKEN - bug #10)
+- [x] Error handling graceful for login/registration (✅ working)
+- [ ] Error handling graceful for Garmin (⚠️ duplicate headers bug #9)
+
+**Assessment**: Phase 4 NOT complete - 5 new bugs found in Session 8 manual re-test (1 critical, 2 high, 2 medium)
+
+### 🐛 Bugs Fixed (Sessions 1-7)
 - Bug #1: Login button stuck after 401 ✅ FIXED
 - Bug #2: Garmin 401 ✅ DOCUMENTED (not a bug)
 - Bug #3: Nested forms in error responses ✅ FIXED
