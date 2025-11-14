@@ -3,6 +3,7 @@
 import logging
 import time
 from collections.abc import Awaitable, Callable
+from typing import Any
 
 from fastapi import Request, Response
 from opentelemetry import trace
@@ -23,7 +24,7 @@ class TelemetryMiddleware(BaseHTTPMiddleware):
         skip_paths: Set of paths to skip logging (e.g., health checks to reduce noise)
     """
 
-    def __init__(self, app, skip_paths: set[str] | None = None):
+    def __init__(self, app: Any, skip_paths: set[str] | None = None) -> None:
         """
         Initialize telemetry middleware.
 

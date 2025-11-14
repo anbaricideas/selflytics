@@ -2,6 +2,7 @@
 
 import logging
 from datetime import date, timedelta
+from typing import Any
 
 from google.api_core.exceptions import GoogleAPIError
 from pydantic_ai import Agent, RunContext
@@ -59,7 +60,7 @@ async def garmin_activity_tool(
     start_date: str,
     end_date: str,
     activity_type: str | None = None,
-) -> dict:
+) -> dict[str, Any]:
     """
     Get user activities from Garmin Connect in date range.
 
@@ -109,7 +110,9 @@ async def garmin_activity_tool(
     }
 
 
-async def garmin_metrics_tool(ctx: RunContext[str], metric_type: str, days: int = 7) -> dict:
+async def garmin_metrics_tool(
+    ctx: RunContext[str], metric_type: str, days: int = 7
+) -> dict[str, Any]:
     """
     Get daily metrics from Garmin (steps, heart rate, sleep, etc.).
 
@@ -173,7 +176,7 @@ async def garmin_metrics_tool(ctx: RunContext[str], metric_type: str, days: int 
     }
 
 
-async def garmin_profile_tool(ctx: RunContext[str]) -> dict:
+async def garmin_profile_tool(ctx: RunContext[str]) -> dict[str, Any]:
     """
     Get user's Garmin profile information.
 
@@ -186,7 +189,7 @@ async def garmin_profile_tool(ctx: RunContext[str]) -> dict:
     user_id = ctx.deps
     service = GarminService(user_id)
 
-    profile = await service.get_user_profile()
+    profile = await service.get_user_profile()  # type: ignore[attr-defined]
 
     return {
         "display_name": profile.get("display_name", "User"),

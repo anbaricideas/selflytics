@@ -166,12 +166,20 @@ strict_equality = true
 # Allow dynamic typing for some common patterns
 [[tool.mypy.overrides]]
 module = [
+    "garth",
     "garth.*",
     "pydantic_ai.*",
+    "google.cloud",
     "google.cloud.*",
+    "google.api_core.*",
     "opentelemetry.*",
     "passlib.*",
     "jose.*",
+    "telemetry",
+    "telemetry.*",
+    "bcrypt",
+    "pydantic_settings",
+    "dotenv",
 ]
 ignore_missing_imports = true
 

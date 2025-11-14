@@ -1,6 +1,7 @@
 """Conversation data models."""
 
 from datetime import datetime
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -14,7 +15,7 @@ class Conversation(BaseModel):
     created_at: datetime
     updated_at: datetime
     message_count: int = 0
-    metadata: dict | None = None  # Topics, date ranges queried
+    metadata: dict[str, Any] | None = None  # Topics, date ranges queried
 
 
 class ConversationCreate(BaseModel):

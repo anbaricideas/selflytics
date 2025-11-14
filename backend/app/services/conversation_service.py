@@ -2,6 +2,7 @@
 
 import uuid
 from datetime import UTC, datetime
+from typing import Any
 
 from google.cloud.firestore_v1 import Increment
 
@@ -13,7 +14,7 @@ from app.models.conversation import Conversation
 class ConversationService:
     """Manage chat conversations."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.db = get_firestore_client()
         self.conversations_collection = self.db.collection("conversations")
 
@@ -42,7 +43,7 @@ class ConversationService:
         conversation_id: str,
         role: str,
         content: str,
-        metadata: dict | None = None,
+        metadata: dict[str, Any] | None = None,
     ) -> Message:
         """Add message to conversation atomically."""
         message_id = str(uuid.uuid4())
@@ -109,7 +110,7 @@ class ConversationService:
 
         return [Conversation(**doc.to_dict()) for doc in query.stream()]
 
-    async def generate_title(self, conversation_id: str, first_user_message: str):
+    async def generate_title(self, conversation_id: str, first_user_message: str) -> None:
         """Generate conversation title from first message (AI-powered)."""
         # Simple heuristic for now - use first 50 chars
         title = first_user_message[:50]

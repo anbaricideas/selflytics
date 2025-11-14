@@ -1,8 +1,11 @@
 """Authentication routes for user registration and login."""
 
+from typing import Any
+
 from fastapi import APIRouter, Depends, Form, HTTPException, Request, Response, status
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.security import OAuth2PasswordRequestForm
+from fastapi.templating import Jinja2Templates
 
 from app.auth.dependencies import get_current_user, get_user_service
 from app.auth.jwt import create_access_token
@@ -22,13 +25,15 @@ router = APIRouter(tags=["authentication"])
 
 
 @router.get("/register", response_class=HTMLResponse)
-async def register_form(request: Request, templates=Depends(get_templates)) -> HTMLResponse:
+async def register_form(
+    request: Request, templates: Jinja2Templates = Depends(get_templates)
+) -> Any:
     """Display registration form."""
     return templates.TemplateResponse(request=request, name="register.html")
 
 
 @router.get("/login", response_class=HTMLResponse)
-async def login_form(request: Request, templates=Depends(get_templates)) -> HTMLResponse:
+async def login_form(request: Request, templates: Jinja2Templates = Depends(get_templates)) -> Any:
     """Display login form."""
     return templates.TemplateResponse(request=request, name="login.html")
 
@@ -46,8 +51,8 @@ async def register(
     display_name: str = Form(...),
     confirm_password: str = Form(None),
     user_service: UserService = Depends(get_user_service),
-    templates=Depends(get_templates),
-):
+    templates: Jinja2Templates = Depends(get_templates),
+) -> Any:
     """Register a new user.
 
     Args:
@@ -159,8 +164,8 @@ async def login(
     request: Request,
     form_data: OAuth2PasswordRequestForm = Depends(),
     user_service: UserService = Depends(get_user_service),
-    templates=Depends(get_templates),
-):
+    templates: Jinja2Templates = Depends(get_templates),
+) -> Any:
     """Login user and return JWT access token.
 
     Args:
@@ -223,7 +228,7 @@ async def login(
 
 
 @router.post("/logout")
-async def logout():
+async def logout() -> Response:
     """Logout user by clearing authentication cookie.
 
     Returns:
@@ -239,7 +244,7 @@ async def logout():
 
 
 @router.get("/auth/me", response_model=UserResponse)
-async def get_me(current_user: UserResponse = Depends(get_current_user)):
+async def get_me(current_user: UserResponse = Depends(get_current_user)) -> UserResponse:
     """Get current user information.
 
     Args:

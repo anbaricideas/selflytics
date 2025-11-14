@@ -2,6 +2,7 @@
 
 import base64
 import json
+from typing import Any
 
 from google.cloud import kms
 
@@ -23,7 +24,7 @@ def _get_kms_key_name() -> str:
     )
 
 
-def encrypt_token(token_dict: dict) -> str:
+def encrypt_token(token_dict: dict[str, Any]) -> str:
     """Encrypt token dictionary using KMS.
 
     Args:
@@ -48,7 +49,7 @@ def encrypt_token(token_dict: dict) -> str:
     return base64.b64encode(encrypt_response.ciphertext).decode("utf-8")
 
 
-def decrypt_token(encrypted_token: str) -> dict:
+def decrypt_token(encrypted_token: str) -> dict[str, Any]:
     """Decrypt token using KMS.
 
     Args:
@@ -70,4 +71,5 @@ def decrypt_token(encrypted_token: str) -> dict:
     decrypt_response = kms_client.decrypt(request={"name": kms_key_name, "ciphertext": ciphertext})
 
     # Parse JSON and return dict
-    return json.loads(decrypt_response.plaintext.decode("utf-8"))
+    result: dict[str, Any] = json.loads(decrypt_response.plaintext.decode("utf-8"))
+    return result
