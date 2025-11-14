@@ -298,3 +298,100 @@ class TestErrorRecoveryFlows:
         # Note: If error swaps outerHTML, form is gone and retry requires page reload
         # This test assumes error doesn't replace the form completely
         # In real implementation, we'd need to verify actual HTMX swap strategy
+
+    def test_login_button_resets_after_401_error(self, page: Page, base_url: str):
+        """Test login button loading state resets after authentication error.
+
+        Bug: Login button gets stuck in 'Logging in...' state after 401 error,
+        preventing user from retrying without page refresh.
+
+        Validates:
+        - Button shows loading state during submission
+        - Button resets to 'Login' text after 401 error
+        - Button becomes clickable again (not disabled)
+        - User can retry login without refresh
+
+        Note: Uses `page` fixture (not `authenticated_user`) since testing login flow.
+        """
+
+        # Mock 401 error response with Alpine.js attributes to match real template
+        def handle_login_error(route):
+            if route.request.method == "GET":
+                route.continue_()
+                return
+
+            route.fulfill(
+                status=401,
+                content_type="text/html",
+                body="""<div data-testid="error-message" class="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+                    <p class="text-red-800">Incorrect email or password</p>
+                </div>
+                <form
+                    data-testid="login-form"
+                    hx-post="/auth/login"
+                    hx-swap="outerHTML"
+                    x-data="{ loading: false }"
+                    @submit="loading = true"
+                >
+                    <input data-testid="input-email" type="email" name="username" required />
+                    <input data-testid="input-password" type="password" name="password" required />
+                    <button
+                        data-testid="submit-login"
+                        type="submit"
+                        :disabled="loading"
+                    >
+                        <span x-show="!loading">Login</span>
+                        <span x-show="loading" x-cloak>Logging in...</span>
+                    </button>
+                </form>""",
+            )
+
+        page.route("**/auth/login", handle_login_error)
+
+        # Navigate to login page
+        page.goto(f"{base_url}/login")
+
+        # Fill login form with wrong credentials
+        page.fill('[data-testid="input-email"]', "test@example.com")
+        page.fill('[data-testid="input-password"]', "WrongPassword123")
+
+        # Submit form
+        submit_button = page.locator('[data-testid="submit-login"]')
+        submit_button.click()
+
+        # FIRST: Verify loading state appears (proves Alpine.js @submit event fired)
+        expect(submit_button).to_contain_text("Logging in", timeout=1000)
+        expect(submit_button).to_be_disabled()
+
+        # Wait for error to appear (triggers htmx:afterSwap which resets loading state)
+        expect(page.locator('[data-testid="error-message"]')).to_be_visible(timeout=5000)
+
+        # CRITICAL: Button must reset after error (validates the fix in base.html)
+        expect(submit_button).not_to_be_disabled()
+        expect(submit_button).to_contain_text("Login")
+        expect(submit_button).not_to_contain_text("Logging in")
+
+        # Verify user can retry
+        page.fill('[data-testid="input-password"]', "CorrectPassword123")
+
+        # Remove error route, add success route
+        page.unroute("**/auth/login")
+
+        def handle_login_success(route):
+            if route.request.method == "GET":
+                route.continue_()
+                return
+
+            route.fulfill(
+                status=200,
+                headers={"HX-Redirect": "/dashboard"},
+                body="",
+            )
+
+        page.route("**/auth/login", handle_login_success)
+
+        # Retry submission
+        submit_button.click()
+
+        # Should redirect to dashboard
+        page.wait_for_url(f"{base_url}/dashboard", timeout=5000)

@@ -70,15 +70,37 @@
         <p>&copy; 2025 Selflytics. All rights reserved.</p>
     </footer>
 
-    <!-- HTMX Configuration: Allow 400 error responses to swap content -->
+    <!-- HTMX Configuration: Allow error responses to swap content and reset loading state -->
     <script>
-        // Configure HTMX to swap content on 400 error responses
+        // Configure HTMX to swap content on 400/401 error responses
         // This allows form validation errors to be displayed inline
         document.body.addEventListener('htmx:beforeSwap', function(evt) {
-            if(evt.detail.xhr.status === 400){
-                // Allow 400 responses to swap - used for form validation errors
+            if(evt.detail.xhr.status === 400 || evt.detail.xhr.status === 401){
+                // Allow 400/401 responses to swap - used for form validation/auth errors
                 evt.detail.shouldSwap = true;
                 evt.detail.isError = false;
+            }
+        });
+
+        // Reset Alpine.js loading state after HTMX swap completes
+        // Fixes bug where login button stays in "Logging in..." state after 401 error
+        document.body.addEventListener('htmx:afterSwap', function(evt) {
+            // Find all Alpine components with loading state in the swapped element
+            const swappedElement = evt.detail.target;
+            if (swappedElement) {
+                // If the swapped element or its descendants have x-data with loading state
+                const alpineElements = swappedElement.querySelectorAll('[x-data]');
+                alpineElements.forEach(function(el) {
+                    // Reset loading to false if it exists
+                    if (el._x_dataStack && el._x_dataStack[0] && el._x_dataStack[0].hasOwnProperty('loading')) {
+                        el._x_dataStack[0].loading = false;
+                    }
+                });
+
+                // Also check the swapped element itself
+                if (swappedElement._x_dataStack && swappedElement._x_dataStack[0] && swappedElement._x_dataStack[0].hasOwnProperty('loading')) {
+                    swappedElement._x_dataStack[0].loading = false;
+                }
             }
         });
     </script>
