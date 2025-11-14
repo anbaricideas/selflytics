@@ -11,6 +11,7 @@ from fastapi.exceptions import HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, RedirectResponse
 
+from app.auth.jwt import verify_token
 from app.config import get_settings
 from app.middleware.telemetry import TelemetryMiddleware
 from app.routes import auth, chat, dashboard, garmin
@@ -125,13 +126,29 @@ async def http_exception_handler(request: Request, exc: HTTPException):
 
 
 @app.get("/")
-async def root() -> RedirectResponse:
-    """Root endpoint - redirect to login page.
+async def root(request: Request) -> RedirectResponse:
+    """Root endpoint - redirect based on authentication status.
 
-    In Phase 2, we'll check auth status and redirect accordingly:
     - Authenticated users → /dashboard
     - Unauthenticated users → /login
     """
+    # Check for JWT token in cookie
+    token = request.cookies.get("access_token")
+
+    if token:
+        # Remove "Bearer " prefix if present
+        token = token.replace("Bearer ", "") if token.startswith("Bearer ") else token
+
+        try:
+            # Validate token
+            verify_token(token)
+            # Token is valid - redirect to dashboard
+            return RedirectResponse(url="/dashboard", status_code=303)
+        except ValueError:
+            # Invalid token - redirect to login
+            pass
+
+    # No token or invalid token - redirect to login
     return RedirectResponse(url="/login", status_code=303)
 
 
