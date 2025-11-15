@@ -101,11 +101,12 @@ Start from: wherever marked as ⏳ NEXT
 | Phase | Description | Status | Branch | PR | Parallelizable |
 |-------|-------------|--------|--------|-----|----------------|
 | [1](./PHASE_1_plan.md) | Core Backend Routes | ✅ COMPLETE | `feat/chat-ui-phase-1` | #11 | No (foundation) |
-| [2](./PHASE_2_plan.md) | Settings Hub Page | ⏳ NEXT | `feat/chat-ui-phase-2` | - | Yes (with Phase 3) |
+| [2](./PHASE_2_plan.md) | Settings Hub Page | ✅ COMPLETE | `feat/chat-ui-phase-2` | #15 | Yes (with Phase 3) |
 | [3](./PHASE_3_plan.md) | Chat Banner & Dismissal | 📋 READY | `feat/chat-ui-phase-3` | - | Yes (with Phase 2) |
-| [4](./PHASE_4_plan.md) | Navigation & Cleanup | 📋 PLANNED | `feat/chat-ui-phase-4` | - | No (needs 1-3) |
+| [4](./PHASE_4_plan.md) | Navigation & Cleanup | ⏳ NEXT | `feat/chat-ui-phase-4` | - | No (needs 1-3) |
 
-**Current Phase**: Phase 2 (Settings Hub Page)
+**Current Phase**: Phase 3 (Chat Banner & Dismissal) - In Progress in separate worktree
+**Next Phase**: Phase 4 (Navigation & Cleanup) - After Phases 2 and 3 merge
 
 **Parallelization Notes**:
 - Phase 1 must complete first (establishes routes)
@@ -421,6 +422,7 @@ git log --oneline feat/chat-ui..HEAD --format="%ad" --date=format:"%Y-%m-%d %H:0
 | 2025-11-15 | Roadmap created | 4 phases, 6-8 hours estimated, parallel execution for phases 2-3 |
 | 2025-11-15 | Specification finalized | Based on SPECIFICATION.md v1.0 |
 | 2025-11-15 | Phase 1 completed | Core Backend Routes - route redirects and settings endpoint (PR #11 merged) |
+| 2025-11-15 | Phase 2 completed | Settings Hub Page - card-based layout with Garmin and Profile cards (PR #15 ready for review) |
 
 ---
 
@@ -440,4 +442,4 @@ git log --oneline feat/chat-ui..HEAD --format="%ad" --date=format:"%Y-%m-%d %H:0
 ---
 
 *Last Updated: 2025-11-15*
-*Status: In Progress - Phase 2 Next*
+*Status: In Progress - Phase 3 (in progress in separate worktree), Phase 4 Next (after 2+3 merge)*
