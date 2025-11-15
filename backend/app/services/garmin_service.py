@@ -4,9 +4,8 @@ import logging
 from datetime import date, timedelta
 from typing import Any
 
-import garth
-
 from app.services.garmin_client import GarminClient
+from app.services.garth_wrapper import get_user_profile_typed
 from app.services.user_service import UserService
 from app.utils.cache import GarminDataCache
 
@@ -195,6 +194,7 @@ class GarminService:
         await self.client.load_tokens()
 
         # Access garth.client.profile for display name
-        display_name: str = garth.client.profile.get("displayName", "User")
+        profile = get_user_profile_typed()
+        display_name: str = profile.get("displayName", "User")
 
         return {"display_name": display_name}
