@@ -169,9 +169,13 @@ cleanup_stale_previews() {
         --format="table[no-heading](metadata.name,metadata.labels.feature)" 2>/dev/null)
 
     if [ -z "$services" ]; then
-        log_info "No preview deployments found."
+        log_error "DEBUG: No preview deployments found by gcloud query"
         return 0
     fi
+
+    local service_count
+    service_count=$(echo "$services" | wc -l | tr -d ' ')
+    log_error "DEBUG: Found $service_count preview services to evaluate"
 
     local deleted_count=0
 
