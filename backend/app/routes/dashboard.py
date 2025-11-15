@@ -3,6 +3,7 @@
 from fastapi import APIRouter, Depends, Request, Response
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
+from fastapi_csrf_protect.flexible import CsrfProtect
 
 from app.auth.dependencies import get_current_user
 from app.dependencies import get_templates
@@ -50,14 +51,24 @@ async def dashboard_redirect() -> RedirectResponse:
 async def settings_page(
     request: Request,
     user: UserResponse = Depends(get_current_user),
+    csrf_protect: CsrfProtect = Depends(),
     templates: Jinja2Templates = Depends(get_templates),
 ) -> Response:
     """Settings hub page with Garmin and profile management links.
 
     Requires authentication via get_current_user dependency.
+    Generates CSRF token for logout form protection.
     """
-    return templates.TemplateResponse(
+    # Generate CSRF token pair for logout form
+    csrf_token, signed_token = csrf_protect.generate_csrf_tokens()
+
+    response = templates.TemplateResponse(
         request=request,
         name="settings.html",
-        context={"user": user},
+        context={"user": user, "csrf_token": csrf_token},
     )
+
+    # Set CSRF cookie
+    csrf_protect.set_csrf_cookie(signed_token, response)
+
+    return response

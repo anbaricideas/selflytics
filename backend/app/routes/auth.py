@@ -274,12 +274,20 @@ async def login(
 
 
 @router.post("/logout")
-async def logout() -> Response:
+async def logout(
+    request: Request,
+    csrf_protect: CsrfProtect = Depends(),
+) -> Response:
     """Logout user by clearing authentication cookie.
+
+    CSRF protection prevents attackers from forcing logout via malicious sites.
 
     Returns:
         Redirect to login page with cleared cookie
     """
+    # Validate CSRF token
+    await csrf_protect.validate_csrf(request)
+
     response = Response(status_code=status.HTTP_303_SEE_OTHER)
     response.headers["Location"] = "/login"
 

@@ -5,6 +5,7 @@ from typing import Any
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
+from fastapi_csrf_protect.flexible import CsrfProtect
 
 from app.auth.dependencies import get_current_user
 from app.models.chat import ChatRequest
@@ -19,10 +20,26 @@ router = APIRouter(prefix="/chat", tags=["chat"])
 
 @router.get("/", response_class=HTMLResponse)
 async def chat_page(
-    request: Request, current_user: UserResponse = Depends(get_current_user)
+    request: Request,
+    current_user: UserResponse = Depends(get_current_user),
+    csrf_protect: CsrfProtect = Depends(),
 ) -> Response:
-    """Render chat interface page."""
-    return templates.TemplateResponse("chat.html", {"request": request, "user": current_user})
+    """Render chat interface page.
+
+    Generates CSRF token for logout form and future chat send protection.
+    """
+    # Generate CSRF token pair
+    csrf_token, signed_token = csrf_protect.generate_csrf_tokens()
+
+    response = templates.TemplateResponse(
+        "chat.html",
+        {"request": request, "user": current_user, "csrf_token": csrf_token},
+    )
+
+    # Set CSRF cookie
+    csrf_protect.set_csrf_cookie(signed_token, response)
+
+    return response
 
 
 @router.post("/send")
