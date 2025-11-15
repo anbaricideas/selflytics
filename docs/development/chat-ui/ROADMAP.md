@@ -102,11 +102,11 @@ Start from: wherever marked as ⏳ NEXT
 |-------|-------------|--------|--------|-----|----------------|
 | [1](./PHASE_1_plan.md) | Core Backend Routes | ✅ COMPLETE | `feat/chat-ui-phase-1` | #11 | No (foundation) |
 | [2](./PHASE_2_plan.md) | Settings Hub Page | ✅ COMPLETE | `feat/chat-ui-phase-2` | #15 | Yes (with Phase 3) |
-| [3](./PHASE_3_plan.md) | Chat Banner & Dismissal | 📋 READY | `feat/chat-ui-phase-3` | - | Yes (with Phase 2) |
+| [3](./PHASE_3_plan.md) | Chat Banner & Dismissal | IN PROGRESS | `feat/chat-ui-phase-3` | #16 | Yes (with Phase 2) |
 | [4](./PHASE_4_plan.md) | Navigation & Cleanup | ⏳ NEXT | `feat/chat-ui-phase-4` | - | No (needs 1-3) |
 
-**Current Phase**: Phase 3 (Chat Banner & Dismissal) - In Progress in separate worktree
-**Next Phase**: Phase 4 (Navigation & Cleanup) - After Phases 2 and 3 merge
+**Current Phase**: Phase 3 (Chat Banner & Dismissal) - PR #16 in review
+**Next Phase**: Phase 4 (Navigation & Cleanup) - After Phase 3 merges
 
 **Parallelization Notes**:
 - Phase 1 must complete first (establishes routes)
