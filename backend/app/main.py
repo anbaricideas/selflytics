@@ -37,7 +37,7 @@ class CsrfSettings(BaseModel):
     secret_key: str
     token_location: str = "body"  # noqa: S105  # Look for token in form data (not header), not a password
     token_key: str = "fastapi-csrf-token"  # noqa: S105  # Form field name for token, not a password
-    cookie_name: str = "csrf_token"
+    # NOTE: cookie_name is ignored by library - it hardcodes "fastapi-csrf-token"
     cookie_samesite: str = "strict"  # Stricter than auth cookie
     cookie_secure: bool = True  # HTTPS only in production
     cookie_httponly: bool = False  # Must be readable by JavaScript (for HTMX)
