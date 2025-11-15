@@ -104,9 +104,18 @@ count_preview_services() {
 
 # Function to get all remote branch names (without origin/ prefix)
 get_remote_branches() {
-    git ls-remote --heads origin 2>/dev/null | \
+    # Try to fetch remote branches - this requires git and network access
+    if ! command -v git >/dev/null 2>&1; then
+        log_error "git command not found - cannot fetch remote branches"
+        return 1
+    fi
+
+    git ls-remote --heads origin 2>&1 | \
         awk '{print $2}' | \
-        sed 's|refs/heads/||' || echo ""
+        sed 's|refs/heads/||' || {
+            log_error "Failed to fetch remote branches via git ls-remote"
+            return 1
+        }
 }
 
 # Function to clean up stale preview deployments
@@ -115,11 +124,15 @@ cleanup_stale_previews() {
 
     # Get list of remote branches
     local remote_branches
-    remote_branches=$(get_remote_branches)
+    if ! remote_branches=$(get_remote_branches); then
+        log_error "Could not fetch remote branches. Skipping automatic cleanup."
+        log_error "This may be due to git not being available or network issues."
+        return 1
+    fi
 
     if [ -z "$remote_branches" ]; then
-        log_info "⚠ Warning: Could not fetch remote branches. Skipping cleanup."
-        return 0
+        log_error "No remote branches found. This is unexpected - skipping cleanup."
+        return 1
     fi
 
     # Get all preview services with their feature labels
@@ -203,11 +216,13 @@ if [ "$AUTO_CLEANUP" = "true" ]; then
     log_info ""
     log_info "Running automatic cleanup of stale previews..."
 
-    cleanup_stale_previews
-
-    # Recount after cleanup
-    count=$(count_preview_services)
-    log_info "Previews after cleanup: $count / $PREVIEW_LIMIT"
+    if cleanup_stale_previews; then
+        # Recount after cleanup
+        count=$(count_preview_services)
+        log_info "Previews after cleanup: $count / $PREVIEW_LIMIT"
+    else
+        log_error "Automatic cleanup failed or was skipped. Proceeding with limit check."
+    fi
 fi
 
 # Check against effective limit
