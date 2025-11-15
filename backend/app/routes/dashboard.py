@@ -18,6 +18,9 @@ async def dashboard_redirect() -> RedirectResponse:
 
     Returns 301 (permanent redirect) to signal this is a permanent change.
     This helps with SEO and allows browsers to cache the redirect.
+
+    Note: No auth required here - authentication is checked at /settings destination.
+    This simplifies the redirect logic and avoids duplicate auth checks.
     """
     return RedirectResponse("/settings", status_code=301)
 
