@@ -1,5 +1,7 @@
 {% extends "base.html" %}
 
+{% block title %}Chat - Selflytics{% endblock %}
+
 {% block content %}
 <div class="min-h-screen bg-gray-50">
     <!-- Header -->
@@ -292,7 +294,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Banner dismissal logic
     const banner = document.getElementById('garmin-banner');
     if (banner) {
-        // Check dismissed state from localStorage
+        // Check dismissed state from localStorage (persists across sessions until login)
         const dismissed = localStorage.getItem('garmin-banner-dismissed');
         if (dismissed === 'true') {
             banner.style.display = 'none';
@@ -303,18 +305,10 @@ document.addEventListener('DOMContentLoaded', () => {
         if (dismissBtn) {
             dismissBtn.addEventListener('click', () => {
                 banner.style.display = 'none';
+                // Store dismissal state (cleared on login page load)
                 localStorage.setItem('garmin-banner-dismissed', 'true');
             });
         }
-    }
-
-    // Logout handler - clears banner state
-    const logoutForm = document.querySelector('form[action="/logout"]');
-    if (logoutForm) {
-        logoutForm.addEventListener('submit', () => {
-            // Clear banner dismissed state before logout
-            localStorage.removeItem('garmin-banner-dismissed');
-        });
     }
 });
 </script>

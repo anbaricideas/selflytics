@@ -35,8 +35,8 @@ class TestGarminLinkingJourney:
         await page.fill('input[name="confirm_password"]', test_user["password"])
         await page.click('[data-testid="submit-register"]')
 
-        # Verify redirect to dashboard
-        await page.wait_for_url(f"{base_url}/dashboard", timeout=10000)
+        # Verify redirect to settings
+        await page.wait_for_url(f"{base_url}/settings", timeout=10000)
 
         # Step 3: Navigate to Garmin settings
         await page.goto(f"{base_url}/garmin/link")

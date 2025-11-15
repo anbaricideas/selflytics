@@ -46,15 +46,13 @@ class TestBannerDismissalScript:
         assert "garmin-banner-dismissed" in response.text
 
 
-class TestLogoutHandler:
-    """Tests for logout handler localStorage clearing."""
+class TestLoginHandler:
+    """Tests for login handler localStorage clearing."""
 
-    def test_logout_clears_localstorage_in_client(self, client: TestClient, test_user_token: str):
-        """Logout handler should include localStorage.removeItem call."""
-        response = client.get("/chat/", cookies={"access_token": f"Bearer {test_user_token}"})
+    def test_login_clears_localstorage_on_page_load(self, client: TestClient):
+        """Login page should clear banner dismissed state on load."""
+        response = client.get("/")
         assert response.status_code == 200
-        # Check for logout handler that clears localStorage
-        assert 'action="/logout"' in response.text
         # Script should contain removeItem for banner dismissed state
         assert "removeItem" in response.text
         assert "garmin-banner-dismissed" in response.text
@@ -149,13 +147,15 @@ def test_profile_card_shows_email(
 
 
 def test_profile_card_has_edit_link(client: TestClient, test_user_token: str) -> None:
-    """Profile card should include 'Edit' link to /profile/edit."""
+    """Profile card should include 'Edit' link with 'Coming Soon' badge."""
     response = client.get("/settings", cookies={"access_token": f"Bearer {test_user_token}"})
 
     assert response.status_code == 200
     assert 'data-testid="link-edit-profile"' in response.text
-    assert 'href="/profile/edit"' in response.text
+    assert 'href="#"' in response.text
     assert "Edit" in response.text
+    assert "Coming Soon" in response.text
+    assert "onclick" in response.text
 
 
 # Phase 4: Chat Header Navigation Tests

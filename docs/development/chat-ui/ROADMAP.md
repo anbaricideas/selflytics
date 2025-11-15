@@ -315,9 +315,9 @@ git log --oneline feat/chat-ui..HEAD --format="%ad" --date=format:"%Y-%m-%d %H:0
 
 **Technical Success**:
 - [x] Banner appears for users with unlinked Garmin accounts
-- [x] Banner dismissal persists within session
+- [x] Banner dismissal persists until logout
 - [x] Banner reappears after logout/login
-- [x] Logout clears banner dismissed state
+- [x] Login clears banner dismissed state
 
 **Deliverables**:
 - [x] Banner component in `chat.html`
@@ -344,13 +344,13 @@ git log --oneline feat/chat-ui..HEAD --format="%ad" --date=format:"%Y-%m-%d %H:0
 **Functional Requirements**:
 - [x] Authenticated users redirect to `/chat` from root URL
 - [x] Garmin banner displays for users with unlinked accounts
-- [x] Banner dismissal works and persists within session
+- [x] Banner dismissal works and persists until logout
 - [x] Banner reappears on new login session if account still unlinked
 - [x] Settings icon in chat header navigates to `/settings`
 - [x] Settings hub displays Garmin and Profile cards
 - [x] Garmin card links to `/garmin/link`
 - [x] Old `/dashboard` URL redirects to `/settings`
-- [x] Logout clears banner dismissal state
+- [x] Login clears banner dismissal state
 - [x] Mobile responsive behavior works correctly
 
 **Non-Functional Requirements**:

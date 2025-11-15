@@ -11,12 +11,12 @@
 
 ## Goal
 
-Add a dismissible Garmin connection banner to the chat interface that appears for users with unlinked Garmin accounts. The banner provides a gentle reminder to link their account without being intrusive, using localStorage for session-based dismissal.
+Add a dismissible Garmin connection banner to the chat interface that appears for users with unlinked Garmin accounts. The banner provides a gentle reminder to link their account without being intrusive, using localStorage for dismissal persistence (cleared on login).
 
 **Key Deliverables**:
 - Garmin banner component in `chat.html`
 - JavaScript dismissal logic with localStorage
-- Logout handler clears banner state
+- Login handler clears banner state
 - Banner only appears when `user.garmin_linked == False`
 - Mobile responsive banner layout
 

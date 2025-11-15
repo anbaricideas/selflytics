@@ -13,7 +13,7 @@
                     <a href="/chat/" class="text-sm text-blue-600 hover:text-blue-800" data-testid="link-back-to-chat">
                         ← Back to Chat
                     </a>
-                    <form hx-post="/logout" hx-swap="none" class="inline">
+                    <form method="POST" action="/logout" class="inline">
                         <button type="submit"
                                 class="text-sm text-red-600 hover:text-red-800"
                                 data-testid="button-logout"
@@ -79,11 +79,13 @@
                             Update your display name, email, and password
                         </p>
                         <p class="text-xs text-gray-500 mb-3" data-testid="profile-email">{{ user.email }}</p>
-                        <a href="/profile/edit"
-                           class="inline-block bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700 transition text-sm"
+                        <a href="#"
+                           onclick="event.preventDefault(); alert('Profile editing coming soon!');"
+                           class="inline-flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700 transition text-sm opacity-60 cursor-not-allowed"
                            data-testid="link-edit-profile"
-                           aria-label="Edit profile settings">
+                           aria-label="Edit profile settings - Coming soon">
                             Edit →
+                            <span class="text-xs bg-yellow-400 text-black px-2 py-0.5 rounded font-semibold">Coming Soon</span>
                         </a>
                     </div>
                 </div>

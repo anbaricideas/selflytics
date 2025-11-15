@@ -634,7 +634,7 @@ The redesign primarily involves UI reorganization with no new authentication or 
 
 **Testing Requirements:**
 - Banner appears for unlinked users
-- Banner dismissal persists within session
+- Banner dismissal persists until logout
 - Banner reappears after logout/login
 - Settings icon navigates correctly
 - Settings hub displays both cards
@@ -679,13 +679,13 @@ The redesign primarily involves UI reorganization with no new authentication or 
 
 - [x] Authenticated users redirect to `/chat` from root URL
 - [x] Garmin banner displays for users with unlinked accounts
-- [x] Banner dismissal works and persists within session
+- [x] Banner dismissal works and persists until logout
 - [x] Banner reappears on new login session if account still unlinked
 - [x] Settings icon in chat header navigates to `/settings`
 - [x] Settings hub displays Garmin and Profile cards
 - [x] Garmin card links to `/garmin/link`
 - [x] Old `/dashboard` URL redirects to `/settings`
-- [x] Logout clears banner dismissal state
+- [x] Login clears banner dismissal state
 - [x] Mobile responsive behavior works correctly
 
 ### Non-Functional Requirements

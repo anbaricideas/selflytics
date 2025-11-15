@@ -27,4 +27,10 @@
         </div>
     </div>
 </div>
+
+<script>
+// Clear old banner state when starting new session
+// This ensures banner reappears for each new login if Garmin is unlinked
+localStorage.removeItem('garmin-banner-dismissed');
+</script>
 {% endblock %}

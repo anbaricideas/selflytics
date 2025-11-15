@@ -54,11 +54,11 @@ class TestAuthenticatedUserNavigation:
         # Navigate to root URL
         await authenticated_user.goto(base_url)
 
-        # Should redirect to dashboard, not login
-        await authenticated_user.wait_for_url(f"{base_url}/dashboard", timeout=5000)
+        # Should redirect to settings, not login
+        await authenticated_user.wait_for_url(f"{base_url}/settings", timeout=5000)
 
-        # Verify we're on dashboard
-        await expect(authenticated_user.locator('[data-testid="dashboard-header"]')).to_be_visible()
+        # Verify we're on settings
+        await expect(authenticated_user.locator('[data-testid="settings-header"]')).to_be_visible()
 
 
 class TestUserSessionManagement:
@@ -89,8 +89,8 @@ class TestUserSessionManagement:
         await page.fill('[data-testid="input-confirm-password"]', password)
         await page.click('[data-testid="submit-register"]')
 
-        # Wait for redirect to dashboard
-        await page.wait_for_url(f"{base_url}/dashboard", timeout=10000)
+        # Wait for redirect to settings
+        await page.wait_for_url(f"{base_url}/settings", timeout=10000)
 
         # Verify first user's name is shown
         welcome_message = page.locator('[data-testid="welcome-section"]')
@@ -111,8 +111,8 @@ class TestUserSessionManagement:
         await page.fill('[data-testid="input-confirm-password"]', password)
         await page.click('[data-testid="submit-register"]')
 
-        # Wait for redirect to dashboard
-        await page.wait_for_url(f"{base_url}/dashboard", timeout=10000)
+        # Wait for redirect to settings
+        await page.wait_for_url(f"{base_url}/settings", timeout=10000)
 
         # Verify second user's name is shown (NOT first user's name)
         welcome_message = page.locator('[data-testid="welcome-section"]')

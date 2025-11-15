@@ -240,9 +240,9 @@ class TestCSRFTokenRotation:
         await page.fill('input[name="confirm_password"]', test_user["password"])  # Fixed!
         await page.click('[data-testid="submit-register"]')
 
-        # STEP 9: Verify successful registration (redirects to dashboard)
-        await page.wait_for_url(f"{base_url}/dashboard", timeout=E2E_TIMEOUT_MS)
-        await expect(page).to_have_url(f"{base_url}/dashboard")
+        # STEP 9: Verify successful registration (redirects to settings)
+        await page.wait_for_url(f"{base_url}/settings", timeout=E2E_TIMEOUT_MS)
+        await expect(page).to_have_url(f"{base_url}/settings")
 
     async def test_csrf_token_rotation_on_login_failure(
         self,
@@ -283,7 +283,7 @@ class TestCSRFTokenRotation:
         await page.click('[data-testid="submit-login"]')
 
         # STEP 6: Verify success
-        await page.wait_for_url(f"{base_url}/dashboard", timeout=E2E_TIMEOUT_MS)
+        await page.wait_for_url(f"{base_url}/settings", timeout=E2E_TIMEOUT_MS)
 
 
 @pytest.mark.e2e
@@ -353,4 +353,4 @@ class TestCSRFHTMXCompatibility:
         await page.click('[data-testid="submit-register"]')
 
         # STEP 10: Verify successful registration (HTMX completes the flow)
-        await page.wait_for_url(f"{base_url}/dashboard", timeout=E2E_TIMEOUT_MS)
+        await page.wait_for_url(f"{base_url}/settings", timeout=E2E_TIMEOUT_MS)
