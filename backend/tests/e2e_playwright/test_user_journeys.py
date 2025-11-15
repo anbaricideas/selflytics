@@ -30,9 +30,9 @@ class TestChatPageNavigation:
         logout_button = authenticated_user.locator('[data-testid="logout-button"]')
         await expect(logout_button).to_be_visible(timeout=2000)
 
-        # User should be able to navigate to dashboard from chat
-        dashboard_link = authenticated_user.locator('[data-testid="link-dashboard"]')
-        await expect(dashboard_link).to_be_visible(timeout=2000)
+        # User should be able to navigate to settings from chat
+        settings_link = authenticated_user.locator('[data-testid="link-settings"]')
+        await expect(settings_link).to_be_visible(timeout=2000)
 
         # Verify sidebar loaded (Conversations heading)
         await expect(authenticated_user.locator("text=Conversations")).to_be_visible(timeout=2000)

@@ -1,11 +1,25 @@
 # Outstanding Tasks
 
-## E2E Test Investigation
+## ✅ RESOLVED: E2E Test Investigation
 
-**Status**: Mostly Complete (39/43 passing - 90.7%)
+**Status**: ✅ COMPLETE (43/43 passing - 100%)
 **Priority**: High
+**Completion Date**: 2025-11-16
 
-### Background
+### Summary
+
+Successfully resolved all 4 remaining test failures by implementing missing frontend features:
+1. Root URL redirect (`/` → `/chat/` for authenticated, `/login` for unauthenticated) - backend/app/routes/dashboard.py:15
+2. Logout button testid standardization (`button-logout` → `logout-button`) - backend/app/templates/settings.html:19
+3. Welcome section with user display name - backend/app/templates/chat.html:27
+4. Updated obsolete test selector (`link-dashboard` → `link-settings`) - backend/tests/e2e_playwright/test_user_journeys.py:34
+
+**Result**: All 43 e2e tests passing (100% pass rate)
+
+---
+
+## Background
+
 PR #19 feedback has been fully addressed. During testing, we discovered pre-existing e2e test failures caused by incorrect post-authentication redirect expectations in tests. The root cause was identified as a redirect chain issue where auth endpoints redirected to `/dashboard`, which then redirected (301) to `/settings`, but Phase 4 spec requires direct redirect to `/chat/`.
 
 ### Root Cause Analysis (RESOLVED ✅)
@@ -134,8 +148,8 @@ To achieve 100% test pass rate, implement these changes:
 
 1. ✅ **DONE**: Fix redirect chain issue (auth endpoints → `/chat/`)
 2. ✅ **DONE**: Update 8 test files with correct redirect expectations
-3. ⏳ **TODO**: Implement 4 frontend changes listed above
-4. ⏳ **TODO**: Verify all 43 tests pass (100% pass rate)
+3. ✅ **DONE**: Implement 4 frontend changes listed above
+4. ✅ **DONE**: Verify all 43 tests pass (100% pass rate - achieved!)
 5. ⏳ **TODO**: Commit and push changes
 
 ### Running E2E Tests

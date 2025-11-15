@@ -24,7 +24,9 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
                     </svg>
                 </a>
-                <span class="text-gray-700 font-medium" data-testid="user-name" aria-label="Currently logged in as {{ user.profile.display_name }}">{{ user.profile.display_name }}</span>
+                <div data-testid="welcome-section">
+                    <span class="text-gray-700 font-medium" data-testid="user-name" aria-label="Currently logged in as {{ user.profile.display_name }}">{{ user.profile.display_name }}</span>
+                </div>
                 <form method="POST" action="/logout" class="inline">
                     <button
                         type="submit"
