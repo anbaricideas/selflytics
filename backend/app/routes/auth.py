@@ -3,6 +3,7 @@
 from fastapi import APIRouter, Depends, Form, HTTPException, Request, Response, status
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.security import OAuth2PasswordRequestForm
+from fastapi_csrf_protect import CsrfProtect
 
 from app.auth.dependencies import get_current_user, get_user_service
 from app.auth.jwt import create_access_token
@@ -22,15 +23,37 @@ router = APIRouter(tags=["authentication"])
 
 
 @router.get("/register", response_class=HTMLResponse)
-async def register_form(request: Request, templates=Depends(get_templates)) -> HTMLResponse:
-    """Display registration form."""
-    return templates.TemplateResponse(request=request, name="register.html")
+async def register_form(
+    request: Request,
+    csrf_protect: CsrfProtect = Depends(),
+    templates=Depends(get_templates),
+) -> HTMLResponse:
+    """Display registration form with CSRF token."""
+    csrf_token, signed_token = csrf_protect.generate_csrf_tokens()
+    response = templates.TemplateResponse(
+        request=request,
+        name="register.html",
+        context={"csrf_token": csrf_token},
+    )
+    csrf_protect.set_csrf_cookie(signed_token, response)
+    return response
 
 
 @router.get("/login", response_class=HTMLResponse)
-async def login_form(request: Request, templates=Depends(get_templates)) -> HTMLResponse:
-    """Display login form."""
-    return templates.TemplateResponse(request=request, name="login.html")
+async def login_form(
+    request: Request,
+    csrf_protect: CsrfProtect = Depends(),
+    templates=Depends(get_templates),
+) -> HTMLResponse:
+    """Display login form with CSRF token."""
+    csrf_token, signed_token = csrf_protect.generate_csrf_tokens()
+    response = templates.TemplateResponse(
+        request=request,
+        name="login.html",
+        context={"csrf_token": csrf_token},
+    )
+    csrf_protect.set_csrf_cookie(signed_token, response)
+    return response
 
 
 # ========================================
@@ -41,6 +64,7 @@ async def login_form(request: Request, templates=Depends(get_templates)) -> HTML
 @router.post("/auth/register")
 async def register(
     request: Request,
+    csrf_protect: CsrfProtect = Depends(),
     email: str = Form(...),
     password: str = Form(...),
     display_name: str = Form(...),
@@ -52,6 +76,7 @@ async def register(
 
     Args:
         request: FastAPI request object
+        csrf_protect: CSRF protection dependency
         email: User email
         password: User password
         display_name: User display name
@@ -67,20 +92,28 @@ async def register(
         HTTPException 400: If email already registered or passwords don't match
     """
 
+    # Validate CSRF token FIRST (before any business logic)
+    await csrf_protect.validate_csrf(request)
+
     # Validate password confirmation if provided
     if confirm_password and password != confirm_password:
         if request.headers.get("HX-Request"):
+            # Generate NEW token for form re-render
+            csrf_token, signed_token = csrf_protect.generate_csrf_tokens()
             # Return form fragment only (not full page) to avoid nesting with hx-swap="outerHTML"
-            return templates.TemplateResponse(
+            response = templates.TemplateResponse(
                 request=request,
                 name="fragments/register_form.html",
                 context={
+                    "csrf_token": csrf_token,  # NEW token
                     "errors": {"password": "Passwords do not match"},
                     "email": email,
                     "display_name": display_name,
                 },
                 status_code=status.HTTP_400_BAD_REQUEST,
             )
+            csrf_protect.set_csrf_cookie(signed_token, response)  # NEW cookie
+            return response
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Passwords do not match",
@@ -102,16 +135,21 @@ async def register(
 
         # For HTMX requests, return form fragment only (not full page)
         if request.headers.get("HX-Request"):
-            return templates.TemplateResponse(
+            # Generate NEW token for form re-render
+            csrf_token, signed_token = csrf_protect.generate_csrf_tokens()
+            response = templates.TemplateResponse(
                 request=request,
                 name="fragments/register_form.html",
                 context={
+                    "csrf_token": csrf_token,  # NEW token
                     "errors": {"general": generic_error},
                     "email": user_data.email,
                     "display_name": user_data.display_name,
                 },
                 status_code=status.HTTP_400_BAD_REQUEST,
             )
+            csrf_protect.set_csrf_cookie(signed_token, response)  # NEW cookie
+            return response
 
         # For API requests, raise HTTPException
         raise HTTPException(
@@ -157,6 +195,7 @@ async def register(
 @router.post("/auth/login")
 async def login(
     request: Request,
+    csrf_protect: CsrfProtect = Depends(),
     form_data: OAuth2PasswordRequestForm = Depends(),
     user_service: UserService = Depends(get_user_service),
     templates=Depends(get_templates),
@@ -165,6 +204,7 @@ async def login(
 
     Args:
         request: FastAPI request object
+        csrf_protect: CSRF protection dependency
         form_data: OAuth2 form with username (email) and password
         user_service: User service dependency
         templates: Jinja2 templates dependency
@@ -177,20 +217,28 @@ async def login(
         HTTPException 401: If credentials are invalid
     """
 
+    # Validate CSRF token FIRST (before any business logic)
+    await csrf_protect.validate_csrf(request)
+
     # Get user by email (OAuth2 uses 'username' field for email)
     user = await user_service.get_user_by_email(form_data.username)
     if not user or not verify_password(form_data.password, user.hashed_password):
         # For HTMX requests, return form fragment only (not full page)
         if request.headers.get("HX-Request"):
-            return templates.TemplateResponse(
+            # Generate NEW token for form re-render
+            csrf_token, signed_token = csrf_protect.generate_csrf_tokens()
+            response = templates.TemplateResponse(
                 request=request,
                 name="fragments/login_form.html",
                 context={
+                    "csrf_token": csrf_token,  # NEW token
                     "errors": {"general": "Incorrect email or password"},
                     "email": form_data.username,
                 },
                 status_code=status.HTTP_401_UNAUTHORIZED,
             )
+            csrf_protect.set_csrf_cookie(signed_token, response)  # NEW cookie
+            return response
 
         # For API requests, raise HTTPException
         raise HTTPException(

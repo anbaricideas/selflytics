@@ -17,6 +17,7 @@ dependencies = [
     # Authentication
     "python-jose[cryptography]>=3.3.0",
     "passlib[bcrypt]>=1.7.4",
+    "fastapi-csrf-protect>=1.0.7",
     # GCP Services
     "google-cloud-firestore>=2.14.0",
     "google-cloud-secret-manager>=2.18.0",

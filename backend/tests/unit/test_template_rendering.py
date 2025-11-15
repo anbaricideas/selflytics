@@ -6,6 +6,8 @@ and contain expected structural elements.
 
 from unittest.mock import AsyncMock
 
+from tests.conftest import get_csrf_token
+
 
 def test_login_template_renders_successfully(unauthenticated_client):
     """Login template should render without errors."""
@@ -112,15 +114,23 @@ def test_error_template_with_validation_errors(unauthenticated_client, create_mo
     # Mock existing user to trigger error
     mock_svc.get_user_by_email.return_value = create_mock_user(email="existing@example.com")
 
+    # Set dependency override BEFORE getting CSRF token
     app.dependency_overrides[get_user_service] = lambda: mock_svc
 
     try:
+        # Get CSRF token (after dependency override is set)
+        csrf_token, csrf_cookie = get_csrf_token(unauthenticated_client, "/register")
+
+        # Set cookie on client instance (recommended way per deprecation warning)
+        unauthenticated_client.cookies.set("fastapi-csrf-token", csrf_cookie)
+
         response = unauthenticated_client.post(
             "/auth/register",
             data={
                 "email": "existing@example.com",
                 "password": "Password123!",
                 "display_name": "Test",
+                "fastapi-csrf-token": csrf_token,
             },
             headers={"HX-Request": "true"},
         )

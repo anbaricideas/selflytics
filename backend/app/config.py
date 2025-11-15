@@ -45,6 +45,12 @@ class Settings(BaseSettings):
         description="JWT token expiry in minutes",
     )
 
+    # CSRF Protection
+    csrf_secret: str = Field(
+        default="dev-csrf-secret-change-in-production",
+        description="CSRF token secret key (min 32 characters)",
+    )
+
     # Security
     allowed_origins: list[str] = Field(
         default_factory=lambda: ["http://localhost:8000", "http://localhost:3000"],
@@ -79,6 +85,15 @@ class Settings(BaseSettings):
             msg = f"telemetry_log_level must be one of {valid_levels}, got {v!r}"
             raise ValueError(msg)
         return v.upper()
+
+    @field_validator("csrf_secret")
+    @classmethod
+    def validate_csrf_secret(cls, v: str) -> str:
+        """Validate that CSRF secret meets minimum security requirements."""
+        if len(v) < 32:
+            msg = "CSRF_SECRET must be at least 32 characters"
+            raise ValueError(msg)
+        return v
 
 
 @lru_cache
