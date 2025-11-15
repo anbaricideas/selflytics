@@ -13,6 +13,7 @@ from fastapi import status
 from app.auth.dependencies import get_user_service
 from app.auth.password import hash_password
 from app.main import app
+from tests.conftest import get_csrf_token
 
 
 def test_register_success_returns_hx_redirect_header(
@@ -28,6 +29,9 @@ def test_register_success_returns_hx_redirect_header(
     )
 
     with mock_user_service_override(mock_svc):
+        # Get CSRF token
+        csrf_token, csrf_cookie = get_csrf_token(unauthenticated_client, "/register")
+
         response = unauthenticated_client.post(
             "/auth/register",
             data={
@@ -35,7 +39,9 @@ def test_register_success_returns_hx_redirect_header(
                 "password": "SecurePass123!",
                 "display_name": "New User",
                 "confirm_password": "SecurePass123!",
+                "fastapi-csrf-token": csrf_token,
             },
+            cookies={"fastapi-csrf-token": csrf_cookie},
             headers={"HX-Request": "true"},
         )
 
@@ -61,13 +67,18 @@ def test_register_success_without_htmx_returns_json(unauthenticated_client, crea
     app.dependency_overrides[get_user_service] = lambda: mock_svc
 
     try:
+        # Get CSRF token
+        csrf_token, csrf_cookie = get_csrf_token(unauthenticated_client, "/register")
+
         response = unauthenticated_client.post(
             "/auth/register",
             data={
                 "email": "apiuser@example.com",
                 "password": "SecurePass123!",
                 "display_name": "API User",
+                "fastapi-csrf-token": csrf_token,
             },
+            cookies={"fastapi-csrf-token": csrf_cookie},
             # No HX-Request header
         )
 
@@ -96,13 +107,18 @@ def test_register_validation_error_returns_html_fragment(unauthenticated_client,
     app.dependency_overrides[get_user_service] = lambda: mock_svc
 
     try:
+        # Get CSRF token
+        csrf_token, csrf_cookie = get_csrf_token(unauthenticated_client, "/register")
+
         response = unauthenticated_client.post(
             "/auth/register",
             data={
                 "email": "existing@example.com",
                 "password": "SecurePass123!",
                 "display_name": "Duplicate",
+                "fastapi-csrf-token": csrf_token,
             },
+            cookies={"fastapi-csrf-token": csrf_cookie},
             headers={"HX-Request": "true"},
         )
 
@@ -121,6 +137,9 @@ def test_register_validation_error_returns_html_fragment(unauthenticated_client,
 
 def test_register_password_mismatch_returns_html_error(unauthenticated_client):
     """POST /auth/register with HTMX and password mismatch should return HTML error."""
+    # Get CSRF token
+    csrf_token, csrf_cookie = get_csrf_token(unauthenticated_client, "/register")
+
     response = unauthenticated_client.post(
         "/auth/register",
         data={
@@ -128,7 +147,9 @@ def test_register_password_mismatch_returns_html_error(unauthenticated_client):
             "password": "Password123!",
             "confirm_password": "DifferentPassword!",
             "display_name": "Test User",
+            "fastapi-csrf-token": csrf_token,
         },
+        cookies={"fastapi-csrf-token": csrf_cookie},
         headers={"HX-Request": "true"},
     )
 
@@ -154,12 +175,17 @@ def test_login_success_returns_hx_redirect_header(unauthenticated_client, create
     app.dependency_overrides[get_user_service] = lambda: mock_svc
 
     try:
+        # Get CSRF token
+        csrf_token, csrf_cookie = get_csrf_token(unauthenticated_client, "/login")
+
         response = unauthenticated_client.post(
             "/auth/login",
             data={
                 "username": "loginuser@example.com",  # OAuth2 uses 'username' field
                 "password": "CorrectPassword123!",
+                "fastapi-csrf-token": csrf_token,
             },
+            cookies={"fastapi-csrf-token": csrf_cookie},
             headers={"HX-Request": "true"},
         )
 
@@ -188,12 +214,17 @@ def test_login_invalid_credentials_returns_html_error(unauthenticated_client, cr
     app.dependency_overrides[get_user_service] = lambda: mock_svc
 
     try:
+        # Get CSRF token
+        csrf_token, csrf_cookie = get_csrf_token(unauthenticated_client, "/login")
+
         response = unauthenticated_client.post(
             "/auth/login",
             data={
                 "username": "user@example.com",
                 "password": "WrongPassword",
+                "fastapi-csrf-token": csrf_token,
             },
+            cookies={"fastapi-csrf-token": csrf_cookie},
             headers={"HX-Request": "true"},
         )
 
@@ -227,12 +258,17 @@ def test_login_success_without_htmx_returns_json(unauthenticated_client, create_
     app.dependency_overrides[get_user_service] = lambda: mock_svc
 
     try:
+        # Get CSRF token
+        csrf_token, csrf_cookie = get_csrf_token(unauthenticated_client, "/login")
+
         response = unauthenticated_client.post(
             "/auth/login",
             data={
                 "username": "apilogin@example.com",
                 "password": "Password123!",
+                "fastapi-csrf-token": csrf_token,
             },
+            cookies={"fastapi-csrf-token": csrf_cookie},
             # No HX-Request header
         )
 

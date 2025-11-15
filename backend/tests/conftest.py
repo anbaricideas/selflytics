@@ -150,3 +150,30 @@ def templates():
         loader=FileSystemLoader(str(template_dir)),
         autoescape=select_autoescape(["html", "xml"]),  # Security: Enable autoescape for HTML
     )
+
+
+def get_csrf_token(client, endpoint="/register"):
+    """Get CSRF token from a form endpoint.
+
+    Returns tuple of (csrf_token, csrf_cookie) for use in POST requests.
+    """
+    from bs4 import BeautifulSoup
+
+    response = client.get(endpoint)
+    assert response.status_code == 200, (
+        f"Failed to get form from {endpoint}: {response.status_code}"
+    )
+
+    # Get cookie (library uses fastapi-csrf-token as cookie name)
+    csrf_cookie = response.cookies.get("fastapi-csrf-token")
+    assert csrf_cookie is not None, "CSRF cookie 'fastapi-csrf-token' not set"
+
+    # Get token from HTML (library uses fastapi-csrf-token as field name)
+    soup = BeautifulSoup(response.text, "html.parser")
+    csrf_input = soup.find("input", {"name": "fastapi-csrf-token"})
+    assert csrf_input is not None, (
+        f"CSRF token field 'fastapi-csrf-token' not found in HTML from {endpoint}"
+    )
+    csrf_token = csrf_input["value"]
+
+    return csrf_token, csrf_cookie

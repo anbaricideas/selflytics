@@ -10,6 +10,7 @@ from app.auth.dependencies import get_user_service
 from app.main import app
 from app.models.user import User, UserProfile
 from app.services.user_service import UserService
+from tests.conftest import get_csrf_token
 
 
 @pytest.fixture
@@ -69,13 +70,18 @@ class TestRegisterEndpoint:
         mock_user_service.get_user_by_email = AsyncMock(return_value=None)
         mock_user_service.create_user = AsyncMock(return_value=existing_user)
 
+        # Get CSRF token
+        csrf_token, csrf_cookie = get_csrf_token(client, "/register")
+
         response = client.post(
             "/auth/register",
             data={
                 "email": "newuser@example.com",
                 "password": "securepass123",
                 "display_name": "New User",
+                "fastapi-csrf-token": csrf_token,
             },
+            cookies={"fastapi-csrf-token": csrf_cookie},
         )
 
         assert response.status_code == 201
@@ -94,13 +100,18 @@ class TestRegisterEndpoint:
         # Mock service to return existing user
         mock_user_service.get_user_by_email = AsyncMock(return_value=existing_user)
 
+        # Get CSRF token
+        csrf_token, csrf_cookie = get_csrf_token(client, "/register")
+
         response = client.post(
             "/auth/register",
             data={
                 "email": "existing@example.com",
                 "password": "password123",
                 "display_name": "Test User",
+                "fastapi-csrf-token": csrf_token,
             },
+            cookies={"fastapi-csrf-token": csrf_cookie},
         )
 
         assert response.status_code == 400
@@ -169,12 +180,17 @@ class TestLoginEndpoint:
         # Mock service to return existing user
         mock_user_service.get_user_by_email = AsyncMock(return_value=existing_user)
 
+        # Get CSRF token
+        csrf_token, csrf_cookie = get_csrf_token(client, "/login")
+
         response = client.post(
             "/auth/login",
             data={
                 "username": "existing@example.com",  # OAuth2 uses 'username' field
                 "password": "password",
+                "fastapi-csrf-token": csrf_token,
             },
+            cookies={"fastapi-csrf-token": csrf_cookie},
         )
 
         assert response.status_code == 200
@@ -188,12 +204,17 @@ class TestLoginEndpoint:
         # Mock service to return None (user not found)
         mock_user_service.get_user_by_email = AsyncMock(return_value=None)
 
+        # Get CSRF token
+        csrf_token, csrf_cookie = get_csrf_token(client, "/login")
+
         response = client.post(
             "/auth/login",
             data={
                 "username": "nonexistent@example.com",
                 "password": "password123",
+                "fastapi-csrf-token": csrf_token,
             },
+            cookies={"fastapi-csrf-token": csrf_cookie},
         )
 
         assert response.status_code == 401
@@ -204,12 +225,17 @@ class TestLoginEndpoint:
         # Mock service to return user
         mock_user_service.get_user_by_email = AsyncMock(return_value=existing_user)
 
+        # Get CSRF token
+        csrf_token, csrf_cookie = get_csrf_token(client, "/login")
+
         response = client.post(
             "/auth/login",
             data={
                 "username": "existing@example.com",
                 "password": "wrongpassword",
+                "fastapi-csrf-token": csrf_token,
             },
+            cookies={"fastapi-csrf-token": csrf_cookie},
         )
 
         assert response.status_code == 401
@@ -236,12 +262,18 @@ class TestMeEndpoint:
 
         # First login to get a token
         mock_user_service.get_user_by_email = AsyncMock(return_value=existing_user)
+
+        # Get CSRF token
+        csrf_token, csrf_cookie = get_csrf_token(client, "/login")
+
         login_response = client.post(
             "/auth/login",
             data={
                 "username": "existing@example.com",
                 "password": "password",
+                "fastapi-csrf-token": csrf_token,
             },
+            cookies={"fastapi-csrf-token": csrf_cookie},
         )
         token = login_response.json()["access_token"]
 
@@ -288,12 +320,18 @@ class TestMeEndpoint:
         """Test /auth/me when user no longer exists returns 401."""
         # Login to get valid token
         mock_user_service.get_user_by_email = AsyncMock(return_value=existing_user)
+
+        # Get CSRF token
+        csrf_token, csrf_cookie = get_csrf_token(client, "/login")
+
         login_response = client.post(
             "/auth/login",
             data={
                 "username": "existing@example.com",
                 "password": "password",
+                "fastapi-csrf-token": csrf_token,
             },
+            cookies={"fastapi-csrf-token": csrf_cookie},
         )
         token = login_response.json()["access_token"]
 
@@ -313,12 +351,18 @@ class TestLogoutEndpoint:
         """Test POST /logout clears authentication cookie and redirects to /login."""
         # First login with HTMX to get a cookie
         mock_user_service.get_user_by_email = AsyncMock(return_value=existing_user)
+
+        # Get CSRF token
+        csrf_token, csrf_cookie = get_csrf_token(client, "/login")
+
         login_response = client.post(
             "/auth/login",
             data={
                 "username": "existing@example.com",
                 "password": "password",
+                "fastapi-csrf-token": csrf_token,
             },
+            cookies={"fastapi-csrf-token": csrf_cookie},
             headers={"HX-Request": "true"},
         )
         assert login_response.status_code == 200
@@ -351,24 +395,35 @@ class TestAuthFlowIntegration:
         mock_user_service.get_user_by_email = AsyncMock(return_value=None)
         mock_user_service.create_user = AsyncMock(return_value=existing_user)
 
+        # Get CSRF token for register
+        csrf_token_reg, csrf_cookie_reg = get_csrf_token(client, "/register")
+
         register_response = client.post(
             "/auth/register",
             data={
                 "email": "newuser@example.com",
                 "password": "securepass123",
                 "display_name": "New User",
+                "fastapi-csrf-token": csrf_token_reg,
             },
+            cookies={"fastapi-csrf-token": csrf_cookie_reg},
         )
         assert register_response.status_code == 201
 
         # Step 2: Login
         mock_user_service.get_user_by_email = AsyncMock(return_value=existing_user)
+
+        # Get CSRF token for login
+        csrf_token_login, csrf_cookie_login = get_csrf_token(client, "/login")
+
         login_response = client.post(
             "/auth/login",
             data={
                 "username": "newuser@example.com",
                 "password": "password",
+                "fastapi-csrf-token": csrf_token_login,
             },
+            cookies={"fastapi-csrf-token": csrf_cookie_login},
         )
         assert login_response.status_code == 200
         token = login_response.json()["access_token"]
