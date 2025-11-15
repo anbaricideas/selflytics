@@ -64,14 +64,14 @@ Validate CSRF protection end-to-end with Playwright tests covering real attack s
 
 ### Setup
 
-- [ ] NEXT: Create branch from feat/csrf
+- [x] ~~NEXT:~~ Create branch from feat/csrf
   ```bash
   git checkout feat/csrf
   git pull origin feat/csrf  # Ensure Phase 1 & 2 merged
   git checkout -b feat/csrf-phase-3
   ```
 
-- [ ] Verify local E2E environment setup:
+- [x] Verify local E2E environment setup:
   ```bash
   # Check Firestore emulator installed
   firebase --version
