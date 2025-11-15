@@ -58,7 +58,7 @@ class CsrfSettings(BaseModel):
 
 # Load CSRF configuration
 @CsrfProtect.load_config
-def get_csrf_config():
+def get_csrf_config() -> CsrfSettings:
     """Load CSRF configuration from settings."""
     settings = get_settings()
     return CsrfSettings(
@@ -183,7 +183,9 @@ async def http_exception_handler(request: Request, exc: HTTPException) -> Any:
 
 
 @app.exception_handler(CsrfProtectError)
-async def csrf_protect_exception_handler(request: Request, _exc: CsrfProtectError):
+async def csrf_protect_exception_handler(
+    request: Request, _exc: CsrfProtectError
+) -> JSONResponse | Any:
     """Handle CSRF validation failures.
 
     For browser/HTMX requests, return HTML error fragment or page.

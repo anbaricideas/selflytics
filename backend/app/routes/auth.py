@@ -1,5 +1,7 @@
 """Authentication routes for user registration and login."""
 
+from typing import Any
+
 from fastapi import APIRouter, Depends, Form, HTTPException, Request, Response, status
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.security import OAuth2PasswordRequestForm
@@ -72,7 +74,7 @@ async def register(
     confirm_password: str = Form(None),
     user_service: UserService = Depends(get_user_service),
     templates: Jinja2Templates = Depends(get_templates),
-) -> Response | JSONResponse:
+) -> Response | JSONResponse | Any:
     """Register a new user.
 
     Args:
@@ -200,7 +202,7 @@ async def login(
     form_data: OAuth2PasswordRequestForm = Depends(),
     user_service: UserService = Depends(get_user_service),
     templates: Jinja2Templates = Depends(get_templates),
-) -> Response | JSONResponse:
+) -> Response | JSONResponse | Any:
     """Login user and return JWT access token.
 
     Args:
