@@ -45,6 +45,12 @@ class Settings(BaseSettings):
         description="JWT token expiry in minutes",
     )
 
+    # CSRF Protection
+    csrf_secret: str = Field(
+        default="dev-csrf-secret-change-in-production",
+        description="CSRF token secret key (min 32 characters)",
+    )
+
     # Security
     allowed_origins: list[str] = Field(
         default_factory=lambda: ["http://localhost:8000", "http://localhost:3000"],
