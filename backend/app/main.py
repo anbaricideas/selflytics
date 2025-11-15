@@ -57,7 +57,7 @@ class CsrfSettings(BaseModel):
 
 
 # Load CSRF configuration
-@CsrfProtect.load_config
+@CsrfProtect.load_config  # type: ignore[misc]
 def get_csrf_config() -> CsrfSettings:
     """Load CSRF configuration from settings."""
     settings = get_settings()

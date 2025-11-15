@@ -169,7 +169,7 @@ async def register(
         access_token = create_access_token(data={"sub": user.user_id, "email": user.email})
 
         settings = get_settings()
-        response = Response(status_code=status.HTTP_200_OK)
+        response: Response = Response(status_code=status.HTTP_200_OK)
         response.headers["HX-Redirect"] = "/dashboard"
         # Set JWT token in httponly cookie for browser-based auth
         response.set_cookie(
@@ -256,7 +256,7 @@ async def login(
     # For HTMX requests, redirect to dashboard with cookie
     if request.headers.get("HX-Request"):
         settings = get_settings()
-        response = Response(status_code=status.HTTP_200_OK)
+        response: Response = Response(status_code=status.HTTP_200_OK)
         response.headers["HX-Redirect"] = "/dashboard"
         # Set JWT token in httponly cookie for browser-based auth
         response.set_cookie(
