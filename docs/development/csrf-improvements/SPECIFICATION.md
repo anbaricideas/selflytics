@@ -256,6 +256,83 @@ const response = await fetch('/chat/send', {
 
 ## Proposed Solutions
 
+### Visual Overview: CSRF Token Flow
+
+The following diagrams show how CSRF tokens flow through the system using the Double Submit Cookie pattern.
+
+**Form-Based Protection (Logout)**:
+```
+┌─────────────┐
+│ GET /settings│
+└──────┬──────┘
+       │ 1. Generate csrf_token (unsigned) + signed_token
+       ├──> Set cookie: fastapi-csrf-token=<signed_token>
+       └──> Render form with: <input name="fastapi-csrf-token" value="<csrf_token>">
+
+┌─────────────┐
+│ POST /logout │
+└──────┬──────┘
+       │ 2. Read csrf_token from form field
+       ├──> Read signed_token from cookie
+       ├──> Validate: unsign(signed_token) == csrf_token
+       └──> ✅ Success: Clear session
+```
+
+**Header-Based Protection (Chat)**:
+```
+┌─────────────┐
+│ GET /chat/   │
+└──────┬──────┘
+       │ 1. Generate csrf_token + signed_token
+       └──> Set cookie: fastapi-csrf-token=<signed_token>
+
+┌─────────────┐
+│POST /chat/send│
+└──────┬──────┘
+       │ 2. JavaScript reads cookie via document.cookie
+       ├──> Send header: X-CSRF-Token: <signed_token>
+       ├──> Validate: cookie value matches header value
+       └──> ✅ Success: Process message
+```
+
+---
+
+### Existing Pattern Reference: DELETE /garmin/link
+
+Before implementing new protections, we reference the existing CSRF pattern already used in the codebase for consistency.
+
+**Current Implementation**:
+```python
+# backend/app/routes/garmin.py (existing code)
+@router.delete("/link")
+async def unlink_garmin(
+    request: Request,
+    current_user: UserResponse = Depends(get_current_user),
+    csrf_protect: CsrfProtect = Depends(),
+) -> dict[str, str]:
+    """Unlink Garmin account from user profile."""
+    await csrf_protect.validate_csrf(request)
+    # ... rest of implementation
+```
+
+**Frontend Pattern** (existing in templates):
+```javascript
+// Reads cookie and sends in X-CSRF-Token header
+const csrfToken = document.cookie
+    .split('; ')
+    .find(row => row.startsWith('fastapi-csrf-token='))
+    ?.split('=')[1];
+
+// Send in DELETE request header
+headers: {
+    'X-CSRF-Token': csrfToken
+}
+```
+
+**We will follow this exact pattern for `/chat/send` to maintain consistency.**
+
+---
+
 ### Solution 1: Protect `/logout` Endpoint
 
 #### Backend Changes
@@ -374,6 +451,7 @@ This requires a different approach since it's a JSON API endpoint called from Ja
 
 ```python
 from fastapi_csrf_protect import CsrfProtect
+from fastapi_csrf_protect.exceptions import CsrfProtectError
 
 @router.post("/send")
 async def send_message(
@@ -387,8 +465,14 @@ async def send_message(
     CSRF protection prevents attackers from sending messages on behalf of users.
     Uses X-CSRF-Token header (not form field) since this is a JSON API.
     """
-    # Validate CSRF token from header
-    await csrf_protect.validate_csrf(request)
+    # Validate CSRF token from header with user-friendly error message
+    try:
+        await csrf_protect.validate_csrf(request)
+    except CsrfProtectError as e:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Security validation failed. Please refresh the page and try again."
+        ) from e
 
     service = ChatService()
     try:
@@ -431,6 +515,12 @@ function chatInterface() {
             try {
                 const csrfToken = this.getCsrfToken();
 
+                // Handle missing CSRF token (expired or not set)
+                if (!csrfToken) {
+                    this.error = 'Security token expired. Please refresh the page.';
+                    return;
+                }
+
                 const response = await fetch('/chat/send', {
                     method: 'POST',
                     headers: {
@@ -445,6 +535,14 @@ function chatInterface() {
 
                 if (!response.ok) {
                     const errorData = await response.json();
+
+                    // Handle CSRF token expiration gracefully
+                    if (response.status === 403) {
+                        this.error = 'Your session has expired. Refreshing page...';
+                        setTimeout(() => window.location.reload(), 2000);
+                        return;
+                    }
+
                     throw new Error(errorData.detail || 'Failed to send message');
                 }
 
@@ -469,6 +567,44 @@ function chatInterface() {
 - `fastapi-csrf-protect` library checks headers before form fields (priority order)
 - DELETE requests (like `/garmin/link`) already use this header pattern
 
+#### Token Expiration Handling
+
+**Scenario**: User opens chat page, leaves browser tab open for 2+ hours, returns and tries to send message.
+
+**Current CSRF token TTL**: Configured in `fastapi-csrf-protect` settings (typically 1-2 hours)
+
+**Solution**: Graceful degradation with automatic page reload
+
+The JavaScript implementation above includes two levels of protection:
+
+1. **Pre-flight check**: Detects missing token before making request
+   ```javascript
+   if (!csrfToken) {
+       this.error = 'Security token expired. Please refresh the page.';
+       return;
+   }
+   ```
+
+2. **Post-response handling**: Catches 403 errors and auto-reloads
+   ```javascript
+   if (response.status === 403) {
+       this.error = 'Your session has expired. Refreshing page...';
+       setTimeout(() => window.location.reload(), 2000);
+       return;
+   }
+   ```
+
+**Alternative Approaches Considered**:
+- ❌ **Background token refresh**: Complex, requires periodic API calls, increases server load
+- ❌ **Long-lived tokens**: Reduces security, defeats purpose of token expiration
+- ✅ **Graceful degradation with reload**: Simple, secure, good UX (user sees clear message)
+
+**User Experience**:
+- User sees friendly message: "Your session has expired. Refreshing page..."
+- Page automatically reloads after 2 seconds
+- New CSRF token is generated on page load
+- User can immediately retry their action
+
 ---
 
 ## Implementation Plan
@@ -478,25 +614,51 @@ function chatInterface() {
 **Estimated Time**: 1 hour
 
 **Steps**:
-1. Update `/logout` endpoint in `backend/app/routes/auth.py`
+1. **Audit all logout forms in codebase**
+   - Search for all instances: `grep -r 'action="/logout"' backend/app/templates/`
+   - Search for variations: `grep -r 'action=\"/logout\"' backend/app/templates/`
+   - Search broadly: `grep -r '/logout' backend/app/templates/ | grep -i form`
+   - Document all found instances (expected: settings.html, chat.html)
+   - Verify no additional logout forms exist
+
+2. **Verify CSRF cookie configuration**
+   - Open `backend/app/main.py`
+   - Verify configuration:
+     ```python
+     csrf_settings.cookie_httponly = False  # Required for JavaScript access
+     csrf_settings.cookie_samesite = "lax"  # CSRF protection
+     csrf_settings.cookie_secure = True     # HTTPS only (production)
+     ```
+   - If missing or incorrect, update configuration
+
+3. Update `/logout` endpoint in `backend/app/routes/auth.py`
    - Add `csrf_protect` dependency
    - Add `await csrf_protect.validate_csrf(request)` call
-2. Find and update GET endpoint for `/settings` page
+
+4. Find and update GET endpoint for `/settings` page
    - Add `csrf_protect` dependency
    - Generate CSRF token pair
    - Pass `csrf_token` to template context
    - Set CSRF cookie on response
-3. Update `backend/app/templates/settings.html`
+
+5. Update `backend/app/templates/settings.html`
    - Add hidden input with `name="fastapi-csrf-token"` and `value="{{ csrf_token }}"`
-4. Update GET endpoint for `/chat` page (same pattern as settings)
-5. Update `backend/app/templates/chat.html` logout form
+
+6. Update GET endpoint for `/chat` page (same pattern as settings)
+
+7. Update `backend/app/templates/chat.html` logout form
    - Add hidden input with CSRF token
-6. Write integration tests
+
+8. Write integration tests
    - Test logout without CSRF token (should fail with 403)
    - Test logout with valid CSRF token (should succeed)
-   - Test CSRF token rotation on error (if applicable)
+   - Test failed logout preserves session (user still logged in after 403)
+   - Test logout with expired token (should fail with 403)
 
 **Success Criteria**:
+- [ ] All logout forms in codebase identified (audit complete)
+- [ ] CSRF cookie has `httponly=false` (verified in code)
+- [ ] CSRF cookie has `samesite=lax` (verified in code)
 - [ ] `/logout` endpoint validates CSRF token
 - [ ] Settings page logout form includes CSRF token
 - [ ] Chat page logout form includes CSRF token
@@ -673,6 +835,95 @@ def test_chat_send_with_valid_csrf_token(authenticated_client: TestClient):
     data = response.json()
     assert "conversation_id" in data
     assert "response" in data
+
+
+def test_logout_failed_attempt_preserves_session(client: TestClient):
+    """Test that failed CSRF logout doesn't clear session."""
+    # Login first
+    login_response = client.get("/login")
+    csrf_cookie = login_response.cookies.get("fastapi-csrf-token")
+
+    soup = BeautifulSoup(login_response.text, "html.parser")
+    csrf_input = soup.find("input", {"name": "fastapi-csrf-token"})
+    csrf_token = csrf_input["value"]
+
+    login_result = client.post(
+        "/auth/login",
+        data={
+            "username": "test@example.com",
+            "password": "TestPass123",
+            "fastapi-csrf-token": csrf_token,
+        },
+        cookies={"fastapi-csrf-token": csrf_cookie},
+    )
+
+    # Attempt logout WITHOUT CSRF token (should fail)
+    logout_response = client.post("/logout")
+    assert logout_response.status_code == 403
+
+    # Verify user is STILL logged in
+    protected_response = client.get("/chat/")
+    assert protected_response.status_code == 200
+    assert "logout-button" in protected_response.text  # Still authenticated
+
+
+def test_chat_send_with_expired_token(authenticated_client: TestClient):
+    """Test that expired CSRF token is rejected."""
+    from freezegun import freeze_time
+
+    # Generate token at time T
+    with freeze_time("2024-01-01 10:00:00"):
+        chat_response = authenticated_client.get("/chat/")
+        csrf_token = chat_response.cookies.get("fastapi-csrf-token")
+
+    # Fast forward time by 3 hours (assuming 2-hour token TTL)
+    with freeze_time("2024-01-01 13:00:00"):
+        response = authenticated_client.post(
+            "/chat/send",
+            json={"message": "Test", "conversation_id": None},
+            headers={"X-CSRF-Token": csrf_token},
+            cookies={"fastapi-csrf-token": csrf_token},
+        )
+
+    assert response.status_code == 403
+    assert "expired" in response.json()["detail"].lower() or "security" in response.json()["detail"].lower()
+
+
+def test_logout_with_invalid_token(client: TestClient):
+    """Test that logout with tampered CSRF token is rejected."""
+    # Login first
+    login_response = client.get("/login")
+    csrf_cookie = login_response.cookies.get("fastapi-csrf-token")
+
+    soup = BeautifulSoup(login_response.text, "html.parser")
+    csrf_input = soup.find("input", {"name": "fastapi-csrf-token"})
+    csrf_token = csrf_input["value"]
+
+    client.post(
+        "/auth/login",
+        data={
+            "username": "test@example.com",
+            "password": "TestPass123",
+            "fastapi-csrf-token": csrf_token,
+        },
+        cookies={"fastapi-csrf-token": csrf_cookie},
+    )
+
+    # Get settings page to obtain CSRF token
+    settings_response = client.get("/settings")
+    csrf_cookie = settings_response.cookies.get("fastapi-csrf-token")
+
+    # Tamper with token (flip some characters)
+    tampered_token = "tampered_invalid_token_12345"
+
+    # Attempt logout with invalid token
+    response = client.post(
+        "/logout",
+        data={"fastapi-csrf-token": tampered_token},
+        cookies={"fastapi-csrf-token": csrf_cookie},
+    )
+
+    assert response.status_code == 403
 ```
 
 ### E2E Tests
@@ -757,6 +1008,38 @@ def test_chat_send_includes_csrf_token(page: Page, authenticated_page: Page, bas
 
 ---
 
+## Testing Coverage Matrix
+
+The following matrix ensures comprehensive test coverage across all scenarios:
+
+| Scenario | Unit | Integration | E2E | Priority | Notes |
+|----------|------|-------------|-----|----------|-------|
+| Logout without token | - | ✅ | ✅ | High | Core security check |
+| Logout with valid token | - | ✅ | ✅ | High | Verify normal flow works |
+| Logout with invalid token | - | ✅ | - | Medium | Tampered token detection |
+| Logout with expired token | - | ✅ | - | Medium | Time-based validation |
+| Failed logout preserves session | - | ✅ | - | High | No unintended logout |
+| Chat send without token | - | ✅ | - | High | Core security check |
+| Chat send with valid token | - | ✅ | ✅ | High | Verify normal flow works |
+| Chat send with invalid token | - | ✅ | - | Medium | Header validation |
+| Chat send with expired token | - | ✅ | - | Medium | Time-based validation |
+| JavaScript handles missing token | - | - | ✅ | High | Client-side error handling |
+| JavaScript handles 403 gracefully | - | - | ✅ | High | Auto-refresh on expiration |
+| Cross-origin logout attack blocked | - | - | ✅ | Medium | Real CSRF attack scenario |
+| All logout forms have tokens | - | - | ✅ | High | Visual verification |
+
+**Coverage Goals**:
+- ✅ **Integration tests**: Cover all backend validation logic (80%+ coverage)
+- ✅ **E2E tests**: Cover critical user journeys and attack scenarios
+- ✅ **Manual testing**: Verify user experience and error messages
+
+**Test Dependencies**:
+- Integration tests may require `freezegun` for time-based token expiration tests
+- E2E tests require Playwright and local Firestore emulator
+- Cross-origin tests may need to serve malicious HTML (use Playwright's `page.set_content()`)
+
+---
+
 ## References
 
 ### Internal Documentation
@@ -796,6 +1079,253 @@ def test_chat_send_includes_csrf_token(page: Page, authenticated_page: Page, bas
 - `/logout` is simpler (form-based, follows existing patterns)
 - `/chat/send` is more complex (JSON API, requires header approach)
 - Both are straightforward given existing CSRF infrastructure
+
+---
+
+## Appendix: Optional Enhancement - Rate Limiting
+
+While CSRF protection prevents unauthorized cross-site requests, **rate limiting** provides defense-in-depth against abuse and DoS attacks. This is **outside the scope** of CSRF protection but recommended for production systems.
+
+### Recommended Implementation
+
+```python
+from slowapi import Limiter
+from slowapi.util import get_remote_address
+
+limiter = Limiter(key_func=get_remote_address)
+
+@router.post("/logout")
+@limiter.limit("10/minute")  # Prevent logout spam
+async def logout(
+    request: Request,
+    csrf_protect: CsrfProtect = Depends(),
+) -> Response:
+    """Logout user by clearing authentication cookie."""
+    await csrf_protect.validate_csrf(request)
+    # ... rest of implementation
+
+
+@router.post("/send")
+@limiter.limit("30/minute")  # Prevent chat spam and API cost abuse
+async def send_message(
+    request: Request,
+    chat_request: ChatRequest,
+    current_user: UserResponse = Depends(get_current_user),
+    csrf_protect: CsrfProtect = Depends(),
+) -> dict[str, Any]:
+    """Send chat message and get AI response."""
+    try:
+        await csrf_protect.validate_csrf(request)
+    except CsrfProtectError as e:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Security validation failed. Please refresh the page and try again."
+        ) from e
+    # ... rest of implementation
+```
+
+### Benefits
+
+- **DoS Protection**: Prevents attacker from overwhelming server with requests
+- **Cost Control**: Limits OpenAI API calls even if attacker bypasses CSRF
+- **Resource Protection**: Prevents Firestore quota exhaustion
+- **User Protection**: Prevents accidental client-side loops from causing issues
+
+### Configuration Considerations
+
+- **Logout limit** (10/minute): Legitimate users rarely logout more than once per minute
+- **Chat limit** (30/minute): Allows normal conversation flow but blocks spam
+- **Key function**: `get_remote_address` rate-limits by IP (consider user ID for authenticated endpoints)
+
+### Implementation Timing
+
+- ✅ **Recommended**: Implement after CSRF protection is complete
+- ✅ **Priority**: Medium (nice-to-have, not security-critical)
+- ✅ **Effort**: Low (30 minutes, add dependency + decorators)
+
+---
+
+## Appendix: Troubleshooting
+
+### Common Issues and Solutions
+
+#### Issue 1: "403 Forbidden" on Logout
+
+**Symptom**: Clicking logout button shows error instead of logging out.
+
+**Possible Causes**:
+1. CSRF token missing from form
+2. Cookie not set by GET endpoint
+3. Token mismatch between cookie and form
+4. Token expired
+
+**Diagnostic Steps**:
+```bash
+# 1. Check template includes hidden input
+grep -A5 'action="/logout"' backend/app/templates/settings.html
+# Expected: <input type="hidden" name="fastapi-csrf-token" value="{{ csrf_token }}">
+
+# 2. Check GET endpoint generates token
+grep -A10 'def settings_page' backend/app/routes/dashboard.py
+# Expected: csrf_protect.generate_csrf_tokens() and set_csrf_cookie()
+
+# 3. Check browser cookies (in browser DevTools)
+# Application tab → Cookies → Should see "fastapi-csrf-token"
+
+# 4. Check form submission (in browser Network tab)
+# POST /logout → Payload → Should contain "fastapi-csrf-token" field
+```
+
+**Solution**:
+- If template missing token → Add `<input type="hidden" name="fastapi-csrf-token" value="{{ csrf_token }}">`
+- If cookie not set → Update GET endpoint to call `set_csrf_cookie()`
+- If token mismatch → Verify both cookie and form use same token source
+- If token expired → User needs to refresh page (or implement auto-refresh)
+
+---
+
+#### Issue 2: "Failed to send message" in Chat
+
+**Symptom**: Chat messages fail to send with security error.
+
+**Possible Causes**:
+1. JavaScript cannot read CSRF cookie
+2. CSRF token expired
+3. `X-CSRF-Token` header not sent
+4. `getCsrfToken()` returns `null`
+
+**Diagnostic Steps**:
+```bash
+# 1. Check cookie is readable by JavaScript
+grep "cookie_httponly" backend/app/main.py
+# Expected: csrf_settings.cookie_httponly = False
+
+# 2. Open browser console → Network tab → Click failed request
+# Headers tab → Request Headers → Should see "X-CSRF-Token: <value>"
+# Cookies tab → Should see "fastapi-csrf-token"
+
+# 3. Test getCsrfToken() function
+# Browser console:
+# > document.cookie.split('; ').find(row => row.startsWith('fastapi-csrf-token='))
+# Expected: "fastapi-csrf-token=<some-value>"
+```
+
+**Solution**:
+- If cookie httponly=true → Change to `cookie_httponly=False` in `main.py`
+- If X-CSRF-Token header missing → Check JavaScript includes header in fetch call
+- If getCsrfToken() returns null → User needs to refresh page to get new token
+- If token expired → JavaScript should show "Session expired, refreshing..." and reload
+
+---
+
+#### Issue 3: Chat Page Stuck in "Refreshing..." Loop
+
+**Symptom**: Page keeps reloading after "Your session has expired" message.
+
+**Possible Causes**:
+1. CSRF cookie not being set on page reload
+2. Infinite 403 loop (missing token on reload)
+
+**Diagnostic Steps**:
+```bash
+# 1. Check GET /chat/ endpoint sets CSRF cookie
+grep -A15 "def chat_page" backend/app/routes/chat.py
+# Expected: csrf_protect.set_csrf_cookie(signed_token, response)
+
+# 2. Check browser Network tab during reload
+# GET /chat/ → Response Headers → Should see "Set-Cookie: fastapi-csrf-token=..."
+```
+
+**Solution**:
+- Ensure GET `/chat/` endpoint calls `set_csrf_cookie()` to regenerate token on page load
+- Clear browser cookies and cache, then retry
+- Check server logs for errors during token generation
+
+---
+
+#### Issue 4: Integration Tests Fail with "CSRF token not found"
+
+**Symptom**: Tests fail even though code looks correct.
+
+**Possible Causes**:
+1. Test client not preserving cookies between requests
+2. Test not extracting token correctly from response
+3. Test not sending both cookie AND form field/header
+
+**Solution**:
+```python
+# CORRECT test pattern:
+def test_logout_with_csrf(client: TestClient):
+    # 1. GET page to obtain token
+    response = client.get("/settings")
+
+    # 2. Extract cookie
+    csrf_cookie = response.cookies.get("fastapi-csrf-token")
+
+    # 3. Extract token from HTML (for forms)
+    soup = BeautifulSoup(response.text, "html.parser")
+    csrf_input = soup.find("input", {"name": "fastapi-csrf-token"})
+    csrf_token = csrf_input["value"]
+
+    # 4. Send BOTH in POST request
+    result = client.post(
+        "/logout",
+        data={"fastapi-csrf-token": csrf_token},  # Form field
+        cookies={"fastapi-csrf-token": csrf_cookie},  # Cookie
+    )
+
+    assert result.status_code == 303  # Success
+```
+
+---
+
+#### Issue 5: E2E Tests Timeout on Chat Send
+
+**Symptom**: Playwright tests hang when submitting chat messages.
+
+**Possible Causes**:
+1. Chat form waiting for AI response indefinitely
+2. JavaScript error preventing form submission
+3. CSRF token issue blocking request
+
+**Diagnostic Steps**:
+```bash
+# Run E2E tests in headed mode to see browser
+uv --directory backend run pytest tests/e2e_playwright -v --headed
+
+# Check browser console for JavaScript errors
+# Check Network tab for failed requests
+```
+
+**Solution**:
+- Mock AI service in tests to avoid waiting for real OpenAI responses
+- Check browser console for JavaScript errors
+- Add timeout to Playwright assertions: `expect(element).to_be_visible(timeout=10000)`
+- Verify CSRF token is available before test runs (check cookie in DevTools)
+
+---
+
+### Quick Reference Commands
+
+```bash
+# Search for all logout forms
+grep -rn 'action="/logout"' backend/app/templates/
+
+# Check CSRF configuration
+grep -A5 "csrf_settings" backend/app/main.py
+
+# Run only CSRF integration tests
+uv --directory backend run pytest tests/integration/test_csrf_routes.py -v
+
+# Run only CSRF E2E tests
+uv --directory backend run pytest tests/e2e_playwright/test_csrf_protection.py -v --headed
+
+# Check test coverage for CSRF code
+uv --directory backend run pytest tests/ -v --cov=app.routes.auth --cov=app.routes.chat
+
+# Search for CSRF validate calls
+grep -rn "validate_csrf" backend/app/routes/
+```
 
 ---
 
