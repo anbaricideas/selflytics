@@ -702,5 +702,79 @@ From specification (lines 102-168):
 
 ---
 
-*Last Updated: [To be filled on completion]*
-*Status: 📅 PLANNED*
+## Session Notes
+
+### Session 2 (2025-11-15): PR Feedback Implementation + E2E Test Fix
+
+**Context**: Addressed PR #17 review feedback and resolved critical e2e test infrastructure issue.
+
+#### PR #17 Feedback Implementation
+
+**Changes Made**:
+1. Added CSRF token rotation to sync error exception handler (`garmin.py:143-151`)
+2. Added CSRF protection to DELETE /garmin/link endpoint (`garmin.py:154-162`)
+3. Created comprehensive tests in `test_csrf_routes.py`:
+   - `test_csrf_token_rotation_on_garmin_sync_error` - verifies token rotation on sync failures
+   - `test_garmin_unlink_requires_csrf_token` - verifies DELETE endpoint requires token
+   - `test_garmin_unlink_with_valid_csrf_token` - verifies DELETE accepts valid tokens
+4. Fixed broken unit tests in `test_template_data_testids.py` (needed CSRF tokens after protection added)
+
+**Commits**:
+- `feat: Add CSRF token rotation to sync error handler`
+- `test: Add CSRF protection tests for sync error and DELETE endpoint`
+- `fix: Update template testid tests to include CSRF tokens`
+
+#### Critical E2E Test Infrastructure Fix
+
+**Problem**: All 29 e2e tests hung indefinitely during Playwright browser initialization, timing out after 60 seconds.
+
+**Root Cause** (found by debug-investigator agent):
+- **Event loop scope mismatch** between pytest-asyncio and pytest-playwright-asyncio
+- pytest-playwright-asyncio provides **session-scoped** async fixtures (browser, page)
+- Test functions defaulted to **function-scoped** event loops (missing config)
+- Mismatched scopes caused deadlock when tests tried to use session fixtures
+
+**Solution**: Added one line to `backend/pyproject.toml`:
+```toml
+asyncio_default_test_loop_scope = "session"
+```
+
+**Results**:
+- **Before**: 366 tests (e2e excluded), tests hung for 60+ seconds
+- **After**: 401 tests total, 390 passed + 11 skipped, 92% coverage, **54.61 seconds**
+- E2E tests now run in default test suite (removed `--ignore=tests/e2e_playwright`)
+
+**Additional Infrastructure Improvements**:
+- Added `pytest-timeout>=2.3.1` with 30s default to catch hung tests early
+- Improved `scripts/local-e2e-server.sh` to kill existing processes before starting
+- Verified Playwright browsers installed correctly in macOS cache location
+
+**Commits**:
+- `fix: Configure session-scoped event loop for e2e tests`
+- `chore: Re-enable e2e tests in default test runs`
+- `chore: Update dependencies and improve local e2e server script`
+- `chore: Add pytest-timeout to workspace dev dependencies`
+
+**Test Verification**:
+```bash
+# Full test suite with e2e
+uv --directory backend run pytest tests/ --cov=app
+# Result: 390 passed, 11 skipped, 92% coverage in 54.61s
+
+# E2E tests isolated
+uv --directory backend run pytest tests/e2e_playwright/ -v
+# Result: 29 passed in 29.21s
+```
+
+**Impact**:
+- ✅ Complete test coverage now includes 29 e2e browser tests
+- ✅ Tests run fast and reliably (no more timeouts)
+- ✅ E2E infrastructure ready for CI/CD integration
+- ✅ Local development workflow improved (automatic cleanup of stale processes)
+
+**Key Learning**: Playwright async fixtures require matching test loop scope. The debug-investigator agent systematically ruled out browser installation, server connectivity, and zombie processes before identifying the pytest configuration mismatch as the root cause.
+
+---
+
+*Last Updated: 2025-11-15*
+*Status: ✅ COMPLETE (PR #17 feedback addressed, e2e tests fixed)*

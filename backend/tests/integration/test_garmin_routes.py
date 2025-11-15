@@ -57,6 +57,13 @@ def client(test_user, mock_garmin_service, monkeypatch):
 
     monkeypatch.setattr("app.routes.garmin.GarminService", mock_garmin_service_init)
 
+    # Mock CSRF validation to bypass it for these tests
+    # (CSRF-specific tests are in test_csrf_routes.py)
+    async def mock_validate_csrf(self, request):
+        pass  # Do nothing - bypass CSRF validation
+
+    monkeypatch.setattr("fastapi_csrf_protect.CsrfProtect.validate_csrf", mock_validate_csrf)
+
     # Create test client (raise_server_exceptions=False allows testing error responses)
     return TestClient(app, raise_server_exceptions=False)
     # Cleanup handled by autouse fixture
