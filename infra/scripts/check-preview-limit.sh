@@ -155,6 +155,11 @@ cleanup_stale_previews() {
         return 1
     fi
 
+    # Debug: log number of branches found (always show, even in quiet mode)
+    local branch_count
+    branch_count=$(echo "$remote_branches" | wc -l | tr -d ' ')
+    log_error "DEBUG: Found $branch_count remote branches"
+
     # Get all preview services with their feature labels
     local services
     services=$(gcloud run services list \
@@ -195,7 +200,7 @@ cleanup_stale_previews() {
         done <<< "$remote_branches"
 
         if [ "$branch_exists" = false ]; then
-            log_info "🗑️  Deleting stale preview: $service_name (branch no longer exists)"
+            log_error "DEBUG: Deleting stale preview: $service_name (feature=$feature_label, branch no longer exists)"
 
             if gcloud run services delete "$service_name" \
                 --region="$REGION" \
@@ -203,10 +208,12 @@ cleanup_stale_previews() {
                 --quiet 2>/dev/null; then
 
                 deleted_count=$((deleted_count + 1))
-                log_info "   ✓ Deleted successfully"
+                log_error "DEBUG: Deleted $service_name successfully"
             else
-                log_error "   ✗ Failed to delete $service_name"
+                log_error "DEBUG: Failed to delete $service_name"
             fi
+        else
+            log_error "DEBUG: Keeping $service_name (feature=$feature_label, branch exists)"
         fi
     done <<< "$services"
 
