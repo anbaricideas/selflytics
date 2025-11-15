@@ -3,6 +3,7 @@
 from fastapi import APIRouter, Depends, Form, HTTPException, Request, Response, status
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.security import OAuth2PasswordRequestForm
+from fastapi.templating import Jinja2Templates
 from fastapi_csrf_protect import CsrfProtect
 
 from app.auth.dependencies import get_current_user, get_user_service
@@ -26,8 +27,8 @@ router = APIRouter(tags=["authentication"])
 async def register_form(
     request: Request,
     csrf_protect: CsrfProtect = Depends(),
-    templates=Depends(get_templates),
-) -> HTMLResponse:
+    templates: Jinja2Templates = Depends(get_templates),
+) -> Response:
     """Display registration form with CSRF token."""
     csrf_token, signed_token = csrf_protect.generate_csrf_tokens()
     response = templates.TemplateResponse(
@@ -43,8 +44,8 @@ async def register_form(
 async def login_form(
     request: Request,
     csrf_protect: CsrfProtect = Depends(),
-    templates=Depends(get_templates),
-) -> HTMLResponse:
+    templates: Jinja2Templates = Depends(get_templates),
+) -> Response:
     """Display login form with CSRF token."""
     csrf_token, signed_token = csrf_protect.generate_csrf_tokens()
     response = templates.TemplateResponse(
@@ -61,7 +62,7 @@ async def login_form(
 # ========================================
 
 
-@router.post("/auth/register")
+@router.post("/auth/register", response_model=None)
 async def register(
     request: Request,
     csrf_protect: CsrfProtect = Depends(),
@@ -70,8 +71,8 @@ async def register(
     display_name: str = Form(...),
     confirm_password: str = Form(None),
     user_service: UserService = Depends(get_user_service),
-    templates=Depends(get_templates),
-):
+    templates: Jinja2Templates = Depends(get_templates),
+) -> Response | JSONResponse:
     """Register a new user.
 
     Args:
@@ -192,14 +193,14 @@ async def register(
     )
 
 
-@router.post("/auth/login")
+@router.post("/auth/login", response_model=None)
 async def login(
     request: Request,
     csrf_protect: CsrfProtect = Depends(),
     form_data: OAuth2PasswordRequestForm = Depends(),
     user_service: UserService = Depends(get_user_service),
-    templates=Depends(get_templates),
-):
+    templates: Jinja2Templates = Depends(get_templates),
+) -> Response | JSONResponse:
     """Login user and return JWT access token.
 
     Args:
@@ -267,11 +268,11 @@ async def login(
         return response
 
     # For API requests, return JSON
-    return {"access_token": access_token, "token_type": "bearer"}
+    return JSONResponse(content={"access_token": access_token, "token_type": "bearer"})
 
 
 @router.post("/logout")
-async def logout():
+async def logout() -> Response:
     """Logout user by clearing authentication cookie.
 
     Returns:
@@ -287,7 +288,7 @@ async def logout():
 
 
 @router.get("/auth/me", response_model=UserResponse)
-async def get_me(current_user: UserResponse = Depends(get_current_user)):
+async def get_me(current_user: UserResponse = Depends(get_current_user)) -> UserResponse:
     """Get current user information.
 
     Args:

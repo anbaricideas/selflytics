@@ -1,6 +1,7 @@
 """Cost calculation utilities."""
 
 from datetime import UTC, datetime
+from typing import Any
 
 from app.models.cost_tracking import (
     GPT_4_1_MINI_MODEL,
@@ -38,7 +39,7 @@ def calculate_cost(
     )
 
 
-def create_usage_record(usage_obj, model: str = GPT_4_1_MINI_MODEL) -> ChatUsage:
+def create_usage_record(usage_obj: Any, model: str = GPT_4_1_MINI_MODEL) -> ChatUsage:
     """
     Create ChatUsage record from Pydantic-AI RunUsage object or dict.
 

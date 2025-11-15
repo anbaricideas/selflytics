@@ -1,6 +1,7 @@
 """Chat data models."""
 
 from datetime import datetime
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -27,7 +28,7 @@ class Message(BaseModel):
     role: str  # "user" or "assistant"
     content: str
     timestamp: datetime
-    metadata: dict | None = None  # Tokens, cost, model used
+    metadata: dict[str, Any] | None = None  # Tokens, cost, model used
 
 
 class ChatRequest(BaseModel):

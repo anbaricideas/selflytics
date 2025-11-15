@@ -2,8 +2,9 @@
 
 import logging
 
-from fastapi import APIRouter, Depends, Form, HTTPException, Request, status
+from fastapi import APIRouter, Depends, Form, HTTPException, Request, Response, status
 from fastapi.responses import HTMLResponse
+from fastapi.templating import Jinja2Templates
 from fastapi_csrf_protect import CsrfProtect
 from telemetry.logging_utils import redact_for_logging
 
@@ -23,8 +24,8 @@ async def garmin_link_page(
     request: Request,
     current_user: UserResponse = Depends(get_current_user),
     csrf_protect: CsrfProtect = Depends(),
-    templates=Depends(get_templates),
-):
+    templates: Jinja2Templates = Depends(get_templates),
+) -> Response:
     """Display Garmin account linking form with CSRF token."""
     csrf_token, signed_token = csrf_protect.generate_csrf_tokens()
     response = templates.TemplateResponse(
@@ -46,8 +47,8 @@ async def link_garmin_account(
     username: str = Form(...),
     password: str = Form(...),
     current_user: UserResponse = Depends(get_current_user),
-    templates=Depends(get_templates),
-):
+    templates: Jinja2Templates = Depends(get_templates),
+) -> Response:
     """Link Garmin account to user.
 
     Returns HTML fragment for HTMX swap (outerHTML).
@@ -117,8 +118,8 @@ async def sync_garmin_data(
     request: Request,
     csrf_protect: CsrfProtect = Depends(),
     current_user: UserResponse = Depends(get_current_user),
-    templates=Depends(get_templates),
-):
+    templates: Jinja2Templates = Depends(get_templates),
+) -> Response:
     """Manually trigger Garmin data sync.
 
     Returns HTML fragment for HTMX swap (outerHTML).
@@ -156,7 +157,7 @@ async def unlink_garmin_account(
     request: Request,
     csrf_protect: CsrfProtect = Depends(),
     current_user: UserResponse = Depends(get_current_user),
-):
+) -> dict[str, str]:
     """Unlink Garmin account by deleting tokens and cache."""
     # Validate CSRF token FIRST
     await csrf_protect.validate_csrf(request)
@@ -180,7 +181,7 @@ async def unlink_garmin_account(
 @router.get("/status")
 async def garmin_status(
     current_user: UserResponse = Depends(get_current_user),
-):
+) -> dict[str, bool | str]:
     """Get Garmin account link status."""
     return {
         "linked": current_user.garmin_linked,

@@ -1,6 +1,8 @@
 """Chat API routes."""
 
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from typing import Any
+
+from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 
@@ -16,7 +18,9 @@ router = APIRouter(prefix="/chat", tags=["chat"])
 
 
 @router.get("/", response_class=HTMLResponse)
-async def chat_page(request: Request, current_user: UserResponse = Depends(get_current_user)):
+async def chat_page(
+    request: Request, current_user: UserResponse = Depends(get_current_user)
+) -> Response:
     """Render chat interface page."""
     return templates.TemplateResponse("chat.html", {"request": request, "user": current_user})
 
@@ -24,7 +28,7 @@ async def chat_page(request: Request, current_user: UserResponse = Depends(get_c
 @router.post("/send")
 async def send_message(
     request: ChatRequest, current_user: UserResponse = Depends(get_current_user)
-):
+) -> dict[str, Any]:
     """Send chat message and get AI response."""
     service = ChatService()
 
@@ -40,7 +44,9 @@ async def send_message(
 
 
 @router.get("/conversations")
-async def list_conversations(current_user: UserResponse = Depends(get_current_user)):
+async def list_conversations(
+    current_user: UserResponse = Depends(get_current_user),
+) -> dict[str, list[dict[str, Any]]]:
     """List user's conversations."""
     service = ChatService()
     conversations = await service.conversation_service.list_conversations(
@@ -53,7 +59,7 @@ async def list_conversations(current_user: UserResponse = Depends(get_current_us
 @router.get("/{conversation_id}")
 async def get_conversation(
     conversation_id: str, current_user: UserResponse = Depends(get_current_user)
-):
+) -> dict[str, Any]:
     """Get conversation with messages."""
     service = ChatService()
 

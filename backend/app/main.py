@@ -4,6 +4,7 @@ import logging
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 from pathlib import Path
+from typing import Any
 
 from dotenv import load_dotenv
 from fastapi import FastAPI, Request, status
@@ -135,7 +136,7 @@ app.include_router(garmin.router)
 
 # Exception handler for HTTP errors
 @app.exception_handler(HTTPException)
-async def http_exception_handler(request: Request, exc: HTTPException):
+async def http_exception_handler(request: Request, exc: HTTPException) -> Any:
     """Handle HTTP exceptions.
 
     For browser/HTMX requests:
@@ -244,7 +245,7 @@ async def root(request: Request) -> RedirectResponse:
 
 
 @app.get("/health")
-async def health_check():
+async def health_check() -> dict[str, str]:
     """Health check endpoint.
 
     Returns:
@@ -256,7 +257,7 @@ async def health_check():
 # Catch-all route for 404 errors (must be last)
 # This handles routes not matched by any other endpoint
 @app.api_route("/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH"])
-async def catch_all(request: Request, path: str):  # noqa: ARG001
+async def catch_all(request: Request, path: str) -> Any:  # noqa: ARG001
     """Catch-all handler for 404 errors.
 
     For browser requests, shows friendly HTML 404 template.

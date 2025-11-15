@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 class ChatService:
     """High-level chat service."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.conversation_service = ConversationService()
 
     async def send_message(self, user_id: str, request: ChatRequest) -> tuple[ChatResponse, str]:
@@ -67,7 +67,7 @@ class ChatService:
             result = await agent.run(
                 request.message,
                 deps=user_id,  # Pass user_id to tools
-                message_history=message_history,
+                message_history=message_history,  # type: ignore[arg-type]
             )
 
             response = result.output
