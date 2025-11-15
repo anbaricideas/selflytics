@@ -152,7 +152,11 @@ class TestGarminClientAuthenticate:
 class TestGarminClientLoadTokens:
     """Tests for load_tokens method."""
 
-    async def test_load_tokens_success(self, mock_firestore, mock_garth, mock_encryption):
+    @patch("app.services.garmin_client.set_oauth2_token")
+    @patch("app.services.garmin_client.set_oauth1_token")
+    async def test_load_tokens_success(
+        self, mock_set_oauth1, mock_set_oauth2, mock_firestore, mock_garth, mock_encryption
+    ):
         """Test successful token loading from Firestore."""
         # Setup
         _, mock_decrypt = mock_encryption
@@ -192,8 +196,8 @@ class TestGarminClientLoadTokens:
         # Assert
         assert result is True
         assert mock_decrypt.call_count == 2
-        assert mock_garth.client.oauth1_token == {"token": "oauth1_decrypted"}
-        assert mock_garth.client.oauth2_token == {"token": "oauth2_decrypted"}
+        mock_set_oauth1.assert_called_once_with({"token": "oauth1_decrypted"})
+        mock_set_oauth2.assert_called_once_with({"token": "oauth2_decrypted"})
 
     async def test_load_tokens_not_found(self, garmin_client, mock_firestore):
         """Test loading tokens when none exist."""
@@ -251,7 +255,18 @@ class TestGarminClientLoadTokens:
 class TestGarminClientGetActivities:
     """Tests for get_activities method."""
 
-    async def test_get_activities_success(self, mock_garth, mock_firestore, mock_encryption):
+    @patch("app.services.garmin_client.set_oauth2_token")
+    @patch("app.services.garmin_client.set_oauth1_token")
+    @patch("app.services.garmin_client.get_activities_typed")
+    async def test_get_activities_success(
+        self,
+        mock_get_activities,
+        mock_set_oauth1,
+        mock_set_oauth2,
+        mock_garth,
+        mock_firestore,
+        mock_encryption,
+    ):
         """Test successful activity fetching."""
         # Setup
         _, mock_decrypt = mock_encryption
@@ -262,7 +277,7 @@ class TestGarminClientGetActivities:
         start_date = date(2025, 11, 1)
         end_date = date(2025, 11, 3)
 
-        mock_garth.activities.side_effect = [
+        mock_get_activities.side_effect = [
             [
                 {
                     "activityId": 123,
@@ -317,7 +332,18 @@ class TestGarminClientGetActivities:
         with pytest.raises(Exception, match="Not authenticated"):
             await garmin_client.get_activities(date.today(), date.today())
 
-    async def test_get_activities_with_filter(self, mock_garth, mock_firestore, mock_encryption):
+    @patch("app.services.garmin_client.set_oauth2_token")
+    @patch("app.services.garmin_client.set_oauth1_token")
+    @patch("app.services.garmin_client.get_activities_typed")
+    async def test_get_activities_with_filter(
+        self,
+        mock_get_activities,
+        mock_set_oauth1,
+        mock_set_oauth2,
+        mock_garth,
+        mock_firestore,
+        mock_encryption,
+    ):
         """Test activity fetching with activity type filter."""
         # Setup
         _, mock_decrypt = mock_encryption
@@ -328,7 +354,7 @@ class TestGarminClientGetActivities:
         start_date = date(2025, 11, 1)
         end_date = date(2025, 11, 1)
 
-        mock_garth.activities.return_value = [
+        mock_get_activities.return_value = [
             {
                 "activityId": 123,
                 "activityName": "Morning Run",
@@ -372,7 +398,18 @@ class TestGarminClientGetActivities:
 class TestGarminClientGetDailyMetrics:
     """Tests for get_daily_metrics method."""
 
-    async def test_get_daily_metrics_success(self, mock_garth, mock_firestore, mock_encryption):
+    @patch("app.services.garmin_client.set_oauth2_token")
+    @patch("app.services.garmin_client.set_oauth1_token")
+    @patch("app.services.garmin_client.get_daily_summary_typed")
+    async def test_get_daily_metrics_success(
+        self,
+        mock_get_daily_summary,
+        mock_set_oauth1,
+        mock_set_oauth2,
+        mock_garth,
+        mock_firestore,
+        mock_encryption,
+    ):
         """Test successful daily metrics fetching."""
         # Setup
         _, mock_decrypt = mock_encryption
@@ -382,7 +419,7 @@ class TestGarminClientGetDailyMetrics:
 
         target_date = date(2025, 11, 13)
 
-        mock_garth.daily_summary.return_value = {
+        mock_get_daily_summary.return_value = {
             "steps": 10500,
             "distanceMeters": 8000,
             "activeCalories": 800,
@@ -421,7 +458,18 @@ class TestGarminClientGetDailyMetrics:
 class TestGarminClientGetHealthSnapshot:
     """Tests for get_health_snapshot method."""
 
-    async def test_get_health_snapshot_success(self, mock_garth, mock_firestore, mock_encryption):
+    @patch("app.services.garmin_client.set_oauth2_token")
+    @patch("app.services.garmin_client.set_oauth1_token")
+    @patch("app.services.garmin_client.get_health_snapshot_typed")
+    async def test_get_health_snapshot_success(
+        self,
+        mock_get_health_snapshot,
+        mock_set_oauth1,
+        mock_set_oauth2,
+        mock_garth,
+        mock_firestore,
+        mock_encryption,
+    ):
         """Test successful health snapshot fetching."""
         # Setup
         _, mock_decrypt = mock_encryption
@@ -429,7 +477,7 @@ class TestGarminClientGetHealthSnapshot:
         setup_firestore_with_tokens(mock_firestore)
         garmin_client = GarminClient(user_id="test_user_123")
 
-        mock_garth.health_snapshot.return_value = {
+        mock_get_health_snapshot.return_value = {
             "heartRate": 65,
             "respirationRate": 16,
             "stressLevel": 25,
