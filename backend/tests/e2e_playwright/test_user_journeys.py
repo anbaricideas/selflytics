@@ -182,3 +182,71 @@ class TestGarminErrorHandling:
             f"Expected 1 'Link Your Garmin Account' header after error, found {count_after}. "
             "HTMX fragment swap should not duplicate page structure."
         )
+
+
+class TestAuthenticationTokenHandling:
+    """Authentication tokens should be validated and invalid tokens should redirect to login."""
+
+    async def test_invalid_jwt_redirects_to_login(self, page: Page, base_url: str):
+        """
+        User with invalid/expired JWT token should be redirected to login page.
+
+        Expected behavior:
+        1. User has an invalid or expired JWT token in cookies
+        2. User attempts to access protected route (/settings, /chat)
+        3. Server validates token, finds it invalid
+        4. User is redirected to login page
+
+        Context: Replaces skipped integration test that tried to test this with mocked fixtures.
+        E2E test uses real authentication flow to verify token validation works end-to-end.
+        """
+        # Set an invalid JWT token cookie manually
+        await page.goto(base_url)
+
+        # Add invalid token cookie (malformed JWT that will fail signature verification)
+        await page.context.add_cookies([{
+            "name": "access_token",
+            "value": "invalid.jwt.token.here",
+            "domain": "localhost",
+            "path": "/",
+        }])
+
+        # Attempt to access protected /settings route
+        await page.goto(f"{base_url}/settings")
+
+        # Should be redirected to login page (token validation fails)
+        await page.wait_for_url(f"{base_url}/login", timeout=5000)
+
+        # Verify we're on login page
+        await expect(page.locator('[data-testid="login-form"]')).to_be_visible()
+
+    async def test_expired_session_redirects_to_login_from_chat(
+        self, page: Page, base_url: str
+    ):
+        """
+        User with expired session attempting to access chat page should redirect to login.
+
+        Expected behavior:
+        1. User session expires or token is invalid
+        2. User navigates to /chat (or root which redirects to /chat)
+        3. Auth validation fails
+        4. User is redirected to login page
+
+        Context: Verifies that chat-first navigation still enforces authentication.
+        Replaces skipped integration test for invalid token handling on protected routes.
+        """
+        # Set an expired/invalid token
+        await page.goto(base_url)
+        await page.context.add_cookies([{
+            "name": "access_token",
+            "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJub25leGlzdGVudCIsImV4cCI6MH0.invalid",
+            "domain": "localhost",
+            "path": "/",
+        }])
+
+        # Attempt to access /chat with invalid token
+        await page.goto(f"{base_url}/chat/")
+
+        # Should redirect to login
+        await page.wait_for_url(f"{base_url}/login", timeout=5000)
+        await expect(page.locator('[data-testid="login-form"]')).to_be_visible()
