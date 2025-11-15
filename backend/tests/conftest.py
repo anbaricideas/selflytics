@@ -32,49 +32,88 @@ def test_user():
 
 
 @pytest.fixture
-def mock_user_service(test_user):
-    """Mock UserService for integration tests."""
-    from app.auth.password import hash_password
+def create_mock_user_service():
+    """Factory fixture for creating mock UserService with different user states."""
 
-    mock_service = Mock(spec=UserService)
+    def _create_service(user_data: dict, include_auth: bool = True):
+        """Create a mock UserService.
 
-    # Mock get_user_by_id to return test user
-    mock_user = User(
-        user_id=test_user["user_id"],
-        email=test_user["email"],
-        hashed_password=hash_password(test_user["password"]),
-        created_at=datetime.now(UTC),
-        updated_at=datetime.now(UTC),
-        profile=UserProfile(**test_user["profile"]),
-        garmin_linked=test_user["garmin_linked"],
-    )
-    mock_service.get_user_by_id = AsyncMock(return_value=mock_user)
+        Args:
+            user_data: Dict with user_id, email, password, profile, garmin_linked
+            include_auth: Whether to mock authenticate method (default True)
+        """
+        from app.auth.password import hash_password
 
-    # Mock authenticate method for login tests
-    async def mock_authenticate(email: str, password: str):
-        if email == test_user["email"] and password == test_user["password"]:
-            return mock_user
-        return None
+        mock_service = Mock(spec=UserService)
 
-    mock_service.authenticate = mock_authenticate
+        # Mock get_user_by_id to return test user
+        mock_user = User(
+            user_id=user_data["user_id"],
+            email=user_data["email"],
+            hashed_password=hash_password(user_data["password"]),
+            created_at=datetime.now(UTC),
+            updated_at=datetime.now(UTC),
+            profile=UserProfile(**user_data["profile"]),
+            garmin_linked=user_data["garmin_linked"],
+        )
+        mock_service.get_user_by_id = AsyncMock(return_value=mock_user)
 
-    return mock_service
+        # Mock authenticate method for login tests
+        if include_auth:
+
+            async def mock_authenticate(email: str, password: str):
+                if email == user_data["email"] and password == user_data["password"]:
+                    return mock_user
+                return None
+
+            mock_service.authenticate = mock_authenticate
+
+        return mock_service
+
+    return _create_service
 
 
 @pytest.fixture
-def client(mock_user_service, test_user):
+def mock_user_service(create_mock_user_service, test_user):
+    """Mock UserService for integration tests."""
+    return create_mock_user_service(test_user)
+
+
+@pytest.fixture
+def create_authenticated_client():
+    """Factory fixture for creating authenticated test clients."""
+
+    def _create_client(user_service, user_data: dict, set_cookie: bool = False):
+        """Create an authenticated TestClient.
+
+        Args:
+            user_service: Mock UserService instance
+            user_data: Dict with user_id and email for token
+            set_cookie: Whether to set access_token cookie (default False)
+        """
+        # Mock JWT verification
+        with patch("app.auth.dependencies.verify_token") as mock_verify:
+            mock_verify.return_value = TokenData(
+                user_id=user_data["user_id"], email=user_data["email"]
+            )
+
+            # Override UserService dependency
+            app.dependency_overrides[get_user_service] = lambda: user_service
+
+            test_client = TestClient(app, raise_server_exceptions=False)
+            if set_cookie:
+                test_client.cookies.set("access_token", "Bearer mock-jwt-token")
+            yield test_client
+
+            app.dependency_overrides.clear()
+
+    return _create_client
+
+
+@pytest.fixture
+def client(create_authenticated_client, mock_user_service, test_user):
     """Provide TestClient with mocked UserService and auth."""
-    # Mock JWT verification
-    with patch("app.auth.dependencies.verify_token") as mock_verify:
-        mock_verify.return_value = TokenData(user_id=test_user["user_id"], email=test_user["email"])
-
-        # Override UserService dependency
-        app.dependency_overrides[get_user_service] = lambda: mock_user_service
-
-        test_client = TestClient(app, raise_server_exceptions=False)
-        yield test_client
-
-        app.dependency_overrides.clear()
+    yield from create_authenticated_client(mock_user_service, test_user)
 
 
 @pytest.fixture
@@ -102,24 +141,9 @@ def test_user_linked_garmin():
 
 
 @pytest.fixture
-def mock_user_service_linked_garmin(test_user_linked_garmin):
+def mock_user_service_linked_garmin(create_mock_user_service, test_user_linked_garmin):
     """Mock UserService for user with linked Garmin."""
-    from app.auth.password import hash_password
-
-    mock_service = Mock(spec=UserService)
-
-    mock_user = User(
-        user_id=test_user_linked_garmin["user_id"],
-        email=test_user_linked_garmin["email"],
-        hashed_password=hash_password(test_user_linked_garmin["password"]),
-        created_at=datetime.now(UTC),
-        updated_at=datetime.now(UTC),
-        profile=UserProfile(**test_user_linked_garmin["profile"]),
-        garmin_linked=test_user_linked_garmin["garmin_linked"],
-    )
-    mock_service.get_user_by_id = AsyncMock(return_value=mock_user)
-
-    return mock_service
+    return create_mock_user_service(test_user_linked_garmin, include_auth=False)
 
 
 @pytest.fixture
@@ -129,23 +153,13 @@ def test_user_linked_garmin_token():
 
 
 @pytest.fixture
-def client_linked_garmin(mock_user_service_linked_garmin, test_user_linked_garmin):
+def client_linked_garmin(
+    create_authenticated_client, mock_user_service_linked_garmin, test_user_linked_garmin
+):
     """Provide TestClient for user with linked Garmin account."""
-    # Mock JWT verification
-    with patch("app.auth.dependencies.verify_token") as mock_verify:
-        mock_verify.return_value = TokenData(
-            user_id=test_user_linked_garmin["user_id"], email=test_user_linked_garmin["email"]
-        )
-
-        # Override UserService dependency
-        app.dependency_overrides[get_user_service] = lambda: mock_user_service_linked_garmin
-
-        test_client = TestClient(app, raise_server_exceptions=False)
-        # Set the auth cookie to bypass authentication
-        test_client.cookies.set("access_token", "Bearer mock-jwt-token-linked")
-        yield test_client
-
-        app.dependency_overrides.clear()
+    yield from create_authenticated_client(
+        mock_user_service_linked_garmin, test_user_linked_garmin, set_cookie=True
+    )
 
 
 @pytest.fixture

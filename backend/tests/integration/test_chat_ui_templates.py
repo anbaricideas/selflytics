@@ -16,10 +16,10 @@ def test_settings_page_renders_with_user_context(client: TestClient, test_user_t
     assert 'data-testid="settings-header"' in response.text
 
 
-def test_settings_page_displays_garmin_connection_status_connected(
+def test_settings_shows_garmin_connected(
     client_linked_garmin: TestClient,
 ) -> None:
-    """Settings page should show 'Connected' when user has linked Garmin."""
+    """Verify settings page displays 'Connected' status when user has linked Garmin account."""
     response = client_linked_garmin.get("/settings")
 
     assert response.status_code == 200
@@ -27,10 +27,8 @@ def test_settings_page_displays_garmin_connection_status_connected(
     assert 'data-testid="garmin-status-connected"' in response.text
 
 
-def test_settings_page_displays_garmin_connection_status_not_connected(
-    client: TestClient, test_user_token: str
-) -> None:
-    """Settings page should show 'Not connected' when user hasn't linked Garmin."""
+def test_settings_shows_garmin_not_connected(client: TestClient, test_user_token: str) -> None:
+    """Verify settings page displays 'Not connected' status when user hasn't linked Garmin account."""
     response = client.get("/settings", cookies={"access_token": f"Bearer {test_user_token}"})
 
     assert response.status_code == 200
@@ -38,8 +36,8 @@ def test_settings_page_displays_garmin_connection_status_not_connected(
     assert 'data-testid="garmin-status-not-connected"' in response.text
 
 
-def test_settings_page_has_navigation_links(client: TestClient, test_user_token: str) -> None:
-    """Settings page should include navigation links."""
+def test_settings_has_navigation_links(client: TestClient, test_user_token: str) -> None:
+    """Verify settings page includes navigation links (back to chat, manage Garmin)."""
     response = client.get("/settings", cookies={"access_token": f"Bearer {test_user_token}"})
 
     assert response.status_code == 200
@@ -51,10 +49,10 @@ def test_settings_page_has_navigation_links(client: TestClient, test_user_token:
     assert 'data-testid="link-manage-garmin"' in response.text
 
 
-def test_garmin_card_shows_connected_status(
+def test_garmin_card_connected(
     client_linked_garmin: TestClient,
 ) -> None:
-    """Garmin card should display green checkmark and 'Connected' when linked."""
+    """Verify Garmin card displays 'Connected' status with appropriate UI elements when linked."""
     response = client_linked_garmin.get("/settings")
 
     assert response.status_code == 200
@@ -63,8 +61,8 @@ def test_garmin_card_shows_connected_status(
     assert "Connected" in response.text
 
 
-def test_garmin_card_shows_not_connected_status(client: TestClient, test_user_token: str) -> None:
-    """Garmin card should display 'Not connected' when not linked."""
+def test_garmin_card_not_connected(client: TestClient, test_user_token: str) -> None:
+    """Verify Garmin card displays 'Not connected' status when account is not linked."""
     response = client.get("/settings", cookies={"access_token": f"Bearer {test_user_token}"})
 
     assert response.status_code == 200
@@ -83,10 +81,10 @@ def test_garmin_card_has_manage_link(client: TestClient, test_user_token: str) -
     assert "Manage" in response.text
 
 
-def test_profile_card_displays_user_email(
+def test_profile_card_shows_email(
     client: TestClient, test_user_token: str, test_user_email: str
 ) -> None:
-    """Profile card should display user's email address."""
+    """Verify profile card displays the user's email address."""
     response = client.get("/settings", cookies={"access_token": f"Bearer {test_user_token}"})
 
     assert response.status_code == 200
