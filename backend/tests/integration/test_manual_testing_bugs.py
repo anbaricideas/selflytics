@@ -5,6 +5,7 @@ These tests capture bugs discovered during Phase 4 manual testing runsheet execu
 
 from unittest.mock import AsyncMock, patch
 
+import pytest
 from fastapi.testclient import TestClient
 
 
@@ -18,10 +19,12 @@ INVALID_GARMIN_PASSWORD = "wrongpassword"  # noqa: S105 - Test fixture
 class TestDashboardGarminLinkRouting:
     """Test that dashboard Garmin link uses correct URL.
 
-    Bug: Dashboard template links to /settings/garmin but route is /garmin/link
-    Expected: Dashboard should link to /garmin/link (the actual route)
+    Note: Dashboard now redirects to /settings (Phase 1). Phase 2 will add Garmin cards to settings.
     """
 
+    @pytest.mark.skip(
+        reason="Dashboard now redirects to /settings - Garmin links will be in settings page (Phase 2)"
+    )
     def test_dashboard_garmin_link_uses_correct_url(self, client: TestClient, test_user_token: str):
         """Dashboard 'Connect Now' button should link to /garmin/link, not /settings/garmin."""
         # Dashboard doesn't call GarminService, but mock for isolation

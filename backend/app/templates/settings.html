@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+
+{% block title %}Settings - Selflytics{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-50">
+    <!-- Header -->
+    <header class="bg-white shadow-sm border-b border-gray-200" role="banner">
+        <div class="max-w-7xl mx-auto px-4 py-5 flex justify-between items-center">
+            <div>
+                <h1 class="text-3xl font-bold text-gray-900">Selflytics</h1>
+                <p class="text-sm text-gray-500 mt-1">AI-Powered Analysis for Your Fitness Data</p>
+            </div>
+            <div class="flex items-center gap-4">
+                <span class="text-gray-700 font-medium">{{ user.profile.display_name }}</span>
+                <form method="POST" action="/logout" class="inline">
+                    <button
+                        type="submit"
+                        class="bg-gray-100 text-gray-700 hover:bg-gray-200 font-medium px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition duration-150"
+                    >
+                        Logout
+                    </button>
+                </form>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 py-10" role="main">
+        <h2 class="text-4xl font-bold text-gray-900 mb-10">Settings</h2>
+
+        <!-- Placeholder content - Phase 2 will add actual settings cards -->
+        <div class="text-gray-600">
+            <p class="text-lg">Your settings will appear here soon.</p>
+            <p class="mt-4 text-sm">We're working on adding personalization options and connection management.</p>
+        </div>
+    </main>
+</div>
+{% endblock %}

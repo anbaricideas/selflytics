@@ -69,12 +69,12 @@ def test_404_api_request_returns_json(client: TestClient):
     assert "detail" in json_data
 
 
-def test_401_redirects_to_login_for_browser(client: TestClient):
+def test_dashboard_redirects_to_settings(client: TestClient):
     """
-    Browser request resulting in 401 should redirect to login (existing behavior).
+    Dashboard route now redirects to settings (Phase 1 - chat-first navigation).
 
-    Expected: 303 redirect to /login
-    Context: Ensure error template changes don't break auth redirects
+    Expected: 301 redirect to /settings
+    Context: Dashboard repurposed as settings hub
     """
     response = client.get(
         "/dashboard",
@@ -82,5 +82,5 @@ def test_401_redirects_to_login_for_browser(client: TestClient):
         follow_redirects=False,
     )
 
-    assert response.status_code == status.HTTP_303_SEE_OTHER
-    assert response.headers["location"] == "/login"
+    assert response.status_code == 301
+    assert response.headers["location"] == "/settings"

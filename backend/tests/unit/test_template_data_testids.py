@@ -45,7 +45,9 @@ def test_register_template_has_required_testids(client):
 
 
 def test_dashboard_template_has_required_testids(client, test_user_token):
-    """Dashboard page should have navigation and key action test IDs."""
+    """Dashboard route (now redirects to settings) should have navigation test IDs."""
+    # Phase 1: /dashboard redirects to /settings with 301
+    # The test client follows redirects by default, so we get the settings page
     response = client.get(
         "/dashboard",
         headers={"Authorization": f"Bearer {test_user_token}"},
@@ -54,12 +56,11 @@ def test_dashboard_template_has_required_testids(client, test_user_token):
     assert response.status_code == 200
     html = response.text
 
-    # Page structure
-    assert 'data-testid="dashboard-header"' in html, "Dashboard header missing test ID"
-    assert 'data-testid="welcome-section"' in html, "Welcome section missing test ID"
-
-    # Actions
-    assert 'data-testid="logout-button"' in html, "Logout button missing test ID"
+    # Settings page should have logout functionality
+    # Note: Phase 2 will add proper test IDs to the settings template
+    # For now, just verify the page renders and has logout
+    assert "Logout" in html or "logout" in html, "Settings page missing logout button"
+    assert "Settings" in html, "Should show settings page content"
 
 
 def test_garmin_settings_unlinked_has_required_testids(client, test_user_token):
