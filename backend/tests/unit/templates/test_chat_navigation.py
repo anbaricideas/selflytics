@@ -2,9 +2,10 @@
 Unit tests for chat page navigation elements.
 
 These tests verify that the chat.html template includes proper navigation
-(logout button, dashboard link) so users aren't trapped on the chat page.
+(logout button, settings link) so users aren't trapped on the chat page.
 
 Context: Bug #10 - chat page missing navigation header
+Phase 4: Updated for chat-first navigation (settings icon replaced dashboard link)
 """
 
 # Commented code documents post-fix assertions in TDD
@@ -36,12 +37,12 @@ def test_chat_template_has_logout_button(templates):
     assert logout_button.name in ["button", "a"], "Should be button or link"
 
 
-def test_chat_template_has_dashboard_link(templates):
+def test_chat_template_has_settings_link(templates):
     """
-    Chat template should include link back to dashboard.
+    Chat template should include link to settings page.
 
-    Expected: Link with href="/dashboard" or data-testid for navigation
-    Context: Bug #10 - no way to navigate back to dashboard
+    Expected: Link with href="/settings" and data-testid="link-settings"
+    Context: Phase 4 - Settings icon navigation (replaced dashboard link)
     """
     html = templates.get_template("chat.html").render(
         user={"profile": {"display_name": "Test User"}, "email": "test@example.com"}
@@ -49,11 +50,13 @@ def test_chat_template_has_dashboard_link(templates):
 
     soup = BeautifulSoup(html, "html.parser")
 
-    # Find dashboard link
-    dashboard_link = soup.find("a", href="/dashboard")
+    # Find settings link
+    settings_link = soup.find("a", href="/settings")
 
-    # Bug #10 fixed: Dashboard link now exists
-    assert dashboard_link is not None, "Chat page should have link back to dashboard"
+    assert settings_link is not None, "Chat page should have link to settings"
+    assert settings_link.get("data-testid") == "link-settings", (
+        "Settings link should have data-testid='link-settings'"
+    )
 
 
 def test_chat_template_has_navigation_header(templates):
@@ -98,38 +101,31 @@ def test_chat_template_displays_user_name(templates):
     assert "Alice Smith" in user_name.get_text()
 
 
-def test_chat_navigation_matches_dashboard_pattern(templates):
+def test_chat_navigation_has_settings_icon(templates):
     """
-    Chat navigation should match dashboard navigation structure.
+    Chat navigation should include settings icon link.
 
-    Expected: Same header structure as dashboard.html
-    Context: Consistent user experience across pages
+    Expected: Settings icon (SVG) within link to /settings
+    Context: Phase 4 - Modern icon-based navigation pattern
     """
     chat_html = templates.get_template("chat.html").render(
         user={"profile": {"display_name": "Test User"}, "email": "test@example.com"}
     )
-    dashboard_html = templates.get_template("dashboard.html").render(
-        user={"profile": {"display_name": "Test User"}, "email": "test@example.com"},
-        garmin_linked=False,
-    )
 
     chat_soup = BeautifulSoup(chat_html, "html.parser")
-    dashboard_soup = BeautifulSoup(dashboard_html, "html.parser")
 
-    # Dashboard has header with logout
-    dashboard_header = dashboard_soup.find("header")
-    dashboard_logout = dashboard_soup.find(attrs={"data-testid": "logout-button"})
-
-    assert dashboard_header is not None, "Dashboard should have header"
-    assert dashboard_logout is not None, "Dashboard should have logout button"
-
-    # Chat should also have header with logout
+    # Chat should have header with logout and settings
     chat_header = chat_soup.find("header")
     chat_logout = chat_soup.find(attrs={"data-testid": "logout-button"})
+    settings_link = chat_soup.find("a", href="/settings")
 
-    # Bug #10 fixed: Chat now has navigation
-    assert chat_header is not None, "Chat should have header like dashboard"
-    assert chat_logout is not None, "Chat should have logout like dashboard"
+    assert chat_header is not None, "Chat should have header"
+    assert chat_logout is not None, "Chat should have logout button"
+    assert settings_link is not None, "Chat should have settings link"
+
+    # Settings link should contain SVG icon
+    settings_svg = settings_link.find("svg")
+    assert settings_svg is not None, "Settings link should contain SVG icon"
 
 
 @pytest.mark.skip(reason="Integration test - should be in integration/ folder")

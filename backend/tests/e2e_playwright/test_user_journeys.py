@@ -30,9 +30,9 @@ class TestChatPageNavigation:
         logout_button = authenticated_user.locator('[data-testid="logout-button"]')
         await expect(logout_button).to_be_visible(timeout=2000)
 
-        # User should be able to navigate to dashboard from chat
-        dashboard_link = authenticated_user.locator('[data-testid="link-dashboard"]')
-        await expect(dashboard_link).to_be_visible(timeout=2000)
+        # User should be able to navigate to settings from chat
+        settings_link = authenticated_user.locator('[data-testid="link-settings"]')
+        await expect(settings_link).to_be_visible(timeout=2000)
 
         # Verify sidebar loaded (Conversations heading)
         await expect(authenticated_user.locator("text=Conversations")).to_be_visible(timeout=2000)
@@ -41,36 +41,36 @@ class TestChatPageNavigation:
 class TestAuthenticatedUserNavigation:
     """Authenticated users should navigate to dashboard, not login page."""
 
-    async def test_authenticated_user_visiting_root_url_sees_dashboard(
+    async def test_authenticated_user_visiting_root_url_redirects_to_chat(
         self, authenticated_user: Page, base_url: str
     ):
         """
-        Authenticated user visiting root URL should see their dashboard.
+        Authenticated user visiting root URL should redirect to chat.
 
-        Expected: Visiting / redirects to /dashboard for logged-in users.
-        Context: Bug #11 - authenticated users were sent to login page.
+        Expected: Visiting / redirects to /chat/ for logged-in users.
+        Context: Phase 4 - chat-first navigation model (Spec line 139)
         """
         # User is already authenticated (from fixture)
         # Navigate to root URL
         await authenticated_user.goto(base_url)
 
-        # Should redirect to dashboard, not login
-        await authenticated_user.wait_for_url(f"{base_url}/dashboard", timeout=5000)
+        # Should redirect to chat, not login
+        await authenticated_user.wait_for_url(f"{base_url}/chat/", timeout=5000)
 
-        # Verify we're on dashboard
-        await expect(authenticated_user.locator('[data-testid="dashboard-header"]')).to_be_visible()
+        # Verify we're on chat
+        await expect(authenticated_user.locator('[data-testid="chat-header"]')).to_be_visible()
 
 
 class TestUserSessionManagement:
     """User sessions should be isolated and display correct user information."""
 
-    async def test_dashboard_displays_correct_user_after_switching_accounts(
+    async def test_chat_displays_correct_user_after_switching_accounts(
         self, page: Page, base_url: str
     ):
         """
-        Dashboard should show currently logged-in user's name, not previous user's.
+        Chat page should show currently logged-in user's name, not previous user's.
 
-        Expected: After logout and login with different account, dashboard shows new user.
+        Expected: After logout and login with different account, chat shows new user.
         Context: Bug #12 - concern about cached user data displaying incorrectly.
         """
         import time
@@ -89,8 +89,8 @@ class TestUserSessionManagement:
         await page.fill('[data-testid="input-confirm-password"]', password)
         await page.click('[data-testid="submit-register"]')
 
-        # Wait for redirect to dashboard
-        await page.wait_for_url(f"{base_url}/dashboard", timeout=10000)
+        # Wait for redirect to chat
+        await page.wait_for_url(f"{base_url}/chat/", timeout=10000)
 
         # Verify first user's name is shown
         welcome_message = page.locator('[data-testid="welcome-section"]')
@@ -111,8 +111,8 @@ class TestUserSessionManagement:
         await page.fill('[data-testid="input-confirm-password"]', password)
         await page.click('[data-testid="submit-register"]')
 
-        # Wait for redirect to dashboard
-        await page.wait_for_url(f"{base_url}/dashboard", timeout=10000)
+        # Wait for redirect to chat
+        await page.wait_for_url(f"{base_url}/chat/", timeout=10000)
 
         # Verify second user's name is shown (NOT first user's name)
         welcome_message = page.locator('[data-testid="welcome-section"]')

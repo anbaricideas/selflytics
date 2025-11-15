@@ -86,8 +86,8 @@ async def authenticated_user(page: Page, base_url: str, test_user: dict):
     await page.click('[data-testid="submit-register"]')
 
     # Wait for HTMX redirect (HX-Redirect header triggers client-side navigation)
-    # HTMX will receive the HX-Redirect header and navigate to /dashboard
-    await page.wait_for_url(f"{base_url}/dashboard", timeout=10000)
+    # HTMX will receive the HX-Redirect header and navigate to /chat/
+    await page.wait_for_url(f"{base_url}/chat/", timeout=10000)
 
     return page
 

@@ -67,17 +67,17 @@ def test_401_without_browser_headers_returns_json_error(unauthenticated_client):
     assert response.json()["detail"] == "Not authenticated"
 
 
-def test_dashboard_without_auth_redirects_to_login(unauthenticated_client):
-    """Dashboard GET without authentication should redirect to /login."""
+def test_dashboard_without_auth_redirects_to_settings(unauthenticated_client):
+    """Dashboard GET redirects to settings (Phase 1 - chat-first navigation)."""
     response = unauthenticated_client.get(
         "/dashboard",
         headers={"Accept": "text/html"},
         follow_redirects=False,
     )
 
-    # Should redirect to login
-    assert response.status_code == status.HTTP_303_SEE_OTHER
-    assert response.headers["location"] == "/login"
+    # Dashboard now redirects to /settings (301 permanent) - no auth required for redirect
+    assert response.status_code == 301
+    assert response.headers["location"] == "/settings"
 
 
 def test_protected_post_without_auth_redirects_browser(unauthenticated_client):

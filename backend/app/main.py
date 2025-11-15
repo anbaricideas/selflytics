@@ -227,7 +227,7 @@ async def csrf_protect_exception_handler(
 async def root(request: Request) -> RedirectResponse:
     """Root endpoint - redirect based on authentication status.
 
-    - Authenticated users → /dashboard
+    - Authenticated users → /chat
     - Unauthenticated users → /login
     """
     # Fast path: Check if token exists before attempting verification
@@ -244,8 +244,8 @@ async def root(request: Request) -> RedirectResponse:
     try:
         # Validate token
         verify_token(token)
-        # Token is valid - redirect to dashboard
-        return RedirectResponse(url="/dashboard", status_code=303)
+        # Token is valid - redirect to chat (chat-first navigation)
+        return RedirectResponse(url="/chat", status_code=303)
     except ValueError:
         # Invalid token - clear it and redirect to login
         response = RedirectResponse(url="/login", status_code=303)

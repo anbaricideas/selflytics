@@ -1,5 +1,7 @@
 {% extends "base.html" %}
 
+{% block title %}Chat - Selflytics{% endblock %}
+
 {% block content %}
 <div class="min-h-screen bg-gray-50">
     <!-- Header -->
@@ -11,14 +13,20 @@
             </div>
             <div class="flex items-center gap-4">
                 <a
-                    href="/dashboard"
-                    class="text-gray-700 hover:text-blue-600 font-medium transition duration-150"
-                    data-testid="link-dashboard"
-                    aria-label="Return to dashboard"
+                    href="/settings"
+                    class="text-gray-600 hover:text-gray-900 transition"
+                    data-testid="link-settings"
+                    title="Settings"
+                    aria-label="Settings"
                 >
-                    Dashboard
+                    <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                    </svg>
                 </a>
-                <span class="text-gray-700 font-medium" data-testid="user-name" aria-label="Currently logged in as {{ user.profile.display_name }}">{{ user.profile.display_name }}</span>
+                <div data-testid="welcome-section">
+                    <span class="text-gray-700 font-medium" data-testid="user-name" aria-label="Currently logged in as {{ user.profile.display_name }}">{{ user.profile.display_name }}</span>
+                </div>
                 <form method="POST" action="/logout" class="inline">
                     <button
                         type="submit"
@@ -32,6 +40,40 @@
             </div>
         </div>
     </header>
+
+    <!-- Garmin Connection Banner (only if not linked) -->
+    {% if not user.garmin_linked %}
+    <div id="garmin-banner" class="bg-blue-50 border-l-4 border-blue-400 p-4" data-testid="garmin-banner">
+        <div class="flex items-center justify-between flex-wrap gap-4">
+            <div class="flex items-center flex-1 min-w-0">
+                <svg class="h-6 w-6 text-blue-400 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
+                    <!-- Link/chain icon -->
+                    <path fill-rule="evenodd" d="M12.586 4.586a2 2 0 112.828 2.828l-3 3a2 2 0 01-2.828 0 1 1 0 00-1.414 1.414 4 4 0 005.656 0l3-3a4 4 0 00-5.656-5.656l-1.5 1.5a1 1 0 101.414 1.414l1.5-1.5zm-5 5a2 2 0 012.828 0 1 1 0 101.414-1.414 4 4 0 00-5.656 0l-3 3a4 4 0 105.656 5.656l1.5-1.5a1 1 0 10-1.414-1.414l-1.5 1.5a2 2 0 11-2.828-2.828l3-3z" clip-rule="evenodd"/>
+                </svg>
+                <p class="text-sm text-blue-700">
+                    Connect your Garmin account to analyze your activity data with AI
+                </p>
+            </div>
+            <div class="flex items-center gap-4 flex-shrink-0">
+                <a href="/garmin/link"
+                   class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition text-sm font-medium"
+                   data-testid="banner-link-now"
+                   aria-label="Link your Garmin account now">
+                    Link Now
+                </a>
+                <button id="dismiss-banner"
+                        class="text-blue-700 hover:text-blue-900 transition"
+                        data-testid="banner-dismiss"
+                        aria-label="Dismiss banner">
+                    <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+                        <!-- Close/X icon -->
+                        <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </div>
+    {% endif %}
 
     <!-- Chat Interface -->
     <div class="flex" style="height: calc(100vh - 88px);" x-data="chatInterface()">
@@ -246,5 +288,30 @@ function chatInterface() {
         }
     }
 }
+</script>
+
+<script>
+// Banner dismissal logic and logout handler (consolidated DOMContentLoaded listener)
+document.addEventListener('DOMContentLoaded', () => {
+    // Banner dismissal logic
+    const banner = document.getElementById('garmin-banner');
+    if (banner) {
+        // Check dismissed state from localStorage (persists across sessions until login)
+        const dismissed = localStorage.getItem('garmin-banner-dismissed');
+        if (dismissed === 'true') {
+            banner.style.display = 'none';
+        }
+
+        // Handle dismiss button click
+        const dismissBtn = document.getElementById('dismiss-banner');
+        if (dismissBtn) {
+            dismissBtn.addEventListener('click', () => {
+                banner.style.display = 'none';
+                // Store dismissal state (cleared on login page load)
+                localStorage.setItem('garmin-banner-dismissed', 'true');
+            });
+        }
+    }
+});
 </script>
 {% endblock %}
