@@ -86,6 +86,15 @@ class Settings(BaseSettings):
             raise ValueError(msg)
         return v.upper()
 
+    @field_validator("csrf_secret")
+    @classmethod
+    def validate_csrf_secret(cls, v: str) -> str:
+        """Validate that CSRF secret meets minimum security requirements."""
+        if len(v) < 32:
+            msg = "CSRF_SECRET must be at least 32 characters"
+            raise ValueError(msg)
+        return v
+
 
 @lru_cache
 def get_settings() -> Settings:
