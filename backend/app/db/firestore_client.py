@@ -2,7 +2,7 @@
 
 from functools import lru_cache
 
-from google.cloud import firestore
+from google.cloud import firestore  # type: ignore[attr-defined]
 
 
 @lru_cache

@@ -6,6 +6,7 @@ user_id (sub) and email claims.
 """
 
 from datetime import UTC, datetime, timedelta
+from typing import Any
 
 from jose import JWTError, jwt
 from pydantic import BaseModel
@@ -20,7 +21,7 @@ class TokenData(BaseModel):
     email: str
 
 
-def create_access_token(data: dict, expires_delta: timedelta | None = None) -> str:
+def create_access_token(data: dict[str, Any], expires_delta: timedelta | None = None) -> str:
     """Create a JWT access token.
 
     Args:
@@ -41,7 +42,7 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None) -> s
     else:
         expire = datetime.now(UTC) + timedelta(minutes=settings.access_token_expire_minutes)
 
-    to_encode["exp"] = expire
+    to_encode["exp"] = int(expire.timestamp())
 
     # Encode and return JWT
     return jwt.encode(to_encode, settings.jwt_secret, algorithm=settings.jwt_algorithm)

@@ -76,7 +76,7 @@ class GarminClient:
             oauth2 = decrypt_token(token_data.oauth2_token_encrypted)
 
             # Set garth tokens
-            garth.client.oauth1_token = oauth1
+            garth.client.oauth1_token = oauth1  # type: ignore[assignment]
             garth.client.oauth2_token = oauth2
 
             logger.debug("Tokens loaded successfully for user %s", self.user_id)
@@ -86,15 +86,15 @@ class GarminClient:
             logger.error("Failed to load tokens: %s", redact_for_logging(str(e)))
             return False
 
-    async def _save_tokens(self):
+    async def _save_tokens(self) -> None:
         """Save garth tokens to Firestore (encrypted).
 
         Raises:
             Exception: If token encryption or Firestore save fails
         """
         # Encrypt tokens
-        oauth1_encrypted = encrypt_token(garth.client.oauth1_token)
-        oauth2_encrypted = encrypt_token(garth.client.oauth2_token)
+        oauth1_encrypted = encrypt_token(garth.client.oauth1_token)  # type: ignore[arg-type]
+        oauth2_encrypted = encrypt_token(garth.client.oauth2_token)  # type: ignore[arg-type]
 
         # Create token document
         now = datetime.now(UTC)
@@ -115,7 +115,7 @@ class GarminClient:
         )
         logger.debug("Tokens saved successfully for user %s", self.user_id)
 
-    async def delete_tokens(self):
+    async def delete_tokens(self) -> None:
         """Delete garth tokens from Firestore.
 
         Raises:
@@ -153,7 +153,7 @@ class GarminClient:
         while current_date <= end_date:
             try:
                 # garth API call (wrap synchronous operation)
-                day_activities = await asyncio.to_thread(garth.activities, current_date.isoformat())
+                day_activities = await asyncio.to_thread(garth.activities, current_date.isoformat())  # type: ignore[attr-defined]
 
                 # Parse and validate
                 for activity_data in day_activities:
@@ -197,7 +197,7 @@ class GarminClient:
             raise Exception("Not authenticated - user must link Garmin account")
 
         # garth API call (wrap synchronous operation)
-        summary = await asyncio.to_thread(garth.daily_summary, target_date.isoformat())
+        summary = await asyncio.to_thread(garth.daily_summary, target_date.isoformat())  # type: ignore[attr-defined]
 
         # Parse to model
         return DailyMetrics(
@@ -224,7 +224,7 @@ class GarminClient:
             raise Exception("Not authenticated - user must link Garmin account")
 
         # garth API call for latest health data (wrap synchronous operation)
-        health_data = await asyncio.to_thread(garth.health_snapshot)
+        health_data = await asyncio.to_thread(garth.health_snapshot)  # type: ignore[attr-defined]
 
         return HealthSnapshot(
             timestamp=datetime.now(UTC),

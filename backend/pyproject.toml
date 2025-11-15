@@ -47,6 +47,9 @@ dev = [
     # Code Quality
     "ruff>=0.1.0",
     "pre-commit>=3.6.0",
+    "mypy>=1.8.0",
+    "types-python-jose>=3.3.0",
+    "types-passlib>=1.7.0",
 
     # Security
     "bandit>=1.7.6",
@@ -145,6 +148,40 @@ exclude_lines = [
 [tool.bandit]
 exclude_dirs = ["tests", "backend/tests"]
 skips = ["B101"]  # Allow assert in tests
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+disallow_any_unimported = false
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_no_return = true
+check_untyped_defs = true
+strict_equality = true
+
+# Allow dynamic typing for some common patterns
+[[tool.mypy.overrides]]
+module = [
+    "garth",
+    "garth.*",
+    "pydantic_ai.*",
+    "google.cloud",
+    "google.cloud.*",
+    "google.api_core.*",
+    "opentelemetry.*",
+    "passlib.*",
+    "jose.*",
+    "telemetry",
+    "telemetry.*",
+    "bcrypt",
+    "pydantic_settings",
+    "dotenv",
+]
+ignore_missing_imports = true
 
 [tool.uv.workspace]
 members = [

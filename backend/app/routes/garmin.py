@@ -2,8 +2,9 @@
 
 import logging
 
-from fastapi import APIRouter, Depends, Form, HTTPException, Request, status
+from fastapi import APIRouter, Depends, Form, HTTPException, Request, Response, status
 from fastapi.responses import HTMLResponse
+from fastapi.templating import Jinja2Templates
 from telemetry.logging_utils import redact_for_logging
 
 from app.auth.dependencies import get_current_user
@@ -21,8 +22,8 @@ router = APIRouter(prefix="/garmin", tags=["garmin"])
 async def garmin_link_page(
     request: Request,
     current_user: UserResponse = Depends(get_current_user),
-    templates=Depends(get_templates),
-):
+    templates: Jinja2Templates = Depends(get_templates),
+) -> Response:
     """Display Garmin account linking form."""
     return templates.TemplateResponse(
         request=request,
@@ -37,8 +38,8 @@ async def link_garmin_account(
     username: str = Form(...),
     password: str = Form(...),
     current_user: UserResponse = Depends(get_current_user),
-    templates=Depends(get_templates),
-):
+    templates: Jinja2Templates = Depends(get_templates),
+) -> Response:
     """Link Garmin account to user.
 
     Returns HTML fragment for HTMX swap (outerHTML).
@@ -96,8 +97,8 @@ async def link_garmin_account(
 async def sync_garmin_data(
     request: Request,
     current_user: UserResponse = Depends(get_current_user),
-    templates=Depends(get_templates),
-):
+    templates: Jinja2Templates = Depends(get_templates),
+) -> Response:
     """Manually trigger Garmin data sync.
 
     Returns HTML fragment for HTMX swap (outerHTML).
@@ -127,7 +128,7 @@ async def sync_garmin_data(
 @router.delete("/link")
 async def unlink_garmin_account(
     current_user: UserResponse = Depends(get_current_user),
-):
+) -> dict[str, str]:
     """Unlink Garmin account by deleting tokens and cache."""
     service = GarminService(current_user.user_id)
 
@@ -148,7 +149,7 @@ async def unlink_garmin_account(
 @router.get("/status")
 async def garmin_status(
     current_user: UserResponse = Depends(get_current_user),
-):
+) -> dict[str, bool | str]:
     """Get Garmin account link status."""
     return {
         "linked": current_user.garmin_linked,

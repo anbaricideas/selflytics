@@ -2,6 +2,9 @@
 
 import logging
 from datetime import date, timedelta
+from typing import Any
+
+import garth
 
 from app.services.garmin_client import GarminClient
 from app.services.user_service import UserService
@@ -73,7 +76,7 @@ class GarminService:
         logger.info("Garmin account unlinked for user %s", self.user_id)
         return True
 
-    async def sync_recent_data(self):
+    async def sync_recent_data(self) -> None:
         """Sync last 30 days of activities and metrics."""
         end_date = date.today()
         start_date = end_date - timedelta(days=30)
@@ -92,7 +95,7 @@ class GarminService:
 
         logger.info("Synced %d activities for user %s", len(activities), self.user_id)
 
-    async def get_activities_cached(self, start_date: date, end_date: date) -> list:
+    async def get_activities_cached(self, start_date: date, end_date: date) -> list[dict[str, Any]]:
         """
         Get activities with caching.
 
@@ -113,7 +116,8 @@ class GarminService:
 
             if cached:
                 logger.debug("Cache hit for activities %s", date_range)
-                return cached
+                result_list: list[dict[str, Any]] = cached
+                return result_list
         except Exception as e:
             logger.warning("Cache get error, falling back to API: %s", str(e))
 
@@ -133,7 +137,7 @@ class GarminService:
 
         return [activity.model_dump() for activity in activities]
 
-    async def get_daily_metrics_cached(self, target_date: date) -> dict:
+    async def get_daily_metrics_cached(self, target_date: date) -> dict[str, Any]:
         """
         Get daily metrics with caching.
 
@@ -153,7 +157,8 @@ class GarminService:
 
             if cached:
                 logger.debug("Cache hit for daily metrics %s", date_range)
-                return cached
+                result_dict: dict[str, Any] = cached
+                return result_dict
         except Exception as e:
             logger.warning("Cache get error, falling back to API: %s", str(e))
 
@@ -175,3 +180,21 @@ class GarminService:
             logger.warning("Cache set error (non-critical): %s", str(e))
 
         return metrics_dict
+
+    async def get_user_profile(self) -> dict[str, Any]:
+        """
+        Get user profile information from Garmin.
+
+        Returns:
+            Dictionary with user profile data including display_name
+
+        Note:
+            Returns "User" as default display_name if not available in garth.client.profile
+        """
+        # Load tokens to ensure garth is authenticated
+        await self.client.load_tokens()
+
+        # Access garth.client.profile for display name
+        display_name: str = garth.client.profile.get("displayName", "User")
+
+        return {"display_name": display_name}

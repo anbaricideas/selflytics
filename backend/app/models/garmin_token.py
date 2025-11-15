@@ -1,6 +1,7 @@
 """Garmin OAuth token storage model."""
 
 from datetime import datetime
+from typing import Any
 
 from pydantic import BaseModel
 
@@ -21,5 +22,5 @@ class GarminToken(BaseModel):
 class GarminTokenDecrypted(BaseModel):
     """Decrypted tokens for use in GarminClient."""
 
-    oauth1_token: dict
-    oauth2_token: dict
+    oauth1_token: dict[str, Any]
+    oauth2_token: dict[str, Any]

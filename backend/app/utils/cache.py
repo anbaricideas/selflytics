@@ -21,12 +21,12 @@ class GarminDataCache:
     TTL_METRICS = timedelta(hours=6)
     TTL_HEALTH = timedelta(hours=1)
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize cache with Firestore client."""
         self.db = get_firestore_client()
         self.collection = self.db.collection("garmin_data")
 
-    def _cache_key(self, user_id: str, data_type: str, **kwargs) -> str:
+    def _cache_key(self, user_id: str, data_type: str, **kwargs: Any) -> str:
         """
         Generate cache key from user_id, data_type, and kwargs.
 
@@ -43,7 +43,7 @@ class GarminDataCache:
             parts.append(f"{k}:{v}")
         return ":".join(parts)
 
-    async def get(self, user_id: str, data_type: str, **kwargs) -> Any | None:
+    async def get(self, user_id: str, data_type: str, **kwargs: Any) -> Any | None:
         """
         Get cached data if available and not expired.
 
@@ -81,8 +81,8 @@ class GarminDataCache:
             return None
 
     async def set(
-        self, user_id: str, data_type: str, data: Any, ttl: timedelta | None = None, **kwargs
-    ):
+        self, user_id: str, data_type: str, data: Any, ttl: timedelta | None = None, **kwargs: Any
+    ) -> None:
         """
         Cache data with TTL.
 
@@ -139,7 +139,7 @@ class GarminDataCache:
 
         logger.debug("Cache set: %s (expires in %s)", cache_key, ttl)
 
-    async def invalidate(self, user_id: str, data_type: str | None = None):
+    async def invalidate(self, user_id: str, data_type: str | None = None) -> None:
         """
         Invalidate cached data for user.
 

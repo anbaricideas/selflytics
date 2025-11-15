@@ -11,7 +11,7 @@ from app.models.user import User, UserCreate, UserProfile
 class UserService:
     """Service for managing user data in Firestore."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize UserService with Firestore client."""
         self.db = get_firestore_client()
         self.collection = self.db.collection("users")
