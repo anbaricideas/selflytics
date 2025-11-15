@@ -20,6 +20,7 @@ from app.dependencies import templates
 from app.middleware.telemetry import TelemetryMiddleware
 from app.routes import auth, chat, dashboard, garmin
 from app.telemetry_config import setup_telemetry, teardown_telemetry
+from app.utils.redact import redact_for_logging
 from app.utils.request_helpers import is_browser_request
 
 
@@ -180,6 +181,14 @@ async def csrf_protect_exception_handler(request: Request, _exc: CsrfProtectErro
     For browser/HTMX requests, return HTML error fragment or page.
     For API requests, return JSON error response.
     """
+    # Log CSRF validation failure for security monitoring
+    logger.warning(
+        "CSRF validation failed: path=%s, method=%s, client=%s",
+        request.url.path,
+        request.method,
+        redact_for_logging(request.client.host if request.client else "unknown"),
+    )
+
     if is_browser_request(request):
         # For HTMX requests, return error fragment
         hx_request = request.headers.get("HX-Request", "") == "true"
