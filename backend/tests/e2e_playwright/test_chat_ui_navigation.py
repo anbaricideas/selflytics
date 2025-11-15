@@ -110,3 +110,61 @@ class TestGarminBanner:
         await expect(authenticated_user.locator('input[name="garmin_email"]')).to_be_visible(
             timeout=3000
         )
+
+
+class TestChatFirstNavigation:
+    """Tests for chat-first navigation model (Phase 4)."""
+
+    async def test_user_login_redirects_to_chat(self, page: Page, base_url: str):
+        """User logs in and lands on chat page, not dashboard."""
+        timestamp = int(time.time())
+        email = f"nav-test-{timestamp}@example.com"
+        password = "TestPass123!"  # noqa: S105 - test fixture, not a real credential
+
+        # Register
+        await page.goto(f"{base_url}/register")
+        await page.fill('[data-testid="input-display-name"]', "Nav Test")
+        await page.fill('[data-testid="input-email"]', email)
+        await page.fill('[data-testid="input-password"]', password)
+        await page.fill('[data-testid="input-confirm-password"]', password)
+        await page.click('[data-testid="submit-register"]')
+
+        # Should redirect to chat, not dashboard
+        await page.wait_for_url(f"{base_url}/chat/", timeout=10000)
+        await expect(page.locator('[data-testid="chat-header"]')).to_be_visible()
+
+    async def test_user_can_navigate_to_settings_from_chat(
+        self, authenticated_user: Page, base_url: str
+    ):
+        """User can click settings icon to navigate to settings page."""
+        await authenticated_user.goto(f"{base_url}/chat/")
+
+        # Click settings icon
+        await authenticated_user.click('[data-testid="link-settings"]')
+
+        # Should navigate to settings
+        await authenticated_user.wait_for_url(f"{base_url}/settings", timeout=5000)
+        await expect(authenticated_user.locator('[data-testid="settings-header"]')).to_be_visible()
+
+    async def test_user_can_return_to_chat_from_settings(
+        self, authenticated_user: Page, base_url: str
+    ):
+        """User can return to chat from settings page."""
+        await authenticated_user.goto(f"{base_url}/settings")
+
+        # Click "Back to Chat"
+        await authenticated_user.click('[data-testid="link-back-to-chat"]')
+
+        # Should navigate back to chat
+        await authenticated_user.wait_for_url(f"{base_url}/chat/", timeout=5000)
+        await expect(authenticated_user.locator('[data-testid="chat-header"]')).to_be_visible()
+
+    async def test_old_dashboard_url_redirects_to_settings(
+        self, authenticated_user: Page, base_url: str
+    ):
+        """Old dashboard URL redirects to settings page."""
+        await authenticated_user.goto(f"{base_url}/dashboard")
+
+        # Should redirect to settings
+        await authenticated_user.wait_for_url(f"{base_url}/settings", timeout=5000)
+        await expect(authenticated_user.locator('[data-testid="settings-header"]')).to_be_visible()
