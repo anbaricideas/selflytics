@@ -20,6 +20,7 @@ from app.dependencies import templates
 from app.middleware.telemetry import TelemetryMiddleware
 from app.routes import auth, chat, dashboard, garmin
 from app.telemetry_config import setup_telemetry, teardown_telemetry
+from app.utils.request_helpers import is_browser_request
 
 
 # Load .env file at module import time (before FastAPI app initialization)
@@ -141,12 +142,7 @@ async def http_exception_handler(request: Request, exc: HTTPException):
     - 403/404/500: Show friendly error template
     For API requests (JSON Accept header), return JSON error response.
     """
-    # Check if request is from browser/HTMX (not API)
-    accept_header = request.headers.get("accept", "")
-    hx_request = request.headers.get("HX-Request", "") == "true"
-    is_browser = "text/html" in accept_header or hx_request
-
-    if is_browser:
+    if is_browser_request(request):
         # 401: Redirect to login
         if exc.status_code == status.HTTP_401_UNAUTHORIZED:
             return RedirectResponse(url="/login", status_code=303)
@@ -184,13 +180,9 @@ async def csrf_protect_exception_handler(request: Request, _exc: CsrfProtectErro
     For browser/HTMX requests, return HTML error fragment or page.
     For API requests, return JSON error response.
     """
-    # Check if request is from browser/HTMX (not API)
-    accept_header = request.headers.get("accept", "")
-    hx_request = request.headers.get("HX-Request", "") == "true"
-    is_browser = "text/html" in accept_header or hx_request
-
-    if is_browser:
+    if is_browser_request(request):
         # For HTMX requests, return error fragment
+        hx_request = request.headers.get("HX-Request", "") == "true"
         if hx_request:
             return templates.TemplateResponse(
                 request=request,
@@ -265,12 +257,7 @@ async def catch_all(request: Request, path: str):  # noqa: ARG001
         request: FastAPI request object
         path: Captured path (unused but required by route pattern)
     """
-    # Check if request is from browser/HTMX
-    accept_header = request.headers.get("accept", "")
-    hx_request = request.headers.get("HX-Request", "") == "true"
-    is_browser = "text/html" in accept_header or hx_request
-
-    if is_browser:
+    if is_browser_request(request):
         return templates.TemplateResponse(request=request, name="error/404.html", status_code=404)
 
     # API request - return JSON
