@@ -135,12 +135,13 @@ def create_mock_user():
 
 @pytest.fixture
 def unauthenticated_client():
-    """Provide TestClient without authentication for testing auth flows."""
-    # Clear any existing overrides
-    app.dependency_overrides.clear()
-    test_client = TestClient(app, raise_server_exceptions=False)
-    yield test_client
-    app.dependency_overrides.clear()
+    """Provide TestClient without authentication for testing auth flows.
+
+    No dependency overrides are set. The autouse reset_app_state fixture
+    handles clearing any existing overrides before this fixture runs.
+    """
+    return TestClient(app, raise_server_exceptions=False)
+    # No cleanup needed - autouse fixture handles it
 
 
 @pytest.fixture

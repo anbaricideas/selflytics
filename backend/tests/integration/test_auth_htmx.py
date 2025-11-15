@@ -66,33 +66,30 @@ def test_register_success_without_htmx_returns_json(unauthenticated_client, crea
 
     app.dependency_overrides[get_user_service] = lambda: mock_svc
 
-    try:
-        # Get CSRF token
-        csrf_token, csrf_cookie = get_csrf_token(unauthenticated_client, "/register")
+    # Get CSRF token
+    csrf_token, csrf_cookie = get_csrf_token(unauthenticated_client, "/register")
 
-        response = unauthenticated_client.post(
-            "/auth/register",
-            data={
-                "email": "apiuser@example.com",
-                "password": "SecurePass123!",
-                "display_name": "API User",
-                "fastapi-csrf-token": csrf_token,
-            },
-            cookies={"fastapi-csrf-token": csrf_cookie},
-            # No HX-Request header
-        )
+    response = unauthenticated_client.post(
+        "/auth/register",
+        data={
+            "email": "apiuser@example.com",
+            "password": "SecurePass123!",
+            "display_name": "API User",
+            "fastapi-csrf-token": csrf_token,
+        },
+        cookies={"fastapi-csrf-token": csrf_cookie},
+        # No HX-Request header
+    )
 
-        # API requests return 201 Created with JSON body
-        assert response.status_code == status.HTTP_201_CREATED
-        data = response.json()
-        assert data["email"] == "apiuser@example.com"
-        assert data["user_id"] == "new-user-456"
+    # API requests return 201 Created with JSON body
+    assert response.status_code == status.HTTP_201_CREATED
+    data = response.json()
+    assert data["email"] == "apiuser@example.com"
+    assert data["user_id"] == "new-user-456"
 
-        # Should NOT have HX-Redirect header
-        assert "HX-Redirect" not in response.headers
-
-    finally:
-        app.dependency_overrides.clear()
+    # Should NOT have HX-Redirect header
+    assert "HX-Redirect" not in response.headers
+    # Cleanup handled by autouse fixture
 
 
 def test_register_validation_error_returns_html_fragment(unauthenticated_client, create_mock_user):
@@ -106,33 +103,30 @@ def test_register_validation_error_returns_html_fragment(unauthenticated_client,
 
     app.dependency_overrides[get_user_service] = lambda: mock_svc
 
-    try:
-        # Get CSRF token
-        csrf_token, csrf_cookie = get_csrf_token(unauthenticated_client, "/register")
+    # Get CSRF token
+    csrf_token, csrf_cookie = get_csrf_token(unauthenticated_client, "/register")
 
-        response = unauthenticated_client.post(
-            "/auth/register",
-            data={
-                "email": "existing@example.com",
-                "password": "SecurePass123!",
-                "display_name": "Duplicate",
-                "fastapi-csrf-token": csrf_token,
-            },
-            cookies={"fastapi-csrf-token": csrf_cookie},
-            headers={"HX-Request": "true"},
-        )
+    response = unauthenticated_client.post(
+        "/auth/register",
+        data={
+            "email": "existing@example.com",
+            "password": "SecurePass123!",
+            "display_name": "Duplicate",
+            "fastapi-csrf-token": csrf_token,
+        },
+        cookies={"fastapi-csrf-token": csrf_cookie},
+        headers={"HX-Request": "true"},
+    )
 
-        # Should return 400 with HTML content
-        assert response.status_code == status.HTTP_400_BAD_REQUEST
-        assert "text/html" in response.headers.get("content-type", "")
+    # Should return 400 with HTML content
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
+    assert "text/html" in response.headers.get("content-type", "")
 
-        # Should contain generic error (not revealing if email exists - user enumeration prevention)
-        html = response.text
-        assert "Unable to create account" in html
-        assert "Email already registered" not in html  # Should NOT reveal email exists
-
-    finally:
-        app.dependency_overrides.clear()
+    # Should contain generic error (not revealing if email exists - user enumeration prevention)
+    html = response.text
+    assert "Unable to create account" in html
+    assert "Email already registered" not in html  # Should NOT reveal email exists
+    # Cleanup handled by autouse fixture
 
 
 def test_register_password_mismatch_returns_html_error(unauthenticated_client):
@@ -174,31 +168,28 @@ def test_login_success_returns_hx_redirect_header(unauthenticated_client, create
 
     app.dependency_overrides[get_user_service] = lambda: mock_svc
 
-    try:
-        # Get CSRF token
-        csrf_token, csrf_cookie = get_csrf_token(unauthenticated_client, "/login")
+    # Get CSRF token
+    csrf_token, csrf_cookie = get_csrf_token(unauthenticated_client, "/login")
 
-        response = unauthenticated_client.post(
-            "/auth/login",
-            data={
-                "username": "loginuser@example.com",  # OAuth2 uses 'username' field
-                "password": "CorrectPassword123!",
-                "fastapi-csrf-token": csrf_token,
-            },
-            cookies={"fastapi-csrf-token": csrf_cookie},
-            headers={"HX-Request": "true"},
-        )
+    response = unauthenticated_client.post(
+        "/auth/login",
+        data={
+            "username": "loginuser@example.com",  # OAuth2 uses 'username' field
+            "password": "CorrectPassword123!",
+            "fastapi-csrf-token": csrf_token,
+        },
+        cookies={"fastapi-csrf-token": csrf_cookie},
+        headers={"HX-Request": "true"},
+    )
 
-        # Should return 200 with HX-Redirect header
-        assert response.status_code == status.HTTP_200_OK
-        assert "HX-Redirect" in response.headers
-        assert response.headers["HX-Redirect"] == "/dashboard"
+    # Should return 200 with HX-Redirect header
+    assert response.status_code == status.HTTP_200_OK
+    assert "HX-Redirect" in response.headers
+    assert response.headers["HX-Redirect"] == "/dashboard"
 
-        # Should set authentication cookie
-        assert "access_token" in response.cookies
-
-    finally:
-        app.dependency_overrides.clear()
+    # Should set authentication cookie
+    assert "access_token" in response.cookies
+    # Cleanup handled by autouse fixture
 
 
 def test_login_invalid_credentials_returns_html_error(unauthenticated_client, create_mock_user):
@@ -213,36 +204,33 @@ def test_login_invalid_credentials_returns_html_error(unauthenticated_client, cr
 
     app.dependency_overrides[get_user_service] = lambda: mock_svc
 
-    try:
-        # Get CSRF token
-        csrf_token, csrf_cookie = get_csrf_token(unauthenticated_client, "/login")
+    # Get CSRF token
+    csrf_token, csrf_cookie = get_csrf_token(unauthenticated_client, "/login")
 
-        response = unauthenticated_client.post(
-            "/auth/login",
-            data={
-                "username": "user@example.com",
-                "password": "WrongPassword",
-                "fastapi-csrf-token": csrf_token,
-            },
-            cookies={"fastapi-csrf-token": csrf_cookie},
-            headers={"HX-Request": "true"},
-        )
+    response = unauthenticated_client.post(
+        "/auth/login",
+        data={
+            "username": "user@example.com",
+            "password": "WrongPassword",
+            "fastapi-csrf-token": csrf_token,
+        },
+        cookies={"fastapi-csrf-token": csrf_cookie},
+        headers={"HX-Request": "true"},
+    )
 
-        # Should return 401 with HTML error
-        assert response.status_code == status.HTTP_401_UNAUTHORIZED
-        assert "text/html" in response.headers.get("content-type", "")
+    # Should return 401 with HTML error
+    assert response.status_code == status.HTTP_401_UNAUTHORIZED
+    assert "text/html" in response.headers.get("content-type", "")
 
-        # Should contain generic error message (without exposing which field is wrong)
-        html = response.text.lower()
-        assert "incorrect" in html or "invalid" in html
+    # Should contain generic error message (without exposing which field is wrong)
+    html = response.text.lower()
+    assert "incorrect" in html or "invalid" in html
 
-        # Should NOT expose which specific field was wrong (prevents user enumeration)
-        assert "password incorrect" not in html
-        assert "username not found" not in html
-        assert "email not found" not in html
-
-    finally:
-        app.dependency_overrides.clear()
+    # Should NOT expose which specific field was wrong (prevents user enumeration)
+    assert "password incorrect" not in html
+    assert "username not found" not in html
+    assert "email not found" not in html
+    # Cleanup handled by autouse fixture
 
 
 def test_login_success_without_htmx_returns_json(unauthenticated_client, create_mock_user):
@@ -257,29 +245,26 @@ def test_login_success_without_htmx_returns_json(unauthenticated_client, create_
 
     app.dependency_overrides[get_user_service] = lambda: mock_svc
 
-    try:
-        # Get CSRF token
-        csrf_token, csrf_cookie = get_csrf_token(unauthenticated_client, "/login")
+    # Get CSRF token
+    csrf_token, csrf_cookie = get_csrf_token(unauthenticated_client, "/login")
 
-        response = unauthenticated_client.post(
-            "/auth/login",
-            data={
-                "username": "apilogin@example.com",
-                "password": "Password123!",
-                "fastapi-csrf-token": csrf_token,
-            },
-            cookies={"fastapi-csrf-token": csrf_cookie},
-            # No HX-Request header
-        )
+    response = unauthenticated_client.post(
+        "/auth/login",
+        data={
+            "username": "apilogin@example.com",
+            "password": "Password123!",
+            "fastapi-csrf-token": csrf_token,
+        },
+        cookies={"fastapi-csrf-token": csrf_cookie},
+        # No HX-Request header
+    )
 
-        # API requests return 200 with JSON access token
-        assert response.status_code == status.HTTP_200_OK
-        data = response.json()
-        assert "access_token" in data
-        assert data["token_type"] == "bearer"  # noqa: S105
+    # API requests return 200 with JSON access token
+    assert response.status_code == status.HTTP_200_OK
+    data = response.json()
+    assert "access_token" in data
+    assert data["token_type"] == "bearer"  # noqa: S105
 
-        # Should NOT have HX-Redirect header
-        assert "HX-Redirect" not in response.headers
-
-    finally:
-        app.dependency_overrides.clear()
+    # Should NOT have HX-Redirect header
+    assert "HX-Redirect" not in response.headers
+    # Cleanup handled by autouse fixture

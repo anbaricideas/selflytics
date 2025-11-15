@@ -30,18 +30,14 @@ def client(mock_user_service):
 
     This fixture uses FastAPI's dependency_overrides to inject the mock
     UserService for all routes, preventing Firestore connection attempts.
-    The override is automatically cleaned up after each test.
+    Cleanup handled by autouse reset_app_state fixture.
     """
     # Override the get_user_service dependency
     app.dependency_overrides[get_user_service] = lambda: mock_user_service
 
     # Create test client (raise_server_exceptions=False allows testing error responses)
-    test_client = TestClient(app, raise_server_exceptions=False)
-
-    yield test_client
-
-    # Clean up override after test
-    app.dependency_overrides.clear()
+    return TestClient(app, raise_server_exceptions=False)
+    # Cleanup handled by autouse fixture
 
 
 @pytest.fixture
