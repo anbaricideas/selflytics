@@ -175,6 +175,7 @@ class TestCSRFTokenRotation:
         self,
         page: Page,
         base_url: str,
+        test_user: dict,
     ):
         """Test that CSRF token is rotated when form has validation errors.
 
@@ -188,7 +189,7 @@ class TestCSRFTokenRotation:
         await expect(page.locator('[data-testid="register-form"]')).to_be_visible()
 
         # STEP 2: Extract initial CSRF token from hidden field
-        csrf_input = page.locator('input[name="csrf_token"]')
+        csrf_input = page.locator('input[name="fastapi-csrf-token"]')
         await expect(csrf_input).to_be_hidden()
         token1 = await csrf_input.get_attribute("value")
 
@@ -200,10 +201,10 @@ class TestCSRFTokenRotation:
         assert len(set(token1)) > 5, "Token should have character variety"
 
         # STEP 3: Fill form with password MISMATCH (validation error)
-        await page.fill('[data-testid="input-email"]', "test@example.com")
-        await page.fill('[data-testid="input-display-name"]', "Test User")
-        await page.fill('[data-testid="input-password"]', "Pass123")
-        await page.fill('input[name="confirm_password"]', "Pass456")  # MISMATCH!
+        await page.fill('[data-testid="input-email"]', test_user["email"])
+        await page.fill('[data-testid="input-display-name"]', test_user["display_name"])
+        await page.fill('[data-testid="input-password"]', test_user["password"])
+        await page.fill('input[name="confirm_password"]', "WrongPassword123!")  # MISMATCH!
 
         # STEP 4: Submit form (will fail validation)
         await page.click('[data-testid="submit-register"]')
@@ -213,7 +214,7 @@ class TestCSRFTokenRotation:
         await expect(error_msg).to_be_visible(timeout=5000)
 
         # STEP 6: Extract NEW CSRF token from re-rendered form
-        csrf_input2 = page.locator('input[name="csrf_token"]')
+        csrf_input2 = page.locator('input[name="fastapi-csrf-token"]')
         token2 = await csrf_input2.get_attribute("value")
 
         assert token2 is not None
@@ -223,8 +224,8 @@ class TestCSRFTokenRotation:
         assert token2 != token1, "CSRF token should be rotated after validation error"
 
         # STEP 8: Correct the password and submit with NEW token
-        await page.fill('[data-testid="input-password"]', "Pass123")
-        await page.fill('input[name="confirm_password"]', "Pass123")  # Fixed!
+        await page.fill('[data-testid="input-password"]', test_user["password"])
+        await page.fill('input[name="confirm_password"]', test_user["password"])  # Fixed!
         await page.click('[data-testid="submit-register"]')
 
         # STEP 9: Verify successful registration (redirects to dashboard)
@@ -248,7 +249,7 @@ class TestCSRFTokenRotation:
         await page.wait_for_url(f"{base_url}/login", timeout=5000)
 
         # STEP 1: Extract initial token
-        token1 = await page.locator('input[name="csrf_token"]').get_attribute("value")
+        token1 = await page.locator('input[name="fastapi-csrf-token"]').get_attribute("value")
         assert token1 is not None
 
         # STEP 2: Submit with WRONG password
@@ -261,7 +262,7 @@ class TestCSRFTokenRotation:
         await expect(error_msg).to_be_visible(timeout=5000)
 
         # STEP 4: Verify token rotated
-        token2 = await page.locator('input[name="csrf_token"]').get_attribute("value")
+        token2 = await page.locator('input[name="fastapi-csrf-token"]').get_attribute("value")
         assert token2 is not None
         assert token2 != token1, "Token should rotate on auth failure"
 
@@ -300,7 +301,7 @@ class TestCSRFHTMXCompatibility:
         await expect(page.locator('[data-testid="register-form"]')).to_be_visible()
 
         # STEP 2: Verify CSRF token exists in form
-        csrf_input = page.locator('input[name="csrf_token"]')
+        csrf_input = page.locator('input[name="fastapi-csrf-token"]')
         await expect(csrf_input).to_be_hidden()
         token1 = await csrf_input.get_attribute("value")
         assert token1 is not None
@@ -310,8 +311,8 @@ class TestCSRFHTMXCompatibility:
         # This triggers HTMX partial update (hx-swap="outerHTML")
         await page.fill('[data-testid="input-email"]', test_user["email"])
         await page.fill('[data-testid="input-display-name"]', test_user["display_name"])
-        await page.fill('[data-testid="input-password"]', "Pass123")
-        await page.fill('input[name="confirm_password"]', "Pass456")  # MISMATCH!
+        await page.fill('[data-testid="input-password"]', test_user["password"])
+        await page.fill('input[name="confirm_password"]', "WrongPassword123!")  # MISMATCH!
         await page.click('[data-testid="submit-register"]')
 
         # STEP 4: Wait for HTMX to swap form fragment
@@ -322,7 +323,7 @@ class TestCSRFHTMXCompatibility:
         await expect(page.locator('[data-testid="register-form"]')).to_be_visible()
 
         # STEP 6: Verify NEW token exists in swapped fragment
-        csrf_input2 = page.locator('input[name="csrf_token"]')
+        csrf_input2 = page.locator('input[name="fastapi-csrf-token"]')
         token2 = await csrf_input2.get_attribute("value")
         assert token2 is not None
 
@@ -331,12 +332,12 @@ class TestCSRFHTMXCompatibility:
 
         # STEP 8: Verify CSRF cookie was also updated
         cookies = await page.context.cookies()
-        csrf_cookie = next((c for c in cookies if c["name"] == "csrf_token"), None)
+        csrf_cookie = next((c for c in cookies if c["name"] == "fastapi-csrf-token"), None)
         assert csrf_cookie is not None, "CSRF cookie should be present"
 
         # STEP 9: Submit again with corrected password using new token
-        await page.fill('[data-testid="input-password"]', "Pass123")
-        await page.fill('input[name="confirm_password"]', "Pass123")
+        await page.fill('[data-testid="input-password"]', test_user["password"])
+        await page.fill('input[name="confirm_password"]', test_user["password"])
         await page.click('[data-testid="submit-register"]')
 
         # STEP 10: Verify successful registration (HTMX completes the flow)
