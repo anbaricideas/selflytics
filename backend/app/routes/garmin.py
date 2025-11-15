@@ -149,8 +149,9 @@ async def unlink_garmin_account(
 @router.get("/status")
 async def garmin_status(
     current_user: UserResponse = Depends(get_current_user),
-) -> dict[str, bool]:
+) -> dict[str, bool | str]:
     """Get Garmin account link status."""
     return {
         "linked": current_user.garmin_linked,
+        "user_id": current_user.user_id,
     }

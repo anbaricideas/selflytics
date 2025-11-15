@@ -43,7 +43,7 @@ async def login_form(
 # ========================================
 
 
-@router.post("/auth/register")
+@router.post("/auth/register", response_model=None)
 async def register(
     request: Request,
     email: str = Form(...),
@@ -159,7 +159,7 @@ async def register(
     )
 
 
-@router.post("/auth/login")
+@router.post("/auth/login", response_model=None)
 async def login(
     request: Request,
     form_data: OAuth2PasswordRequestForm = Depends(),
