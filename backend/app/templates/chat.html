@@ -303,5 +303,16 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 });
+
+// Logout handler - clears banner state
+document.addEventListener('DOMContentLoaded', () => {
+    const logoutForm = document.querySelector('form[action="/logout"]');
+    if (logoutForm) {
+        logoutForm.addEventListener('submit', () => {
+            // Clear banner dismissed state before logout
+            localStorage.removeItem('garmin-banner-dismissed');
+        });
+    }
+});
 </script>
 {% endblock %}
