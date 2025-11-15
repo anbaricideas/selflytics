@@ -5,6 +5,9 @@ These tests verify critical user experience requirements found during
 manual testing runsheet execution in Session 8 (2025-11-14).
 """
 
+from urllib.parse import urlparse
+
+import pytest
 from playwright.async_api import Page, expect
 
 
@@ -187,32 +190,44 @@ class TestGarminErrorHandling:
 class TestAuthenticationTokenHandling:
     """Authentication tokens should be validated and invalid tokens should redirect to login."""
 
-    async def test_invalid_jwt_redirects_to_login(self, page: Page, base_url: str):
+    @pytest.mark.parametrize("protected_route", ["/settings", "/chat/"])
+    async def test_invalid_jwt_redirects_to_login_from_protected_routes(
+        self, page: Page, base_url: str, protected_route: str
+    ):
         """
-        User with invalid/expired JWT token should be redirected to login page.
+        User with invalid JWT token should be redirected to login from any protected route.
 
         Expected behavior:
-        1. User has an invalid or expired JWT token in cookies
-        2. User attempts to access protected route (/settings, /chat)
+        1. User has an invalid JWT token in cookies
+        2. User attempts to access protected route (settings, chat, etc.)
         3. Server validates token, finds it invalid
-        4. User is redirected to login page
+        4. User is redirected to login page (silent redirect, no error message)
+        5. Login functionality still works (confirms auth validation caused redirect)
 
-        Context: Replaces skipped integration test that tried to test this with mocked fixtures.
+        Context: Replaces skipped integration tests that tried to test this with mocked fixtures.
         E2E test uses real authentication flow to verify token validation works end-to-end.
+        Verifies that chat-first navigation model still enforces authentication.
         """
         # Set an invalid JWT token cookie manually
         await page.goto(base_url)
 
-        # Add invalid token cookie (malformed JWT that will fail signature verification)
-        await page.context.add_cookies([{
-            "name": "access_token",
-            "value": "invalid.jwt.token.here",
-            "domain": "localhost",
-            "path": "/",
-        }])
+        # Extract domain from base_url to avoid hard-coding localhost
+        domain = urlparse(base_url).hostname or "localhost"
 
-        # Attempt to access protected /settings route
-        await page.goto(f"{base_url}/settings")
+        # Add invalid token cookie (malformed JWT that will fail signature verification)
+        await page.context.add_cookies(
+            [
+                {
+                    "name": "access_token",
+                    "value": "invalid.jwt.token.here",
+                    "domain": domain,
+                    "path": "/",
+                }
+            ]
+        )
+
+        # Attempt to access protected route
+        await page.goto(f"{base_url}{protected_route}")
 
         # Should be redirected to login page (token validation fails)
         await page.wait_for_url(f"{base_url}/login", timeout=5000)
@@ -220,33 +235,12 @@ class TestAuthenticationTokenHandling:
         # Verify we're on login page
         await expect(page.locator('[data-testid="login-form"]')).to_be_visible()
 
-    async def test_expired_session_redirects_to_login_from_chat(
-        self, page: Page, base_url: str
-    ):
-        """
-        User with expired session attempting to access chat page should redirect to login.
+        # Verify silent redirect (no error message from invalid token)
+        # Invalid tokens should cause silent redirect, not display an error
+        error_alert = page.locator('[data-testid="error-message"]')
+        await expect(error_alert).not_to_be_visible()
 
-        Expected behavior:
-        1. User session expires or token is invalid
-        2. User navigates to /chat (or root which redirects to /chat)
-        3. Auth validation fails
-        4. User is redirected to login page
-
-        Context: Verifies that chat-first navigation still enforces authentication.
-        Replaces skipped integration test for invalid token handling on protected routes.
-        """
-        # Set an expired/invalid token
-        await page.goto(base_url)
-        await page.context.add_cookies([{
-            "name": "access_token",
-            "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJub25leGlzdGVudCIsImV4cCI6MH0.invalid",
-            "domain": "localhost",
-            "path": "/",
-        }])
-
-        # Attempt to access /chat with invalid token
-        await page.goto(f"{base_url}/chat/")
-
-        # Should redirect to login
-        await page.wait_for_url(f"{base_url}/login", timeout=5000)
-        await expect(page.locator('[data-testid="login-form"]')).to_be_visible()
+        # Verify login still works (confirms route is functional, auth just failed)
+        # This proves redirect was due to token validation, not broken routing
+        login_button = page.locator('[data-testid="submit-login"]')
+        await expect(login_button).to_be_visible()

@@ -17,7 +17,6 @@ in e2e_playwright tests which use real Firestore and actual authentication.
 See: test_user_journeys.py, test_chat_ui_navigation.py, test_settings_navigation.py
 """
 
-import pytest
 from fastapi.testclient import TestClient
 
 
