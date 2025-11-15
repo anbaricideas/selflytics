@@ -28,6 +28,7 @@
                     <span class="text-gray-700 font-medium" data-testid="user-name" aria-label="Currently logged in as {{ user.profile.display_name }}">{{ user.profile.display_name }}</span>
                 </div>
                 <form method="POST" action="/logout" class="inline">
+                    <input type="hidden" name="fastapi-csrf-token" value="{{ csrf_token }}">
                     <button
                         type="submit"
                         class="bg-gray-100 text-gray-700 hover:bg-gray-200 font-medium px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition duration-150"
