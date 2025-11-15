@@ -88,7 +88,7 @@ async def register(
         templates: Jinja2 templates dependency
 
     Returns:
-        For HTMX requests: Redirect to /dashboard (HX-Redirect header)
+        For HTMX requests: Redirect to /chat/ (HX-Redirect header)
         For API requests: UserResponse JSON with created user data
 
     Raises:
@@ -163,14 +163,14 @@ async def register(
     # Create new user
     user = await user_service.create_user(user_data)
 
-    # For HTMX requests, redirect to dashboard with auth cookie
+    # For HTMX requests, redirect to chat with auth cookie
     if request.headers.get("HX-Request"):
         # Create JWT access token
         access_token = create_access_token(data={"sub": user.user_id, "email": user.email})
 
         settings = get_settings()
         response = Response(status_code=status.HTTP_200_OK)  # type: ignore[assignment]
-        response.headers["HX-Redirect"] = "/dashboard"
+        response.headers["HX-Redirect"] = "/chat/"
         # Set JWT token in httponly cookie for browser-based auth
         response.set_cookie(
             key="access_token",
@@ -213,7 +213,7 @@ async def login(
         templates: Jinja2 templates dependency
 
     Returns:
-        For HTMX requests: Redirect to /dashboard (HX-Redirect header) with Set-Cookie
+        For HTMX requests: Redirect to /chat/ (HX-Redirect header) with Set-Cookie
         For API requests: JSON with access token and token type
 
     Raises:
@@ -253,11 +253,11 @@ async def login(
     # Create JWT access token
     access_token = create_access_token(data={"sub": user.user_id, "email": user.email})
 
-    # For HTMX requests, redirect to dashboard with cookie
+    # For HTMX requests, redirect to chat with cookie
     if request.headers.get("HX-Request"):
         settings = get_settings()
         response = Response(status_code=status.HTTP_200_OK)  # type: ignore[assignment]
-        response.headers["HX-Redirect"] = "/dashboard"
+        response.headers["HX-Redirect"] = "/chat/"
         # Set JWT token in httponly cookie for browser-based auth
         response.set_cookie(
             key="access_token",

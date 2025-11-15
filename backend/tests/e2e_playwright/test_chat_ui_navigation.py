@@ -106,10 +106,10 @@ class TestGarminBanner:
         # Should navigate to /garmin/link
         await authenticated_user.wait_for_url(f"{base_url}/garmin/link", timeout=5000)
 
-        # Verify we're on the Garmin link page (check for email input)
-        await expect(authenticated_user.locator('input[name="garmin_email"]')).to_be_visible(
-            timeout=3000
-        )
+        # Verify we're on the Garmin link page (check for username input)
+        await expect(
+            authenticated_user.locator('[data-testid="input-garmin-username"]')
+        ).to_be_visible(timeout=3000)
 
 
 class TestChatFirstNavigation:

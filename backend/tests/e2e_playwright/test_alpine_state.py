@@ -31,8 +31,8 @@ async def test_loading_state_toggles_button_text(page: Page, base_url: str):
     # Click submit - loading state should appear briefly
     await submit_button.click()
 
-    # Should redirect to settings on success
-    await page.wait_for_url(f"{base_url}/settings", timeout=5000)
+    # Should redirect to chat on success
+    await page.wait_for_url(f"{base_url}/chat/", timeout=5000)
 
 
 async def test_loading_state_disables_submit_button(page: Page, base_url: str):

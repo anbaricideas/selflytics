@@ -9,11 +9,11 @@ class TestGarminLinkingJourney:
     async def test_new_user_links_garmin_account(
         self, page: Page, base_url: str, test_user: dict, mock_garmin_api
     ):
-        """Test complete journey: register → dashboard → link Garmin → sync.
+        """Test complete journey: register → chat → link Garmin → sync.
 
         User Journey:
         1. User registers new account
-        2. Lands on dashboard
+        2. Lands on chat page
         3. Navigates to Garmin settings
         4. Links Garmin account
         5. Sees success state
@@ -35,8 +35,8 @@ class TestGarminLinkingJourney:
         await page.fill('input[name="confirm_password"]', test_user["password"])
         await page.click('[data-testid="submit-register"]')
 
-        # Verify redirect to settings
-        await page.wait_for_url(f"{base_url}/settings", timeout=10000)
+        # Verify redirect to chat
+        await page.wait_for_url(f"{base_url}/chat/", timeout=10000)
 
         # Step 3: Navigate to Garmin settings
         await page.goto(f"{base_url}/garmin/link")
