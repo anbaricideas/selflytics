@@ -35,7 +35,8 @@ def test_register_template_renders_successfully(unauthenticated_client):
 
 
 def test_dashboard_template_renders_for_authenticated_user(client, test_user_token):
-    """Dashboard template should render for authenticated users."""
+    """Dashboard route (redirects to settings) should render for authenticated users."""
+    # Phase 1: /dashboard redirects to /settings with 301
     response = client.get(
         "/dashboard",
         headers={"Authorization": f"Bearer {test_user_token}"},
@@ -45,8 +46,9 @@ def test_dashboard_template_renders_for_authenticated_user(client, test_user_tok
     assert "text/html" in response.headers.get("content-type", "")
 
     html = response.text
-    assert "Dashboard" in html or "dashboard" in html
-    assert "Welcome" in html or "welcome" in html
+    # After redirect, should see settings page content
+    assert "Settings" in html or "settings" in html
+    assert "Selflytics" in html
 
 
 def test_garmin_settings_template_renders_for_authenticated_user(client, test_user_token):
