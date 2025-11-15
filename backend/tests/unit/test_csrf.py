@@ -5,7 +5,7 @@ They use the global CSRF configuration from the app instead of overriding it,
 to avoid polluting the global state and breaking integration tests.
 """
 
-from fastapi_csrf_protect import CsrfProtect
+from fastapi_csrf_protect.flexible import CsrfProtect
 
 
 def test_csrf_token_generation():

@@ -48,7 +48,7 @@ class Settings(BaseSettings):
     # CSRF Protection
     csrf_secret: str = Field(
         default="dev-csrf-secret-change-in-production",
-        description="CSRF token secret key (min 32 characters)",
+        description="CSRF token secret key (min 32 characters, 64+ recommended for production)",
     )
 
     # Security
@@ -89,9 +89,14 @@ class Settings(BaseSettings):
     @field_validator("csrf_secret")
     @classmethod
     def validate_csrf_secret(cls, v: str) -> str:
-        """Validate that CSRF secret meets minimum security requirements."""
+        """Validate that CSRF secret meets minimum security requirements.
+
+        Minimum 32 characters required for HMAC-SHA256 (256 bits = 32 bytes).
+        While 32 chars is the minimum, using 64+ characters is recommended
+        for production environments to provide additional security margin.
+        """
         if len(v) < 32:
-            msg = "CSRF_SECRET must be at least 32 characters"
+            msg = "CSRF_SECRET must be at least 32 characters (64+ recommended for production)"
             raise ValueError(msg)
         return v
 

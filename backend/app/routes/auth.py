@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, Form, HTTPException, Request, Response, 
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.security import OAuth2PasswordRequestForm
 from fastapi.templating import Jinja2Templates
-from fastapi_csrf_protect import CsrfProtect
+from fastapi_csrf_protect.flexible import CsrfProtect
 
 from app.auth.dependencies import get_current_user, get_user_service
 from app.auth.jwt import create_access_token

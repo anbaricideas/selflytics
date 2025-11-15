@@ -20,7 +20,9 @@ def bypass_csrf_for_manual_testing_bug_tests(monkeypatch):
     async def mock_validate_csrf(self, request):
         pass  # Bypass CSRF validation
 
-    monkeypatch.setattr("fastapi_csrf_protect.CsrfProtect.validate_csrf", mock_validate_csrf)
+    monkeypatch.setattr(
+        "fastapi_csrf_protect.flexible.CsrfProtect.validate_csrf", mock_validate_csrf
+    )
 
 
 # Test data constants

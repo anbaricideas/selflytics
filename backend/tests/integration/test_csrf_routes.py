@@ -413,18 +413,43 @@ def test_garmin_unlink_requires_csrf_token(authenticated_garmin_client: TestClie
     assert "CSRF" in response.text or "Security validation" in response.text
 
 
+def test_garmin_unlink_rejects_invalid_csrf_token_in_header(
+    authenticated_garmin_client: TestClient,
+):
+    """Test that DELETE /garmin/link rejects invalid CSRF token in header."""
+    # Get CSRF cookie (but don't use the correct token)
+    form_response = authenticated_garmin_client.get("/garmin/link")
+    csrf_cookie = form_response.cookies.get("fastapi-csrf-token")
+    assert csrf_cookie is not None
+
+    # Submit DELETE with INVALID token in header
+    response = authenticated_garmin_client.delete(
+        "/garmin/link",
+        cookies={"fastapi-csrf-token": csrf_cookie},
+        headers={"X-CSRF-Token": "invalid-token-12345"},
+    )
+
+    # Should fail CSRF validation (403)
+    assert response.status_code == 403
+    assert "CSRF" in response.text or "Security validation" in response.text
+
+
 def test_garmin_unlink_with_valid_csrf_token(authenticated_garmin_client: TestClient):
-    """Test that DELETE /garmin/link accepts valid CSRF token."""
+    """Test that DELETE /garmin/link accepts valid CSRF token in header."""
     # Get CSRF token (from link page)
     form_response = authenticated_garmin_client.get("/garmin/link")
     csrf_cookie = form_response.cookies.get("fastapi-csrf-token")
     assert csrf_cookie is not None
 
-    # Submit DELETE with valid CSRF token
+    # Extract unsigned CSRF token from HTML form
+    soup = BeautifulSoup(form_response.text, "html.parser")
+    csrf_token = soup.find("input", {"name": "fastapi-csrf-token"})["value"]
+
+    # Submit DELETE with valid CSRF token in header
     response = authenticated_garmin_client.delete(
         "/garmin/link",
         cookies={"fastapi-csrf-token": csrf_cookie},
-        headers={"X-CSRF-Token": csrf_cookie},  # Send token in header for API endpoints
+        headers={"X-CSRF-Token": csrf_token},  # Send unsigned token in header
     )
 
     # Should succeed (200) or fail business logic (500), not CSRF (403)

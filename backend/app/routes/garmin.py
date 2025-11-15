@@ -5,7 +5,7 @@ import logging
 from fastapi import APIRouter, Depends, Form, HTTPException, Request, Response, status
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
-from fastapi_csrf_protect import CsrfProtect
+from fastapi_csrf_protect.flexible import CsrfProtect
 from telemetry.logging_utils import redact_for_logging
 
 from app.auth.dependencies import get_current_user
@@ -141,8 +141,8 @@ async def sync_garmin_data(
         logger.error(
             "Sync failed for user %s: %s", current_user.user_id, redact_for_logging(str(e))
         )
-        # Generate NEW token for potential retry
-        _csrf_token, signed_token = csrf_protect.generate_csrf_tokens()
+        # Generate NEW token for potential retry (error template has no form, but set cookie anyway)
+        _, signed_token = csrf_protect.generate_csrf_tokens()
         response = templates.TemplateResponse(
             request=request,
             name="fragments/garmin_sync_error.html",
@@ -158,8 +158,13 @@ async def unlink_garmin_account(
     csrf_protect: CsrfProtect = Depends(),
     current_user: UserResponse = Depends(get_current_user),
 ) -> dict[str, str]:
-    """Unlink Garmin account by deleting tokens and cache."""
-    # Validate CSRF token FIRST
+    """Unlink Garmin account by deleting tokens and cache.
+
+    DELETE requests must send CSRF token in X-CSRF-Token header (not body).
+    The flexible CsrfProtect validates tokens from both headers and body,
+    with priority given to headers for requests that cannot have a body.
+    """
+    # Validate CSRF token FIRST (checks X-CSRF-Token header for DELETE)
     await csrf_protect.validate_csrf(request)
 
     service = GarminService(current_user.user_id)

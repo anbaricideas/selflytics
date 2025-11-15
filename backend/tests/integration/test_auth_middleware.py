@@ -23,7 +23,9 @@ def bypass_csrf_for_auth_middleware_tests(monkeypatch):
     async def mock_validate_csrf(self, request):
         pass  # Bypass CSRF validation
 
-    monkeypatch.setattr("fastapi_csrf_protect.CsrfProtect.validate_csrf", mock_validate_csrf)
+    monkeypatch.setattr(
+        "fastapi_csrf_protect.flexible.CsrfProtect.validate_csrf", mock_validate_csrf
+    )
 
 
 def test_401_with_browser_accept_header_redirects_to_login(unauthenticated_client):

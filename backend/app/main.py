@@ -11,8 +11,8 @@ from fastapi import FastAPI, Request, status
 from fastapi.exceptions import HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, RedirectResponse
-from fastapi_csrf_protect import CsrfProtect
 from fastapi_csrf_protect.exceptions import CsrfProtectError
+from fastapi_csrf_protect.flexible import CsrfProtect
 from pydantic import BaseModel
 
 from app.auth.jwt import verify_token
@@ -35,10 +35,17 @@ if ENV_FILE.exists():
 
 # CSRF Settings
 class CsrfSettings(BaseModel):
-    """CSRF protection settings."""
+    """CSRF protection settings.
+
+    Uses fastapi_csrf_protect.flexible.CsrfProtect to support both:
+    - HTML forms submitting tokens in request body (POST forms)
+    - API/HTMX requests submitting tokens in X-CSRF-Token header (DELETE, etc.)
+
+    Priority: Header is checked first, then body. This allows DELETE requests
+    (which cannot have a body) to use headers while POST forms use body.
+    """
 
     secret_key: str
-    token_location: str = "body"  # noqa: S105  # Look for token in form data (not header), not a password
     token_key: str = "fastapi-csrf-token"  # noqa: S105  # Form field name for token, not a password
     # NOTE: cookie_name is ignored by library - it hardcodes "fastapi-csrf-token"
     cookie_samesite: str = "strict"  # Stricter than auth cookie
