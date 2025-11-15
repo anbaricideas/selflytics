@@ -8,7 +8,24 @@ Tests verify that 401 Unauthorized errors are handled differently for:
 
 from unittest.mock import AsyncMock, patch
 
+import pytest
 from fastapi import status
+
+
+@pytest.fixture(autouse=True)
+def bypass_csrf_for_auth_middleware_tests(monkeypatch):
+    """Bypass CSRF validation for these auth middleware tests.
+
+    CSRF-specific tests are in test_csrf_routes.py.
+    These tests focus on authentication middleware, not CSRF protection.
+    """
+
+    async def mock_validate_csrf(self, request):
+        pass  # Bypass CSRF validation
+
+    monkeypatch.setattr(
+        "fastapi_csrf_protect.flexible.CsrfProtect.validate_csrf", mock_validate_csrf
+    )
 
 
 def test_401_with_browser_accept_header_redirects_to_login(unauthenticated_client):

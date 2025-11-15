@@ -39,7 +39,10 @@ def mock_garmin_service():
 
 @pytest.fixture
 def client(test_user, mock_garmin_service, monkeypatch):
-    """Provide a TestClient with authenticated user and mocked Garmin service."""
+    """Provide a TestClient with authenticated user and mocked Garmin service.
+
+    Cleanup handled by autouse reset_app_state fixture.
+    """
 
     # Mock get_current_user to return test user
     async def mock_get_current_user():
@@ -54,12 +57,18 @@ def client(test_user, mock_garmin_service, monkeypatch):
 
     monkeypatch.setattr("app.routes.garmin.GarminService", mock_garmin_service_init)
 
+    # Mock CSRF validation to bypass it for these tests
+    # (CSRF-specific tests are in test_csrf_routes.py)
+    async def mock_validate_csrf(self, request):
+        pass  # Do nothing - bypass CSRF validation
+
+    monkeypatch.setattr(
+        "fastapi_csrf_protect.flexible.CsrfProtect.validate_csrf", mock_validate_csrf
+    )
+
     # Create test client (raise_server_exceptions=False allows testing error responses)
-    test_client = TestClient(app, raise_server_exceptions=False)
-
-    yield test_client
-
-    app.dependency_overrides.clear()
+    return TestClient(app, raise_server_exceptions=False)
+    # Cleanup handled by autouse fixture
 
 
 class TestGarminLinkPage:

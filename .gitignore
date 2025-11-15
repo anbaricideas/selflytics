@@ -116,6 +116,9 @@ temp/
 spike/cache/
 spike/.env
 
+# Debug scripts
+scripts/debug_*.py
+
 # uv
 .uv/
 

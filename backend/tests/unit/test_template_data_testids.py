@@ -7,6 +7,8 @@ where templates are modified without preserving test attributes.
 
 from unittest.mock import AsyncMock, patch
 
+from bs4 import BeautifulSoup
+
 
 def test_login_template_has_required_testids(client):
     """Login page should have all required data-testid attributes for e2e tests."""
@@ -82,6 +84,15 @@ def test_garmin_settings_unlinked_has_required_testids(client, test_user_token):
 
 def test_garmin_linked_status_has_required_testids(client, test_user_token):
     """Garmin link success HTML fragment should have status and sync button test IDs."""
+    # Get CSRF token from form
+    form_response = client.get(
+        "/garmin/link",
+        headers={"Authorization": f"Bearer {test_user_token}"},
+    )
+    csrf_cookie = form_response.cookies.get("fastapi-csrf-token")
+    soup = BeautifulSoup(form_response.text, "html.parser")
+    csrf_token = soup.find("input", {"name": "fastapi-csrf-token"})["value"]
+
     with patch("app.routes.garmin.GarminService") as mock_service_class:
         mock_service = AsyncMock()
         mock_service.link_account.return_value = True
@@ -92,8 +103,10 @@ def test_garmin_linked_status_has_required_testids(client, test_user_token):
             data={
                 "username": "test@garmin.com",
                 "password": "password123",
+                "fastapi-csrf-token": csrf_token,
             },
             headers={"Authorization": f"Bearer {test_user_token}"},
+            cookies={"fastapi-csrf-token": csrf_cookie},
         )
 
         assert response.status_code == 200
@@ -110,6 +123,15 @@ def test_garmin_linked_status_has_required_testids(client, test_user_token):
 
 def test_garmin_link_error_has_testid(client, test_user_token):
     """Garmin link error HTML fragment should have error message test ID."""
+    # Get CSRF token from form
+    form_response = client.get(
+        "/garmin/link",
+        headers={"Authorization": f"Bearer {test_user_token}"},
+    )
+    csrf_cookie = form_response.cookies.get("fastapi-csrf-token")
+    soup = BeautifulSoup(form_response.text, "html.parser")
+    csrf_token = soup.find("input", {"name": "fastapi-csrf-token"})["value"]
+
     with patch("app.routes.garmin.GarminService") as mock_service_class:
         mock_service = AsyncMock()
         mock_service.link_account.return_value = False  # Failure
@@ -120,8 +142,10 @@ def test_garmin_link_error_has_testid(client, test_user_token):
             data={
                 "username": "wrong@garmin.com",
                 "password": "wrongpassword",
+                "fastapi-csrf-token": csrf_token,
             },
             headers={"Authorization": f"Bearer {test_user_token}"},
+            cookies={"fastapi-csrf-token": csrf_cookie},
         )
 
         assert response.status_code == 400
