@@ -12,7 +12,7 @@
 - [ ] Firestore emulator running: `firebase emulators:start --only firestore`
 - [ ] Dev server running: `./scripts/dev-server.sh`
 - [ ] Browser DevTools open (Chrome/Edge recommended)
-- [ ] Test user account created (email: test@example.com, password: TestPass123)
+- [ ] Test user account created (email: test-user@example.com, password: TestPass123!)
 
 ---
 
@@ -149,16 +149,16 @@
 ### Registration Password Mismatch
 - [ ] Navigate to http://localhost:8000/register
 - [ ] Copy csrf_token value from hidden field (DevTools)
-  - **Token 1**: ___________________________________________
+  - **Token 1**: ___________________________________________ (e.g., eyJhbGc6IkpXVCJ9.dGVzdA.SflKxwRJ... - yours will differ)
 - [ ] Fill form with password MISMATCH:
-  - Email: rotate@test.com
+  - Email: rotation-test@example.com
   - Display Name: Rotate Test
-  - Password: Pass123
-  - Confirm Password: Pass456  ← MISMATCH
+  - Password: Pass123!
+  - Confirm Password: Pass456!  ← MISMATCH
 - [ ] Submit form
 - [ ] Verify error: "Passwords do not match"
 - [ ] Copy NEW csrf_token value from hidden field
-  - **Token 2**: ___________________________________________
+  - **Token 2**: ___________________________________________ (e.g., eyJhbGc6IkpXVCJ9.bmV3dG9rZW4.abc123... - yours will differ)
 - [ ] Verify Token 2 ≠ Token 1 (rotation occurred)
 - [ ] Open DevTools → Network → Find POST request
 - [ ] Verify response includes `Set-Cookie: csrf_token=...` (new cookie)
@@ -169,12 +169,12 @@
 ### Login Invalid Credentials
 - [ ] Navigate to http://localhost:8000/login
 - [ ] Copy csrf_token value
-  - **Token 1**: ___________________________________________
-- [ ] Enter: test@example.com / WrongPassword
+  - **Token 1**: ___________________________________________ (e.g., eyJhbGc6IkpXVCJ9.dGVzdA.SflKxwRJ... - yours will differ)
+- [ ] Enter: test-user@example.com / WrongPassword
 - [ ] Submit form
 - [ ] Verify error: "Incorrect email or password"
 - [ ] Copy NEW csrf_token value
-  - **Token 2**: ___________________________________________
+  - **Token 2**: ___________________________________________ (e.g., eyJhbGc6IkpXVCJ9.bmV3dG9rZW4.abc123... - yours will differ)
 - [ ] Verify Token 2 ≠ Token 1
 - [ ] Enter correct password and submit
 - [ ] Verify successful login

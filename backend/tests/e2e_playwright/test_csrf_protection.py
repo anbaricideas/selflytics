@@ -16,6 +16,10 @@ import pytest
 from playwright.async_api import Page, expect
 
 
+# Timeout constant for expect assertions
+E2E_TIMEOUT_MS = 5000
+
+
 @pytest.mark.e2e
 class TestCSRFAttackPrevention:
     """Verify CSRF protection blocks cross-origin POST attacks."""
@@ -72,7 +76,11 @@ class TestCSRFAttackPrevention:
         await page.set_content(malicious_html)
 
         # STEP 3: Wait for form auto-submission to complete
-        await page.wait_for_load_state("networkidle")
+        # Use response tracking instead of networkidle for deterministic wait
+        async with page.expect_response(
+            lambda r: "/garmin/link" in r.url and r.request.method == "POST"
+        ):
+            pass  # Form submits on load via onload handler
 
         # STEP 3a: Verify attack request was sent and rejected with 403
         assert len(responses) > 0, "Attack request should have been sent"
@@ -147,7 +155,11 @@ class TestCSRFAttackPrevention:
         await page.set_content(malicious_html)
 
         # Wait for iframe submission and response
-        await page.wait_for_timeout(2000)
+        # Use response tracking instead of fixed timeout for deterministic wait
+        async with page.expect_response(
+            lambda r: "/auth/register" in r.url and r.request.method == "POST"
+        ):
+            pass  # Form submits via submitAttack() function
 
         # STEP 2a: Verify attack request was rejected with 403
         assert len(responses) > 0, "Attack request should have been sent"
@@ -164,7 +176,7 @@ class TestCSRFAttackPrevention:
 
         # Login should FAIL (account not created)
         error_msg = page.locator("text=Incorrect email or password")
-        await expect(error_msg).to_be_visible(timeout=5000)
+        await expect(error_msg).to_be_visible(timeout=E2E_TIMEOUT_MS)
 
 
 @pytest.mark.e2e
@@ -211,7 +223,7 @@ class TestCSRFTokenRotation:
 
         # STEP 5: Wait for HTMX to swap form with error message
         error_msg = page.locator("text=Passwords do not match")
-        await expect(error_msg).to_be_visible(timeout=5000)
+        await expect(error_msg).to_be_visible(timeout=E2E_TIMEOUT_MS)
 
         # STEP 6: Extract NEW CSRF token from re-rendered form
         csrf_input2 = page.locator('input[name="fastapi-csrf-token"]')
@@ -229,7 +241,7 @@ class TestCSRFTokenRotation:
         await page.click('[data-testid="submit-register"]')
 
         # STEP 9: Verify successful registration (redirects to dashboard)
-        await page.wait_for_url(f"{base_url}/dashboard", timeout=5000)
+        await page.wait_for_url(f"{base_url}/dashboard", timeout=E2E_TIMEOUT_MS)
         await expect(page).to_have_url(f"{base_url}/dashboard")
 
     async def test_csrf_token_rotation_on_login_failure(
@@ -246,7 +258,7 @@ class TestCSRFTokenRotation:
 
         # Logout to test login flow
         await page.click('[data-testid="logout-button"]')
-        await page.wait_for_url(f"{base_url}/login", timeout=5000)
+        await page.wait_for_url(f"{base_url}/login", timeout=E2E_TIMEOUT_MS)
 
         # STEP 1: Extract initial token
         token1 = await page.locator('input[name="fastapi-csrf-token"]').get_attribute("value")
@@ -259,7 +271,7 @@ class TestCSRFTokenRotation:
 
         # STEP 3: Wait for error
         error_msg = page.locator("text=Incorrect email or password")
-        await expect(error_msg).to_be_visible(timeout=5000)
+        await expect(error_msg).to_be_visible(timeout=E2E_TIMEOUT_MS)
 
         # STEP 4: Verify token rotated
         token2 = await page.locator('input[name="fastapi-csrf-token"]').get_attribute("value")
@@ -271,7 +283,7 @@ class TestCSRFTokenRotation:
         await page.click('[data-testid="submit-login"]')
 
         # STEP 6: Verify success
-        await page.wait_for_url(f"{base_url}/dashboard", timeout=5000)
+        await page.wait_for_url(f"{base_url}/dashboard", timeout=E2E_TIMEOUT_MS)
 
 
 @pytest.mark.e2e
@@ -317,7 +329,7 @@ class TestCSRFHTMXCompatibility:
 
         # STEP 4: Wait for HTMX to swap form fragment
         error_msg = page.locator("text=Passwords do not match")
-        await expect(error_msg).to_be_visible(timeout=5000)
+        await expect(error_msg).to_be_visible(timeout=E2E_TIMEOUT_MS)
 
         # STEP 5: Verify form still exists (HTMX swapped it, not full page reload)
         await expect(page.locator('[data-testid="register-form"]')).to_be_visible()
@@ -341,4 +353,4 @@ class TestCSRFHTMXCompatibility:
         await page.click('[data-testid="submit-register"]')
 
         # STEP 10: Verify successful registration (HTMX completes the flow)
-        await page.wait_for_url(f"{base_url}/dashboard", timeout=5000)
+        await page.wait_for_url(f"{base_url}/dashboard", timeout=E2E_TIMEOUT_MS)
