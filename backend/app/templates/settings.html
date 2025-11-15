@@ -5,34 +5,90 @@
 {% block content %}
 <div class="min-h-screen bg-gray-50">
     <!-- Header -->
-    <header class="bg-white shadow-sm border-b border-gray-200" role="banner">
-        <div class="max-w-7xl mx-auto px-4 py-5 flex justify-between items-center">
-            <div>
-                <h1 class="text-3xl font-bold text-gray-900">Selflytics</h1>
-                <p class="text-sm text-gray-500 mt-1">AI-Powered Analysis for Your Fitness Data</p>
-            </div>
-            <div class="flex items-center gap-4">
-                <span class="text-gray-700 font-medium">{{ user.profile.display_name }}</span>
-                <form method="POST" action="/logout" class="inline">
-                    <button
-                        type="submit"
-                        class="bg-gray-100 text-gray-700 hover:bg-gray-200 font-medium px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition duration-150"
-                    >
-                        Logout
-                    </button>
-                </form>
+    <header class="bg-white shadow mb-8" data-testid="settings-header">
+        <div class="max-w-7xl mx-auto px-4 py-6">
+            <div class="flex items-center justify-between">
+                <h1 class="text-2xl font-bold text-gray-800">Settings</h1>
+                <div class="flex items-center gap-4">
+                    <a href="/chat/" class="text-sm text-blue-600 hover:text-blue-800" data-testid="link-back-to-chat">
+                        ← Back to Chat
+                    </a>
+                    <form hx-post="/logout" hx-swap="none" class="inline">
+                        <button type="submit"
+                                class="text-sm text-red-600 hover:text-red-800"
+                                data-testid="button-logout"
+                                aria-label="Logout">
+                            Logout
+                        </button>
+                    </form>
+                </div>
             </div>
         </div>
     </header>
 
     <!-- Main Content -->
-    <main class="max-w-7xl mx-auto px-4 py-10" role="main">
-        <h2 class="text-4xl font-bold text-gray-900 mb-10">Settings</h2>
+    <main class="max-w-7xl mx-auto px-4">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6" data-testid="settings-grid">
 
-        <!-- Placeholder content - Phase 2 will add actual settings cards -->
-        <div class="text-gray-600">
-            <p class="text-lg">Your settings will appear here soon.</p>
-            <p class="mt-4 text-sm">We're working on adding personalization options and connection management.</p>
+            <!-- Garmin Account Card -->
+            <div class="bg-white rounded-lg shadow p-6 hover:shadow-lg transition" data-testid="card-garmin">
+                <div class="flex items-start">
+                    <svg class="h-10 w-10 text-blue-500 mr-4" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
+                        <!-- Link/chain icon -->
+                        <path fill-rule="evenodd" d="M12.586 4.586a2 2 0 112.828 2.828l-3 3a2 2 0 01-2.828 0 1 1 0 00-1.414 1.414 4 4 0 005.656 0l3-3a4 4 0 00-5.656-5.656l-1.5 1.5a1 1 0 101.414 1.414l1.5-1.5zm-5 5a2 2 0 012.828 0 1 1 0 101.414-1.414 4 4 0 00-5.656 0l-3 3a4 4 0 105.656 5.656l1.5-1.5a1 1 0 10-1.414-1.414l-1.5 1.5a2 2 0 11-2.828-2.828l3-3z" clip-rule="evenodd"/>
+                    </svg>
+                    <div class="flex-1">
+                        <h2 class="text-lg font-semibold text-gray-800 mb-2">
+                            Garmin Account
+                        </h2>
+                        <p class="text-sm text-gray-600 mb-4">
+                            Manage your Garmin connection and sync activity data
+                        </p>
+                        {% if user.garmin_linked %}
+                        <p class="text-xs text-green-600 mb-3" data-testid="garmin-status-connected">
+                            <svg class="inline h-4 w-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                            </svg>
+                            Connected
+                        </p>
+                        {% else %}
+                        <p class="text-xs text-gray-500 mb-3" data-testid="garmin-status-not-connected">Not connected</p>
+                        {% endif %}
+                        <a href="/garmin/link"
+                           class="inline-block bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition text-sm"
+                           data-testid="link-manage-garmin"
+                           aria-label="Manage Garmin account connection">
+                            Manage →
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Profile Settings Card -->
+            <div class="bg-white rounded-lg shadow p-6 hover:shadow-lg transition" data-testid="card-profile">
+                <div class="flex items-start">
+                    <svg class="h-10 w-10 text-purple-500 mr-4" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
+                        <!-- User icon -->
+                        <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"/>
+                    </svg>
+                    <div class="flex-1">
+                        <h2 class="text-lg font-semibold text-gray-800 mb-2">
+                            Profile Settings
+                        </h2>
+                        <p class="text-sm text-gray-600 mb-4">
+                            Update your display name, email, and password
+                        </p>
+                        <p class="text-xs text-gray-500 mb-3" data-testid="profile-email">{{ user.email }}</p>
+                        <a href="/profile/edit"
+                           class="inline-block bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700 transition text-sm"
+                           data-testid="link-edit-profile"
+                           aria-label="Edit profile settings">
+                            Edit →
+                        </a>
+                    </div>
+                </div>
+            </div>
+
         </div>
     </main>
 </div>

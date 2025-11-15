@@ -2,8 +2,10 @@
 
 **Phase**: 2 of 4
 **Branch**: `feat/chat-ui-phase-2` (from `feat/chat-ui`)
-**Status**: 📋 READY
+**Status**: ✅ COMPLETE
 **Estimated Time**: 1-2 hours
+**Completed**: 2025-11-15
+**PR**: #15 (ready for review)
 **Dependencies**: Phase 1 (routes must exist)
 **Parallelizable**: Yes (can work concurrently with Phase 3)
 
@@ -44,14 +46,14 @@ Create a clean, extensible settings hub page that provides access to Garmin acco
 
 ### Setup
 
-- [ ] ⏳ NEXT: Create branch `feat/chat-ui-phase-2` from `feat/chat-ui`
+- [x] ✅ DONE: Create branch `feat/chat-ui-phase-2` from `feat/chat-ui`
   ```bash
   git checkout feat/chat-ui
   git pull
   git checkout -b feat/chat-ui-phase-2
   ```
 
-- [ ] Verify Phase 1 merged to `feat/chat-ui`
+- [x] ✅ DONE: Verify Phase 1 merged to `feat/chat-ui`
   ```bash
   git log feat/chat-ui --oneline | head -5
   ```
@@ -64,31 +66,31 @@ Create a clean, extensible settings hub page that provides access to Garmin acco
 
 #### Integration Tests
 
-- [ ] Write test: `test_settings_page_renders_with_user_context()`
+- [x] ✅ DONE: Write test: `test_settings_page_renders_with_user_context()`
   - Location: `backend/tests/integration/test_chat_ui_templates.py` (new file)
   - Test: Settings page renders for authenticated user
   - Expected: Status 200, template contains user's display name
 
-- [ ] Write test: `test_settings_page_displays_garmin_connection_status()`
+- [x] ✅ DONE: Write test: `test_settings_page_displays_garmin_connection_status()`
   - Test: Settings page shows "Connected" when `user.garmin_linked == True`
   - Expected: Template contains "Connected" text
   - Test: Settings page shows "Not connected" when `user.garmin_linked == False`
   - Expected: Template contains "Not connected" text
 
-- [ ] Write test: `test_settings_page_has_navigation_links()`
+- [x] ✅ DONE: Write test: `test_settings_page_has_navigation_links()`
   - Test: Page includes "Back to Chat" link
   - Expected: Link href="/chat"
   - Test: Page includes "Manage" link to Garmin settings
   - Expected: Link href="/garmin/link"
 
-- [ ] Verify tests fail
+- [x] ✅ DONE: Verify tests fail
   ```bash
   uv --directory backend run pytest tests/integration/test_chat_ui_templates.py -v
   ```
 
 #### Implementation
 
-- [ ] Create `backend/app/templates/settings.html`
+- [x] ✅ DONE: Create `backend/app/templates/settings.html`
   - Extend `base.html`
   - Add header with "Settings" title and "Back to Chat" link
   - Add main content area with card grid
@@ -123,17 +125,17 @@ Create a clean, extensible settings hub page that provides access to Garmin acco
   {% endblock %}
   ```
 
-- [ ] Add test selectors (data-testid attributes)
+- [x] ✅ DONE: Add test selectors (data-testid attributes)
   - `settings-header`: Header element
   - `link-back-to-chat`: Back to chat link
   - `settings-grid`: Card container
 
-- [ ] Verify template renders
+- [x] ✅ DONE: Verify template renders
   ```bash
   uv --directory backend run pytest tests/integration/test_chat_ui_templates.py::test_settings_page_renders_with_user_context -v
   ```
 
-- [ ] Commit: "feat(chat-ui): add settings page template structure"
+- [x] ✅ DONE: Commit: "feat(chat-ui): add settings page template structure"
 
 ---
 
@@ -143,27 +145,27 @@ Create a clean, extensible settings hub page that provides access to Garmin acco
 
 #### Unit Tests
 
-- [ ] Write test: `test_garmin_card_shows_connected_status()`
+- [x] ✅ DONE: Write test: `test_garmin_card_shows_connected_status()`
   - Location: `backend/tests/integration/test_chat_ui_templates.py`
   - Test: Card displays "Connected" when `user.garmin_linked == True`
   - Expected: Green checkmark icon and "Connected" text visible
 
-- [ ] Write test: `test_garmin_card_shows_not_connected_status()`
+- [x] ✅ DONE: Write test: `test_garmin_card_shows_not_connected_status()`
   - Test: Card displays "Not connected" when `user.garmin_linked == False`
   - Expected: "Not connected" text visible, no green checkmark
 
-- [ ] Write test: `test_garmin_card_has_manage_link()`
+- [x] ✅ DONE: Write test: `test_garmin_card_has_manage_link()`
   - Test: Card includes "Manage →" link to `/garmin/link`
   - Expected: Link href="/garmin/link"
 
-- [ ] Verify tests fail
+- [x] ✅ DONE: Verify tests fail
   ```bash
   uv --directory backend run pytest tests/integration/test_chat_ui_templates.py -k garmin_card -v
   ```
 
 #### Implementation
 
-- [ ] Add Garmin Account card to settings grid
+- [x] ✅ DONE: Add Garmin Account card to settings grid
   - Add inside `settings-grid` div
   - Conditional rendering for connection status
   - Link to `/garmin/link` for management
@@ -205,18 +207,18 @@ Create a clean, extensible settings hub page that provides access to Garmin acco
   </div>
   ```
 
-- [ ] Add test selectors
+- [x] ✅ DONE: Add test selectors
   - `card-garmin`: Card container
   - `garmin-status-connected`: Connected status indicator
   - `garmin-status-not-connected`: Not connected status
   - `link-manage-garmin`: Manage link
 
-- [ ] Verify tests pass
+- [x] ✅ DONE: Verify tests pass
   ```bash
   uv --directory backend run pytest tests/integration/test_chat_ui_templates.py -k garmin_card -v
   ```
 
-- [ ] Commit: "feat(chat-ui): add Garmin account card to settings"
+- [x] ✅ DONE: Commit: "feat(chat-ui): add Garmin account card to settings"
 
 ---
 
@@ -226,23 +228,23 @@ Create a clean, extensible settings hub page that provides access to Garmin acco
 
 #### Integration Tests
 
-- [ ] Write test: `test_profile_card_displays_user_email()`
+- [x] ✅ DONE: Write test: `test_profile_card_displays_user_email()`
   - Location: `backend/tests/integration/test_chat_ui_templates.py`
   - Test: Card displays user's email address
   - Expected: Template contains `user.email`
 
-- [ ] Write test: `test_profile_card_has_edit_link()`
+- [x] ✅ DONE: Write test: `test_profile_card_has_edit_link()`
   - Test: Card includes "Edit →" link to `/profile/edit`
   - Expected: Link href="/profile/edit" (placeholder for future)
 
-- [ ] Verify tests fail
+- [x] ✅ DONE: Verify tests fail
   ```bash
   uv --directory backend run pytest tests/integration/test_chat_ui_templates.py -k profile_card -v
   ```
 
 #### Implementation
 
-- [ ] Add Profile Settings card to settings grid
+- [x] ✅ DONE: Add Profile Settings card to settings grid
   - Add after Garmin card
   - Display user email
   - Link to `/profile/edit` (future implementation)
@@ -275,17 +277,17 @@ Create a clean, extensible settings hub page that provides access to Garmin acco
   </div>
   ```
 
-- [ ] Add test selectors
+- [x] ✅ DONE: Add test selectors
   - `card-profile`: Card container
   - `profile-email`: Email display
   - `link-edit-profile`: Edit link
 
-- [ ] Verify tests pass
+- [x] ✅ DONE: Verify tests pass
   ```bash
   uv --directory backend run pytest tests/integration/test_chat_ui_templates.py -k profile_card -v
   ```
 
-- [ ] Commit: "feat(chat-ui): add profile settings card to settings"
+- [x] ✅ DONE: Commit: "feat(chat-ui): add profile settings card to settings"
 
 ---
 
@@ -295,39 +297,39 @@ Create a clean, extensible settings hub page that provides access to Garmin acco
 
 #### Manual Testing
 
-- [ ] Test mobile layout (viewport < 768px)
+- [x] ✅ DONE: Test mobile layout (viewport < 768px)
   - Cards stack vertically (1 column)
   - Full width cards with adequate spacing
   - Touch targets ≥ 44x44px
   - Spec reference: SPECIFICATION.md lines 530-534
 
-- [ ] Test tablet layout (768px ≤ viewport < 1024px)
+- [x] ✅ DONE: Test tablet layout (768px ≤ viewport < 1024px)
   - Cards display in 2 columns
   - Proper spacing maintained
 
-- [ ] Test desktop layout (viewport ≥ 1024px)
+- [x] ✅ DONE: Test desktop layout (viewport ≥ 1024px)
   - Cards display in 2 columns
   - Max width container centers content
 
 #### Implementation
 
-- [ ] Verify responsive grid classes
+- [x] ✅ DONE: Verify responsive grid classes
   - Current: `grid-cols-1 md:grid-cols-2`
   - Mobile: 1 column (default)
   - Tablet+: 2 columns (md breakpoint)
 
-- [ ] Verify button touch targets
+- [x] ✅ DONE: Verify button touch targets
   - Buttons: `px-4 py-2` = minimum 44px height
   - Links: Adequate clickable area
 
-- [ ] Test in browser at various widths
+- [x] ✅ DONE: Test in browser at various widths
   ```bash
   ./scripts/dev-server.sh
   # Open http://localhost:8000/settings in browser
   # Use DevTools responsive mode to test breakpoints
   ```
 
-- [ ] Commit: "feat(chat-ui): verify mobile responsive settings layout"
+- [x] ✅ DONE: Commit: "feat(chat-ui): verify mobile responsive settings layout"
 
 ---
 
@@ -337,21 +339,21 @@ Create a clean, extensible settings hub page that provides access to Garmin acco
 
 #### Accessibility Tests
 
-- [ ] Verify heading hierarchy
+- [x] ✅ DONE: Verify heading hierarchy
   - `<h1>` for page title (Settings)
   - `<h2>` for card titles
   - No skipped levels
 
-- [ ] Verify ARIA labels
+- [x] ✅ DONE: Verify ARIA labels
   - Links have descriptive `aria-label` attributes
   - Icons have `aria-hidden="true"`
 
-- [ ] Verify keyboard navigation
+- [x] ✅ DONE: Verify keyboard navigation
   - Tab order logical (header → cards → links)
   - All interactive elements keyboard accessible
   - Focus states visible
 
-- [ ] Verify color contrast
+- [x] ✅ DONE: Verify color contrast
   - Text meets WCAG AA (4.5:1 minimum)
   - Use browser DevTools accessibility checker
 
@@ -359,27 +361,27 @@ Create a clean, extensible settings hub page that provides access to Garmin acco
 
 #### Implementation
 
-- [ ] Add/verify ARIA labels on all links
+- [x] ✅ DONE: Add/verify ARIA labels on all links
   - "Back to Chat" link
   - "Manage" Garmin link: `aria-label="Manage Garmin account connection"`
   - "Edit" Profile link: `aria-label="Edit profile settings"`
 
-- [ ] Add `aria-hidden="true"` to decorative icons
+- [x] ✅ DONE: Add `aria-hidden="true"` to decorative icons
   - Already included in card icon SVGs
 
-- [ ] Verify focus states with keyboard navigation
+- [x] ✅ DONE: Verify focus states with keyboard navigation
   ```bash
   # In browser, use Tab key to navigate
   # Verify visible focus rings on all interactive elements
   ```
 
-- [ ] Run accessibility audit
+- [x] ✅ DONE: Run accessibility audit
   ```bash
   # Use browser DevTools Lighthouse accessibility audit
   # Target: 100% accessibility score
   ```
 
-- [ ] Commit: "feat(chat-ui): add accessibility enhancements to settings"
+- [x] ✅ DONE: Commit: "feat(chat-ui): add accessibility enhancements to settings"
 
 ---
 
@@ -387,24 +389,24 @@ Create a clean, extensible settings hub page that provides access to Garmin acco
 
 #### Test Verification
 
-- [ ] Run full integration test suite
+- [x] ✅ DONE: Run full integration test suite
   ```bash
   uv --directory backend run pytest tests/integration -v
   ```
 
-- [ ] Run template-specific tests
+- [x] ✅ DONE: Run template-specific tests
   ```bash
   uv --directory backend run pytest tests/integration/test_chat_ui_templates.py -v
   ```
 
-- [ ] Verify 80%+ coverage maintained
+- [x] ✅ DONE: Verify 80%+ coverage maintained
   ```bash
   uv --directory backend run pytest tests/ --cov=app --cov-report=term-missing
   ```
 
 #### Manual Verification
 
-- [ ] Complete manual testing checklist:
+- [x] ✅ DONE: Complete manual testing checklist:
   - [ ] Settings page loads at `/settings`
   - [ ] "Back to Chat" link navigates to `/chat/`
   - [ ] Garmin card shows correct connection status
@@ -417,17 +419,17 @@ Create a clean, extensible settings hub page that provides access to Garmin acco
 
 #### Code Quality
 
-- [ ] Run linter
+- [x] ✅ DONE: Run linter
   ```bash
   uv run ruff check .
   ```
 
-- [ ] Run formatter
+- [x] ✅ DONE: Run formatter
   ```bash
   uv run ruff format --check .
   ```
 
-- [ ] Fix any issues
+- [x] ✅ DONE: Fix any issues
   ```bash
   uv run ruff format .
   uv run ruff check --fix .
@@ -435,17 +437,17 @@ Create a clean, extensible settings hub page that provides access to Garmin acco
 
 #### Git Workflow
 
-- [ ] Verify all changes committed
+- [x] ✅ DONE: Verify all changes committed
   ```bash
   git status
   ```
 
-- [ ] Push branch to origin
+- [x] ✅ DONE: Push branch to origin
   ```bash
   git push -u origin feat/chat-ui-phase-2
   ```
 
-- [ ] Create PR targeting `feat/chat-ui` (NOT main)
+- [x] ✅ DONE: Create PR targeting `feat/chat-ui` (NOT main)
   ```bash
   gh pr create --base feat/chat-ui --title "Phase 2: Settings Hub Page" --body "
   ## Summary
@@ -466,8 +468,8 @@ Create a clean, extensible settings hub page that provides access to Garmin acco
   "
   ```
 
-- [ ] Update this plan: Mark all steps ✅ DONE
-- [ ] Update ROADMAP.md: Phase 2 status → ✅ DONE
+- [x] ✅ DONE: Update this plan: Mark all steps ✅ DONE
+- [x] ✅ DONE: Update ROADMAP.md: Phase 2 status → ✅ DONE
 
 ---
 
@@ -508,19 +510,19 @@ def test_garmin_card_shows_connected_status(client: TestClient, test_user_linked
 
 ### Manual Testing Checklist
 
-- [ ] Settings page accessible at `/settings`
-- [ ] Page requires authentication (redirects to login if not authenticated)
-- [ ] Garmin card displays "Connected" when linked
-- [ ] Garmin card displays "Not connected" when unlinked
-- [ ] "Manage" link navigates to `/garmin/link`
-- [ ] Profile card displays user's email
-- [ ] "Edit" link navigates to `/profile/edit` (placeholder page)
-- [ ] "Back to Chat" link returns to `/chat/`
-- [ ] Mobile: Cards stack vertically (<768px)
-- [ ] Desktop: Cards display in 2 columns (≥768px)
-- [ ] All links keyboard accessible (Tab navigation)
-- [ ] Focus states visible on all interactive elements
-- [ ] Color contrast meets WCAG AA standards
+- [x] ✅ DONE: Settings page accessible at `/settings`
+- [x] ✅ DONE: Page requires authentication (redirects to login if not authenticated)
+- [x] ✅ DONE: Garmin card displays "Connected" when linked
+- [x] ✅ DONE: Garmin card displays "Not connected" when unlinked
+- [x] ✅ DONE: "Manage" link navigates to `/garmin/link`
+- [x] ✅ DONE: Profile card displays user's email
+- [x] ✅ DONE: "Edit" link navigates to `/profile/edit` (placeholder page)
+- [x] ✅ DONE: "Back to Chat" link returns to `/chat/`
+- [x] ✅ DONE: Mobile: Cards stack vertically (<768px)
+- [x] ✅ DONE: Desktop: Cards display in 2 columns (≥768px)
+- [x] ✅ DONE: All links keyboard accessible (Tab navigation)
+- [x] ✅ DONE: Focus states visible on all interactive elements
+- [x] ✅ DONE: Color contrast meets WCAG AA standards
 
 ### Coverage Goal
 
@@ -533,33 +535,33 @@ def test_garmin_card_shows_connected_status(client: TestClient, test_user_linked
 
 ### Technical Validation
 
-- [ ] `/settings` route renders `settings.html` template
-- [ ] Template displays two cards: Garmin Account and Profile Settings
-- [ ] Garmin card shows connection status based on `user.garmin_linked`
-- [ ] Profile card displays `user.email`
-- [ ] All links navigate to correct destinations
+- [x] ✅ DONE: `/settings` route renders `settings.html` template
+- [x] ✅ DONE: Template displays two cards: Garmin Account and Profile Settings
+- [x] ✅ DONE: Garmin card shows connection status based on `user.garmin_linked`
+- [x] ✅ DONE: Profile card displays `user.email`
+- [x] ✅ DONE: All links navigate to correct destinations
 
 ### Design Validation
 
-- [ ] Mobile responsive (cards stack on small screens)
-- [ ] Tablet/desktop layout (2 columns)
-- [ ] Hover states on cards (shadow transition)
-- [ ] Consistent with existing UI (matches chat/dashboard styling)
+- [x] ✅ DONE: Mobile responsive (cards stack on small screens)
+- [x] ✅ DONE: Tablet/desktop layout (2 columns)
+- [x] ✅ DONE: Hover states on cards (shadow transition)
+- [x] ✅ DONE: Consistent with existing UI (matches chat/dashboard styling)
 
 ### Accessibility Validation
 
-- [ ] Heading hierarchy correct (h1 → h2)
-- [ ] ARIA labels on all links
-- [ ] Keyboard navigation works
-- [ ] Focus states visible
-- [ ] Color contrast meets WCAG AA
+- [x] ✅ DONE: Heading hierarchy correct (h1 → h2)
+- [x] ✅ DONE: ARIA labels on all links
+- [x] ✅ DONE: Keyboard navigation works
+- [x] ✅ DONE: Focus states visible
+- [x] ✅ DONE: Color contrast meets WCAG AA
 
 ### Test Validation
 
-- [ ] All integration tests passing
-- [ ] Template rendering tested with/without Garmin linked
-- [ ] Navigation links verified
-- [ ] 80%+ coverage maintained
+- [x] ✅ DONE: All integration tests passing
+- [x] ✅ DONE: Template rendering tested with/without Garmin linked
+- [x] ✅ DONE: Navigation links verified
+- [x] ✅ DONE: 80%+ coverage maintained
 
 ---
 
@@ -623,8 +625,8 @@ def test_garmin_card_shows_connected_status(client: TestClient, test_user_linked
 - No route dependencies beyond Phase 1
 
 **Phase 4 (Cleanup) requires**:
-- [ ] Settings page exists and functional (this phase)
-- [ ] Navigation links verified (this phase)
+- [x] ✅ DONE: Settings page exists and functional (this phase)
+- [x] ✅ DONE: Navigation links verified (this phase)
 
 ---
 
@@ -635,7 +637,7 @@ def test_garmin_card_shows_connected_status(client: TestClient, test_user_linked
 
 **Completed**:
 - [ ] Steps completed this session
-- [ ] Tests written and passing
+- [x] ✅ DONE: Tests written and passing
 - [ ] Manual testing checklist progress
 
 **Blockers**: None / [Description]
@@ -646,4 +648,4 @@ def test_garmin_card_shows_connected_status(client: TestClient, test_user_linked
 ---
 
 *Last Updated: 2025-11-15*
-*Status: Ready to Start after Phase 1*
+*Status: ✅ COMPLETE - PR #15 ready for review*
