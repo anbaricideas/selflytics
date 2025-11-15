@@ -403,3 +403,30 @@ def test_csrf_token_rotation_on_garmin_sync_error(
 
     # Clean up override
     app.dependency_overrides.clear()
+
+
+def test_garmin_unlink_requires_csrf_token(authenticated_garmin_client: TestClient):
+    """Test that DELETE /garmin/link rejects requests without CSRF token."""
+    response = authenticated_garmin_client.delete("/garmin/link")
+
+    assert response.status_code == 403
+    assert "CSRF" in response.text or "Security validation" in response.text
+
+
+def test_garmin_unlink_with_valid_csrf_token(authenticated_garmin_client: TestClient):
+    """Test that DELETE /garmin/link accepts valid CSRF token."""
+    # Get CSRF token (from link page)
+    form_response = authenticated_garmin_client.get("/garmin/link")
+    csrf_cookie = form_response.cookies.get("fastapi-csrf-token")
+    assert csrf_cookie is not None
+
+    # Submit DELETE with valid CSRF token
+    response = authenticated_garmin_client.delete(
+        "/garmin/link",
+        cookies={"fastapi-csrf-token": csrf_cookie},
+        headers={"X-CSRF-Token": csrf_cookie},  # Send token in header for API endpoints
+    )
+
+    # Should succeed (200) or fail business logic (500), not CSRF (403)
+    assert response.status_code in (200, 500)
+    assert response.status_code != 403

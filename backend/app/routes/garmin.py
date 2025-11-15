@@ -153,9 +153,14 @@ async def sync_garmin_data(
 
 @router.delete("/link")
 async def unlink_garmin_account(
+    request: Request,
+    csrf_protect: CsrfProtect = Depends(),
     current_user: UserResponse = Depends(get_current_user),
 ):
     """Unlink Garmin account by deleting tokens and cache."""
+    # Validate CSRF token FIRST
+    await csrf_protect.validate_csrf(request)
+
     service = GarminService(current_user.user_id)
 
     try:
