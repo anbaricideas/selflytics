@@ -102,11 +102,21 @@ count_preview_services() {
     echo "$count"
 }
 
-# Function to get all remote branch names (without origin/ prefix)
+# Function to get all remote branch names
 get_remote_branches() {
-    # Try to fetch remote branches - this requires git and network access
+    # Try GitHub CLI first (more reliable in CI, handles auth automatically)
+    if command -v gh >/dev/null 2>&1; then
+        log_info "Fetching branches via GitHub CLI..."
+        if gh api repos/:owner/:repo/branches --paginate --jq '.[].name' 2>/dev/null; then
+            return 0
+        else
+            log_info "GitHub CLI fetch failed, falling back to git ls-remote..."
+        fi
+    fi
+
+    # Fallback to git ls-remote
     if ! command -v git >/dev/null 2>&1; then
-        log_error "git command not found - cannot fetch remote branches"
+        log_error "Neither gh nor git command available - cannot fetch remote branches"
         return 1
     fi
 
