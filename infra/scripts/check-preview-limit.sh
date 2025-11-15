@@ -161,12 +161,13 @@ cleanup_stale_previews() {
     log_error "DEBUG: Found $branch_count remote branches"
 
     # Get all preview services with their feature labels
+    # Use CSV format for reliable parsing (comma-separated)
     local services
     services=$(gcloud run services list \
         --region="$REGION" \
         --project="$PROJECT_ID" \
         --filter="metadata.name:selflytics-webapp-preview" \
-        --format="table[no-heading](metadata.name,metadata.labels.feature)" 2>/dev/null)
+        --format="csv[no-heading](metadata.name,metadata.labels.feature)" 2>/dev/null)
 
     if [ -z "$services" ]; then
         log_error "DEBUG: No preview deployments found by gcloud query"
@@ -179,8 +180,8 @@ cleanup_stale_previews() {
 
     local deleted_count=0
 
-    # Process each service
-    while IFS=$'\t' read -r service_name feature_label; do
+    # Process each service (CSV format: service_name,feature_label)
+    while IFS=, read -r service_name feature_label; do
         # Skip if no feature label (shouldn't happen, but be safe)
         if [ -z "$feature_label" ]; then
             log_info "⚠ Service $service_name has no feature label, skipping"
