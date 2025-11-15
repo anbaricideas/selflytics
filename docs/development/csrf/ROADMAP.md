@@ -83,10 +83,10 @@ Start from: wherever marked as ⏳ NEXT
 | Phase | Description | Status | Branch | Estimated | Actual |
 |-------|-------------|--------|--------|-----------|--------|
 | [1](./PHASE_1_plan.md) | CSRF Infrastructure & Auth Routes | ✅ DONE | `feat/csrf-1` | 2h | ~5h |
-| [2](./PHASE_2_plan.md) | Garmin Routes CSRF Protection | ⏳ NEXT | `feat/csrf-phase-2` | 1.5h | - |
-| [3](./PHASE_3_plan.md) | E2E Tests & Security Validation | 📅 PLANNED | `feat/csrf-phase-3` | 1.5h | - |
+| [2](./PHASE_2_plan.md) | Garmin Routes CSRF Protection | ✅ DONE | `feat/csrf-phase-2` | 1.5h | ~4h |
+| [3](./PHASE_3_plan.md) | E2E Tests & Security Validation | ✅ DONE | `feat/csrf-phase-3` | 1.5h | ~4h |
 
-**Current Phase**: Phase 2 (Garmin Routes CSRF Protection)
+**Current Phase**: All phases complete - Ready for PR to main
 
 **Total Estimated Time**: 5 hours across 3 phases
 
@@ -406,6 +406,8 @@ git log --oneline feat/csrf..HEAD --format="%ad" --date=format:"%Y-%m-%d %H:00" 
 | 2025-11-15 | Specification finalized | CSRF_SPECIFICATION.md v1.0 |
 | 2025-11-15 | Branch created | feat/csrf (from main) |
 | 2025-11-15 | Phase 1 completed | CSRF Infrastructure & Auth Routes (~5 hours, 8 commits, 341 tests passing) |
+| 2025-11-15 | Phase 2 completed | Garmin Routes CSRF Protection (~4 hours) |
+| 2025-11-15 | Phase 3 completed | E2E Tests & Security Validation (~4 hours, 5 E2E tests, manual runsheet) |
 
 ---
 

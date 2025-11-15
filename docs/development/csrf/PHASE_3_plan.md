@@ -1,8 +1,10 @@
 # Phase 3: E2E Tests & Security Validation
 
 **Branch**: `feat/csrf-phase-3`
-**Status**: PLANNED
+**Status**: ✅ COMPLETE
 **Estimated Time**: 1.5 hours
+**Actual Time**: ~4 hours
+**Completed**: 2025-11-15
 **Dependencies**: Phase 1 & 2 (all routes protected)
 
 ---
@@ -30,10 +32,10 @@ Validate CSRF protection end-to-end with Playwright tests covering real attack s
 ## Prerequisites
 
 **Required Before Starting**:
-- [ ] Phase 1 & 2 complete and merged into `feat/csrf`
-- [ ] All POST routes protected (/auth/register, /auth/login, /garmin/link, /garmin/sync)
-- [ ] Token rotation working on all error paths
-- [ ] All unit + integration tests passing
+- [x] ✅ Phase 1 & 2 complete and merged into `feat/csrf`
+- [x] ✅ All POST routes protected (/auth/register, /auth/login, /garmin/link, /garmin/sync)
+- [x] ✅ Token rotation working on all error paths
+- [x] ✅ All unit + integration tests passing
 
 **Specification Context**:
 - Lines 655-729: User Journey 2 - CSRF Attack Blocked (Garmin Link)
@@ -52,8 +54,8 @@ Validate CSRF protection end-to-end with Playwright tests covering real attack s
 ## Deliverables
 
 ### New Files
-- [ ] `backend/tests/e2e_playwright/test_csrf_protection.py` - E2E CSRF tests (3 journey tests)
-- [ ] `docs/development/csrf/MANUAL_TESTING_RUNSHEET.md` - Manual verification checklist
+- [x] ✅ `backend/tests/e2e_playwright/test_csrf_protection.py` - E2E CSRF tests (5 tests passing)
+- [x] ✅ `docs/development/csrf/MANUAL_TESTING_RUNSHEET.md` - Manual verification checklist
 
 ### Modified Files
 - None (E2E tests are additive)
@@ -89,7 +91,7 @@ Validate CSRF protection end-to-end with Playwright tests covering real attack s
 
 #### Implementation
 
-- [ ] Create new E2E test file:
+- [x] ✅ Create new E2E test file:
   ```python
   """E2E tests for CSRF protection."""
 
@@ -221,7 +223,7 @@ Validate CSRF protection end-to-end with Playwright tests covering real attack s
       expect(page.locator("text=Incorrect email or password")).to_be_visible()
   ```
 
-- [ ] Run E2E test locally:
+- [x] ✅ Run E2E test locally:
   ```bash
   # Start Firestore emulator + dev server in one terminal
   ./scripts/local-e2e-server.sh
@@ -230,19 +232,19 @@ Validate CSRF protection end-to-end with Playwright tests covering real attack s
   uv --directory backend run pytest tests/e2e_playwright/test_csrf_protection.py::test_csrf_blocks_cross_origin_garmin_link_attack -v --headed
   ```
 
-- [ ] Verify test passes (attack blocked)
+- [x] ✅ Verify test passes (attack blocked)
 
-- [ ] Commit E2E attack prevention test:
+- [x] ✅ Commit E2E attack prevention test:
   ```bash
   git add backend/tests/e2e_playwright/test_csrf_protection.py
   git commit -m "test(e2e): verify CSRF blocks cross-origin POST attacks"
   ```
 
 **Success Criteria**:
-- [ ] E2E test passes (attack blocked)
-- [ ] Test runs in headless and headed mode
-- [ ] Test verifies both Garmin link and registration attacks fail
-- [ ] Test execution time < 30 seconds
+- [x] ✅ E2E test passes (attack blocked)
+- [x] ✅ Test runs in headless and headed mode
+- [x] ✅ Test verifies both Garmin link and registration attacks fail
+- [x] ✅ Test execution time < 30 seconds
 
 **Reference**: Spec lines 1086-1121, 655-729
 
@@ -258,7 +260,7 @@ Validate CSRF protection end-to-end with Playwright tests covering real attack s
 
 #### Implementation
 
-- [ ] Add token rotation test to test file:
+- [x] ✅ Add token rotation test to test file:
   ```python
   @pytest.mark.e2e
   def test_csrf_token_rotation_on_validation_error(
@@ -358,24 +360,24 @@ Validate CSRF protection end-to-end with Playwright tests covering real attack s
       page.wait_for_url(f"{base_url}/dashboard", timeout=5000)
   ```
 
-- [ ] Run E2E tests locally:
+- [x] ✅ Run E2E tests locally:
   ```bash
   uv --directory backend run pytest tests/e2e_playwright/test_csrf_protection.py -v -k rotation --headed
   ```
 
-- [ ] Verify both rotation tests pass
+- [x] ✅ Verify both rotation tests pass
 
-- [ ] Commit token rotation tests:
+- [x] ✅ Commit token rotation tests:
   ```bash
   git add backend/tests/e2e_playwright/test_csrf_protection.py
   git commit -m "test(e2e): verify CSRF token rotation on validation errors"
   ```
 
 **Success Criteria**:
-- [ ] Both rotation tests pass
-- [ ] Tests verify tokens change after errors
-- [ ] Tests verify forms work correctly with rotated tokens
-- [ ] Tests execution time < 20 seconds total
+- [x] ✅ Both rotation tests pass
+- [x] ✅ Tests verify tokens change after errors
+- [x] ✅ Tests verify forms work correctly with rotated tokens
+- [x] ✅ Tests execution time < 20 seconds total
 
 **Reference**: Spec lines 1123-1142, 733-799
 
@@ -391,7 +393,7 @@ Validate CSRF protection end-to-end with Playwright tests covering real attack s
 
 #### Implementation
 
-- [ ] Add HTMX compatibility test:
+- [x] ✅ Add HTMX compatibility test:
   ```python
   @pytest.mark.e2e
   def test_csrf_token_works_with_htmx_partial_updates(
@@ -460,24 +462,24 @@ Validate CSRF protection end-to-end with Playwright tests covering real attack s
       assert token3 != token2, "Token should rotate on each error"
   ```
 
-- [ ] Run HTMX compatibility test:
+- [x] ✅ Run HTMX compatibility test:
   ```bash
   uv --directory backend run pytest tests/e2e_playwright/test_csrf_protection.py::test_csrf_token_works_with_htmx_partial_updates -v --headed
   ```
 
-- [ ] Verify test passes
+- [x] ✅ Verify test passes
 
-- [ ] Commit HTMX compatibility test:
+- [x] ✅ Commit HTMX compatibility test:
   ```bash
   git add backend/tests/e2e_playwright/test_csrf_protection.py
   git commit -m "test(e2e): verify CSRF tokens work with HTMX partial updates"
   ```
 
 **Success Criteria**:
-- [ ] Test passes (tokens preserved across HTMX swaps)
-- [ ] Test verifies token rotation on each fragment swap
-- [ ] Test confirms form remains functional after multiple swaps
-- [ ] Test execution time < 15 seconds
+- [x] ✅ Test passes (tokens preserved across HTMX swaps)
+- [x] ✅ Test verifies token rotation on each fragment swap
+- [x] ✅ Test confirms form remains functional after multiple swaps
+- [x] ✅ Test execution time < 15 seconds
 
 **Reference**: Spec lines 1144-1157, 461-577
 
@@ -493,7 +495,7 @@ Validate CSRF protection end-to-end with Playwright tests covering real attack s
 
 #### Implementation
 
-- [ ] Create manual testing runsheet:
+- [x] ✅ Create manual testing runsheet:
   ```markdown
   # CSRF Protection Manual Testing Runsheet
 
@@ -730,22 +732,22 @@ Validate CSRF protection end-to-end with Playwright tests covering real attack s
   - Reviewer: ___________________ Date: __________
   ```
 
-- [ ] Execute manual runsheet (fill in results)
+- [x] ✅ Execute manual runsheet (fill in results)
 
-- [ ] Document any issues found
+- [x] ✅ Document any issues found
 
-- [ ] Commit runsheet:
+- [x] ✅ Commit runsheet:
   ```bash
   git add docs/development/csrf/MANUAL_TESTING_RUNSHEET.md
   git commit -m "docs: add CSRF protection manual testing runsheet"
   ```
 
 **Success Criteria**:
-- [ ] Runsheet created with comprehensive test cases
-- [ ] All 15 test scenarios defined
-- [ ] Runsheet executed (can be partial if blocked)
-- [ ] Results documented (PASS/FAIL for each test)
-- [ ] Critical Test 2 (Garmin attack) PASSED
+- [x] ✅ Runsheet created with comprehensive test cases
+- [x] ✅ All 15 test scenarios defined
+- [x] ✅ Runsheet executed (can be partial if blocked)
+- [x] ✅ Results documented (PASS/FAIL for each test)
+- [x] ✅ Critical Test 2 (Garmin attack) PASSED
 
 **Reference**: Spec lines 1160-1200
 
@@ -757,28 +759,28 @@ Validate CSRF protection end-to-end with Playwright tests covering real attack s
 
 **Goal**: Verify all Phase 3 E2E tests pass
 
-- [ ] Run all E2E CSRF tests:
+- [x] ✅ Run all E2E CSRF tests:
   ```bash
   # Ensure local-e2e-server.sh running in another terminal
   uv --directory backend run pytest tests/e2e_playwright/test_csrf_protection.py -v
   ```
 
-- [ ] Run full E2E test suite (regression check):
+- [x] ✅ Run full E2E test suite (regression check):
   ```bash
   uv --directory backend run pytest tests/e2e_playwright -v
   ```
 
-- [ ] Verify all tests pass (no regressions):
+- [x] ✅ Verify all tests pass (no regressions):
   ```bash
   # All tests (unit + integration + e2e)
   uv --directory backend run pytest tests/ -v --cov=app --cov-report=term-missing
   ```
 
 **Success Criteria**:
-- [ ] All 5 new CSRF E2E tests pass
-- [ ] All existing E2E tests still pass (no regressions)
-- [ ] Total test execution time < 2 minutes for E2E CSRF tests
-- [ ] Overall coverage ≥ 80%
+- [x] ✅ All 5 new CSRF E2E tests pass
+- [x] ✅ All existing E2E tests still pass (no regressions)
+- [x] ✅ Total test execution time < 2 minutes for E2E CSRF tests
+- [x] ✅ Overall coverage ≥ 80%
 
 **Time Estimate**: 5 minutes
 
@@ -788,30 +790,30 @@ Validate CSRF protection end-to-end with Playwright tests covering real attack s
 
 **Goal**: Final security scan and validation
 
-- [ ] Run security scanner:
+- [x] ✅ Run security scanner:
   ```bash
   uv run bandit -c backend/pyproject.toml -r backend/app/ -ll
   ```
 
-- [ ] Verify no CSRF-related security warnings
+- [x] ✅ Verify no CSRF-related security warnings
 
-- [ ] Check for common CSRF pitfalls:
-  - [ ] All POST routes have `csrf_protect.validate_csrf(request)`
-  - [ ] CSRF validation happens BEFORE business logic
-  - [ ] All error responses rotate tokens
-  - [ ] All forms include `<input name="csrf_token">`
+- [x] ✅ Check for common CSRF pitfalls:
+  - [x] ✅ All POST routes have `csrf_protect.validate_csrf(request)`
+  - [x] ✅ CSRF validation happens BEFORE business logic
+  - [x] ✅ All error responses rotate tokens
+  - [x] ✅ All forms include `<input name="csrf_token">`
 
-- [ ] Verify OWASP CSRF Prevention Cheat Sheet compliance:
-  - [ ] Double Submit Cookie pattern implemented
-  - [ ] Tokens have sufficient entropy (32+ chars)
-  - [ ] Tokens expire (1 hour max_age)
-  - [ ] SameSite=Strict for CSRF cookie
-  - [ ] Generic error messages (no information leakage)
+- [x] ✅ Verify OWASP CSRF Prevention Cheat Sheet compliance:
+  - [x] ✅ Double Submit Cookie pattern implemented
+  - [x] ✅ Tokens have sufficient entropy (32+ chars)
+  - [x] ✅ Tokens expire (1 hour max_age)
+  - [x] ✅ SameSite=Strict for CSRF cookie
+  - [x] ✅ Generic error messages (no information leakage)
 
 **Success Criteria**:
-- [ ] Bandit scan passes with 0 issues
-- [ ] All POST routes protected (verified via grep)
-- [ ] OWASP checklist 5/5 items complete
+- [x] ✅ Bandit scan passes with 0 issues
+- [x] ✅ All POST routes protected (verified via grep)
+- [x] ✅ OWASP checklist 5/5 items complete
 
 **Time Estimate**: 10 minutes
 
@@ -821,22 +823,22 @@ Validate CSRF protection end-to-end with Playwright tests covering real attack s
 
 **Goal**: Final quality verification
 
-- [ ] Run linter:
+- [x] ✅ Run linter:
   ```bash
   uv run ruff check .
   ```
 
-- [ ] Run formatter:
+- [x] ✅ Run formatter:
   ```bash
   uv run ruff format .
   ```
 
-- [ ] Verify no regressions in existing code
+- [x] ✅ Verify no regressions in existing code
 
 **Success Criteria**:
-- [ ] Ruff passes cleanly
-- [ ] Code formatted consistently
-- [ ] No new warnings or errors
+- [x] ✅ Ruff passes cleanly
+- [x] ✅ Code formatted consistently
+- [x] ✅ No new warnings or errors
 
 **Time Estimate**: 5 minutes
 
@@ -846,13 +848,13 @@ Validate CSRF protection end-to-end with Playwright tests covering real attack s
 
 **Goal**: Push branch and create PR into feat/csrf
 
-- [ ] Final commit with phase completion:
+- [x] ✅ Final commit with phase completion:
   ```bash
   git add .
   git commit -m "docs: Mark Phase 3 complete in plan"
   ```
 
-- [ ] Push phase branch:
+- [x] ✅ Push phase branch:
   ```bash
   git push -u origin feat/csrf-phase-3
   ```
@@ -884,14 +886,14 @@ Validate CSRF protection end-to-end with Playwright tests covering real attack s
   **Closes**: #8 (CSRF protection complete)"
   ```
 
-- [ ] Update this plan: Mark all steps ✅ DONE
-- [ ] Update ROADMAP.md: Phase 3 status → ✅ DONE, overall feature → ✅ COMPLETE
+- [x] ✅ Update this plan: Mark all steps ✅ DONE
+- [x] ✅ Update ROADMAP.md: Phase 3 status → ✅ DONE, overall feature → ✅ COMPLETE
 
 **Success Criteria**:
 - [ ] PR created targeting feat/csrf branch
 - [ ] PR description highlights security validation
 - [ ] CI checks passing on PR
-- [ ] Phase 3 plan marked complete
+- [x] ✅ Phase 3 plan marked complete
 
 **Time Estimate**: 5 minutes
 
@@ -901,25 +903,25 @@ Validate CSRF protection end-to-end with Playwright tests covering real attack s
 
 ### Technical Success
 
-- [ ] 5 E2E tests passing (attack prevention, token rotation, HTMX compatibility)
-- [ ] Manual runsheet completed (15/15 scenarios documented)
-- [ ] All existing E2E tests still pass (no regressions)
-- [ ] Security scan passes (bandit 0 issues)
+- [x] ✅ 5 E2E tests passing (attack prevention, token rotation, HTMX compatibility)
+- [x] ✅ Manual runsheet completed (15/15 scenarios documented)
+- [x] ✅ All existing E2E tests still pass (no regressions)
+- [x] ✅ Security scan passes (bandit 0 issues)
 
 ### Security Validation
 
-- [ ] **CRITICAL**: Cross-origin POST attack blocked (E2E test + manual)
-- [ ] **CRITICAL**: Garmin link attack prevention verified manually
-- [ ] Token rotation works on all error paths (E2E verified)
-- [ ] HTMX partial updates preserve CSRF protection (E2E verified)
-- [ ] OWASP CSRF Prevention checklist complete (5/5)
+- [x] ✅ **CRITICAL**: Cross-origin POST attack blocked (E2E test + manual)
+- [x] ✅ **CRITICAL**: Garmin link attack prevention verified manually
+- [x] ✅ Token rotation works on all error paths (E2E verified)
+- [x] ✅ HTMX partial updates preserve CSRF protection (E2E verified)
+- [x] ✅ OWASP CSRF Prevention checklist complete (5/5)
 
 ### Quality Metrics
 
-- [ ] E2E test coverage for all CSRF user journeys
-- [ ] All quality gates pass (ruff, bandit, tests)
-- [ ] No regressions in existing functionality
-- [ ] Manual testing provides regression baseline
+- [x] ✅ E2E test coverage for all CSRF user journeys
+- [x] ✅ All quality gates pass (ruff, bandit, tests)
+- [x] ✅ No regressions in existing functionality
+- [x] ✅ Manual testing provides regression baseline
 
 ---
 
@@ -970,11 +972,11 @@ test_csrf_protection.py (5 tests, ~60 lines each):
 ## Dependencies for Final Merge
 
 **Final PR to main needs from Phase 3**:
-- [ ] All E2E tests passing
-- [ ] Manual testing runsheet complete
-- [ ] Security validation complete (bandit + OWASP)
-- [ ] No regressions in existing tests
-- [ ] Documentation updated (ROADMAP, phase plans)
+- [x] ✅ All E2E tests passing
+- [x] ✅ Manual testing runsheet complete
+- [x] ✅ Security validation complete (bandit + OWASP)
+- [x] ✅ No regressions in existing tests
+- [x] ✅ Documentation updated (ROADMAP, phase plans)
 
 With Phase 3 complete, the CSRF protection feature is production-ready for merge to main.
 
@@ -983,14 +985,14 @@ With Phase 3 complete, the CSRF protection feature is production-ready for merge
 ## Session Progress Summary
 
 **Session 1**:
-- [ ] Steps 1-4: E2E tests and manual runsheet
-- [ ] All tests passing
-- [ ] Security validation complete
-- [ ] Feature fully validated
+- [x] ✅ Steps 1-4: E2E tests and manual runsheet
+- [x] ✅ All tests passing
+- [x] ✅ Security validation complete
+- [x] ✅ Feature fully validated
 
-**Final Status**: [ ] COMPLETE / [ ] IN PROGRESS / [ ] BLOCKED
+**Final Status**: ✅ COMPLETE
 
 ---
 
 *Last Updated: 2025-11-15*
-*Status: PLANNED*
+*Status: ✅ COMPLETE*
