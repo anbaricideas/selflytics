@@ -207,6 +207,16 @@ def mock_garmin_service():
 
 
 @pytest.fixture
+def mock_garmin_service_sync_failure():
+    """Provide mocked GarminService with sync_recent_data that raises exception."""
+    mock = Mock(spec=GarminService)
+    mock.link_account = AsyncMock(return_value=True)
+    # Force sync to fail with exception
+    mock.sync_recent_data = AsyncMock(side_effect=Exception("Sync failed"))
+    return mock
+
+
+@pytest.fixture
 def authenticated_garmin_client(test_garmin_user, mock_garmin_service, monkeypatch):
     """Provide a TestClient with authenticated user for Garmin tests.
 
@@ -346,3 +356,50 @@ def test_garmin_sync_with_valid_csrf_token(authenticated_garmin_client: TestClie
     # Should fail business logic (500), not CSRF (403)
     assert response.status_code in (200, 400, 500)
     assert response.status_code != 403
+
+
+def test_csrf_token_rotation_on_garmin_sync_error(
+    test_garmin_user, mock_garmin_service_sync_failure, monkeypatch
+):
+    """Test that CSRF token is rotated when Garmin sync fails."""
+
+    # Create authenticated client with sync failure mock
+    async def mock_get_current_user():
+        return test_garmin_user
+
+    app.dependency_overrides[get_current_user] = mock_get_current_user
+
+    def mock_garmin_service_init(user_id: str):
+        mock_garmin_service_sync_failure.user_id = user_id
+        return mock_garmin_service_sync_failure
+
+    monkeypatch.setattr("app.routes.garmin.GarminService", mock_garmin_service_init)
+
+    client = TestClient(app, raise_server_exceptions=False)
+
+    # Get initial CSRF token
+    form_response = client.get("/garmin/link")
+    token1 = form_response.cookies.get("fastapi-csrf-token")
+    soup1 = BeautifulSoup(form_response.text, "html.parser")
+    csrf_token1 = soup1.find("input", {"name": "fastapi-csrf-token"})["value"]
+
+    # Submit sync request that will fail
+    response = client.post(
+        "/garmin/sync",
+        data={
+            "fastapi-csrf-token": csrf_token1,
+        },
+        cookies={"fastapi-csrf-token": token1},
+        headers={"HX-Request": "true"},
+    )
+
+    # Should return 500 error
+    assert response.status_code == 500
+
+    # Token should be rotated
+    token2 = response.cookies.get("fastapi-csrf-token")
+    assert token2 is not None
+    assert token2 != token1
+
+    # Clean up override
+    app.dependency_overrides.clear()

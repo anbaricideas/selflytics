@@ -140,12 +140,15 @@ async def sync_garmin_data(
         logger.error(
             "Sync failed for user %s: %s", current_user.user_id, redact_for_logging(str(e))
         )
-        # Return error HTML fragment
-        return templates.TemplateResponse(
+        # Generate NEW token for potential retry
+        _csrf_token, signed_token = csrf_protect.generate_csrf_tokens()
+        response = templates.TemplateResponse(
             request=request,
             name="fragments/garmin_sync_error.html",
             status_code=500,
         )
+        csrf_protect.set_csrf_cookie(signed_token, response)
+        return response
 
 
 @router.delete("/link")
