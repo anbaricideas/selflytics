@@ -308,3 +308,41 @@ def test_csrf_token_rotation_on_garmin_link_error(authenticated_garmin_client: T
     assert csrf_input2 is not None
     csrf_token2 = csrf_input2["value"]
     assert csrf_token2 != csrf_token1
+
+
+def test_garmin_sync_requires_csrf_token(authenticated_garmin_client: TestClient):
+    """Test that /garmin/sync rejects requests without CSRF token."""
+    response = authenticated_garmin_client.post(
+        "/garmin/sync",
+        data={
+            # csrf_token intentionally omitted
+        },
+    )
+
+    assert response.status_code == 403
+    assert "CSRF" in response.text or "Security validation" in response.text
+
+
+def test_garmin_sync_with_valid_csrf_token(authenticated_garmin_client: TestClient):
+    """Test that /garmin/sync accepts valid CSRF token.
+
+    Note: This test may fail with 500 (no linked account) but should not fail with 403 (CSRF).
+    """
+    # Get a CSRF token (from link page)
+    form_response = authenticated_garmin_client.get("/garmin/link")
+    csrf_cookie = form_response.cookies.get("fastapi-csrf-token")
+    soup = BeautifulSoup(form_response.text, "html.parser")
+    csrf_token = soup.find("input", {"name": "fastapi-csrf-token"})["value"]
+
+    # Submit sync with valid CSRF token
+    response = authenticated_garmin_client.post(
+        "/garmin/sync",
+        data={
+            "fastapi-csrf-token": csrf_token,
+        },
+        cookies={"fastapi-csrf-token": csrf_cookie},
+    )
+
+    # Should fail business logic (500), not CSRF (403)
+    assert response.status_code in (200, 400, 500)
+    assert response.status_code != 403

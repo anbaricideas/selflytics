@@ -115,6 +115,7 @@ async def link_garmin_account(
 @router.post("/sync", response_class=HTMLResponse)
 async def sync_garmin_data(
     request: Request,
+    csrf_protect: CsrfProtect = Depends(),
     current_user: UserResponse = Depends(get_current_user),
     templates=Depends(get_templates),
 ):
@@ -122,6 +123,9 @@ async def sync_garmin_data(
 
     Returns HTML fragment for HTMX swap (outerHTML).
     """
+    # Validate CSRF token FIRST
+    await csrf_protect.validate_csrf(request)
+
     service = GarminService(current_user.user_id)
 
     try:

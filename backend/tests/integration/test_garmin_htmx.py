@@ -8,7 +8,22 @@ Tests verify that Garmin endpoints correctly:
 
 from unittest.mock import AsyncMock, patch
 
+import pytest
 from fastapi import status
+
+
+@pytest.fixture(autouse=True)
+def bypass_csrf_for_garmin_tests(monkeypatch):
+    """Bypass CSRF validation for these Garmin HTMX tests.
+
+    CSRF-specific tests are in test_csrf_routes.py.
+    These tests focus on HTMX behavior, not CSRF protection.
+    """
+
+    async def mock_validate_csrf(self, request):
+        pass  # Bypass CSRF validation
+
+    monkeypatch.setattr("fastapi_csrf_protect.CsrfProtect.validate_csrf", mock_validate_csrf)
 
 
 def test_link_garmin_success_returns_html_fragment(client, test_user_token):

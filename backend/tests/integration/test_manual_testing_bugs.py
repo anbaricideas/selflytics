@@ -5,7 +5,22 @@ These tests capture bugs discovered during Phase 4 manual testing runsheet execu
 
 from unittest.mock import AsyncMock, patch
 
+import pytest
 from fastapi.testclient import TestClient
+
+
+@pytest.fixture(autouse=True)
+def bypass_csrf_for_manual_testing_bug_tests(monkeypatch):
+    """Bypass CSRF validation for these manual testing bug tests.
+
+    CSRF-specific tests are in test_csrf_routes.py.
+    These tests focus on specific bug fixes, not CSRF protection.
+    """
+
+    async def mock_validate_csrf(self, request):
+        pass  # Bypass CSRF validation
+
+    monkeypatch.setattr("fastapi_csrf_protect.CsrfProtect.validate_csrf", mock_validate_csrf)
 
 
 # Test data constants
