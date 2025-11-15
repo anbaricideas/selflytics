@@ -4,6 +4,7 @@ import logging
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Request, status
 from fastapi.responses import HTMLResponse
+from fastapi_csrf_protect import CsrfProtect
 from telemetry.logging_utils import redact_for_logging
 
 from app.auth.dependencies import get_current_user
@@ -21,19 +22,27 @@ router = APIRouter(prefix="/garmin", tags=["garmin"])
 async def garmin_link_page(
     request: Request,
     current_user: UserResponse = Depends(get_current_user),
+    csrf_protect: CsrfProtect = Depends(),
     templates=Depends(get_templates),
 ):
-    """Display Garmin account linking form."""
-    return templates.TemplateResponse(
+    """Display Garmin account linking form with CSRF token."""
+    csrf_token, signed_token = csrf_protect.generate_csrf_tokens()
+    response = templates.TemplateResponse(
         request=request,
         name="settings_garmin.html",
-        context={"user": current_user},
+        context={
+            "user": current_user,
+            "csrf_token": csrf_token,
+        },
     )
+    csrf_protect.set_csrf_cookie(signed_token, response)
+    return response
 
 
 @router.post("/link", response_class=HTMLResponse)
 async def link_garmin_account(
     request: Request,
+    csrf_protect: CsrfProtect = Depends(),
     username: str = Form(...),
     password: str = Form(...),
     current_user: UserResponse = Depends(get_current_user),
@@ -44,6 +53,9 @@ async def link_garmin_account(
     Returns HTML fragment for HTMX swap (outerHTML).
     Accepts form data from HTMX form submission.
     """
+    # Validate CSRF token FIRST
+    await csrf_protect.validate_csrf(request)
+
     try:
         service = GarminService(current_user.user_id)
 
@@ -53,15 +65,19 @@ async def link_garmin_account(
         )
 
         if not success:
-            # Return form fragment only (not full page) to avoid nesting
-            return templates.TemplateResponse(
+            # Generate NEW token for form re-render
+            csrf_token, signed_token = csrf_protect.generate_csrf_tokens()
+            response = templates.TemplateResponse(
                 request=request,
                 name="fragments/garmin_link_form.html",
                 context={
+                    "csrf_token": csrf_token,
                     "error_message": "Please check your credentials and try again.",
                 },
                 status_code=400,
             )
+            csrf_protect.set_csrf_cookie(signed_token, response)
+            return response
 
         # Return success HTML fragment for HTMX swap
         # This replaces the form with the "linked" status view
@@ -80,16 +96,20 @@ async def link_garmin_account(
             redact_for_logging(str(e)),
         )
 
-        # Return form fragment only (not full page) with generic error message
-        return templates.TemplateResponse(
+        # Generate NEW token for form re-render
+        csrf_token, signed_token = csrf_protect.generate_csrf_tokens()
+        response = templates.TemplateResponse(
             request=request,
             name="fragments/garmin_link_form.html",
             context={
+                "csrf_token": csrf_token,
                 "error_title": "Something went wrong",
                 "error_message": "An unexpected error occurred. Please try again later.",
             },
             status_code=500,
         )
+        csrf_protect.set_csrf_cookie(signed_token, response)
+        return response
 
 
 @router.post("/sync", response_class=HTMLResponse)
