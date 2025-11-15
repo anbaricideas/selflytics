@@ -1,6 +1,6 @@
 """Unit tests for GarminService.get_user_profile method."""
 
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
@@ -11,7 +11,15 @@ class TestGarminServiceUserProfile:
     """Test GarminService.get_user_profile method."""
 
     @pytest.fixture
-    def garmin_service(self):
+    def mock_firestore(self):
+        """Mock Firestore client to avoid GCP credentials requirement."""
+        with patch("google.cloud.firestore.Client") as mock_client:
+            mock_db = MagicMock()
+            mock_client.return_value = mock_db
+            yield mock_db
+
+    @pytest.fixture
+    def garmin_service(self, mock_firestore):
         """Create GarminService instance for testing."""
         service = GarminService(user_id="test_user_123")
         # Mock load_tokens to avoid actual Firestore calls
