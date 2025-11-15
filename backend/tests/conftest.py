@@ -19,6 +19,27 @@ from app.services.user_service import UserService
 os.environ.setdefault("OPENAI_API_KEY", "sk-test-key-for-testing-only")
 
 
+@pytest.fixture(autouse=True)
+def reset_app_state():
+    """Ensure dependency_overrides is clean before and after each test.
+
+    This fixture runs automatically for every test to prevent state pollution
+    from dependency overrides leaking between tests. It clears overrides both
+    before (defensive - in case previous test's fixture teardown didn't complete)
+    and after (primary cleanup) each test runs.
+
+    This solves the test isolation issue where running 'pytest tests/unit tests/integration'
+    together caused 21 tests to fail, even though all tests pass when run separately.
+    """
+    # Clear before test (defensive - prevents pollution from previous tests)
+    app.dependency_overrides.clear()
+
+    yield
+
+    # Clear after test (primary cleanup)
+    app.dependency_overrides.clear()
+
+
 @pytest.fixture
 def test_user():
     """Test user data shared across all tests."""
@@ -63,18 +84,26 @@ def mock_user_service(test_user):
 
 @pytest.fixture
 def client(mock_user_service, test_user):
-    """Provide TestClient with mocked UserService and auth."""
-    # Mock JWT verification
-    with patch("app.auth.dependencies.verify_token") as mock_verify:
-        mock_verify.return_value = TokenData(user_id=test_user["user_id"], email=test_user["email"])
+    """Provide TestClient with mocked UserService and auth.
 
-        # Override UserService dependency
-        app.dependency_overrides[get_user_service] = lambda: mock_user_service
+    This fixture mocks JWT verification and injects mock UserService.
+    Uses explicit patch start/stop instead of context manager to ensure
+    the mock is properly cleaned up during fixture teardown.
+    """
+    # Mock JWT verification using patch with explicit start/stop
+    patcher = patch("app.auth.dependencies.verify_token")
+    mock_verify = patcher.start()
+    mock_verify.return_value = TokenData(user_id=test_user["user_id"], email=test_user["email"])
 
-        test_client = TestClient(app, raise_server_exceptions=False)
-        yield test_client
+    # Override UserService dependency
+    app.dependency_overrides[get_user_service] = lambda: mock_user_service
 
-        app.dependency_overrides.clear()
+    test_client = TestClient(app, raise_server_exceptions=False)
+    yield test_client
+
+    # Cleanup: stop patch first, then clear overrides
+    patcher.stop()
+    app.dependency_overrides.clear()
 
 
 @pytest.fixture
