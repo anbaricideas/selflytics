@@ -472,8 +472,8 @@ def test_logout_user():
 
 
 @pytest.fixture
-def authenticated_client(test_logout_user):
-    """Provide TestClient with authenticated session (logged in user).
+def authenticated_logout_client(test_logout_user):
+    """Provide TestClient with authenticated session for logout testing.
 
     Uses dependency override to mock authentication.
     Cleanup handled by autouse reset_app_state fixture.
@@ -488,9 +488,9 @@ def authenticated_client(test_logout_user):
     return TestClient(app, raise_server_exceptions=False)
 
 
-def test_logout_requires_csrf_token(authenticated_client: TestClient):
+def test_logout_requires_csrf_token(authenticated_logout_client: TestClient):
     """Test that POST /logout rejects requests without CSRF token."""
-    response = authenticated_client.post(
+    response = authenticated_logout_client.post(
         "/logout",
         # csrf_token intentionally omitted
     )
@@ -499,10 +499,10 @@ def test_logout_requires_csrf_token(authenticated_client: TestClient):
     assert "CSRF" in response.text or "Security validation" in response.text
 
 
-def test_logout_with_valid_csrf_token(authenticated_client: TestClient):
+def test_logout_with_valid_csrf_token(authenticated_logout_client: TestClient):
     """Test that POST /logout succeeds with valid CSRF token."""
     # Get settings page to obtain CSRF token
-    settings_response = authenticated_client.get("/settings")
+    settings_response = authenticated_logout_client.get("/settings")
     assert settings_response.status_code == 200
 
     # Extract CSRF token from cookie
@@ -516,7 +516,7 @@ def test_logout_with_valid_csrf_token(authenticated_client: TestClient):
     csrf_token = csrf_input["value"]
 
     # Logout with valid CSRF token
-    response = authenticated_client.post(
+    response = authenticated_logout_client.post(
         "/logout",
         data={"fastapi-csrf-token": csrf_token},
         cookies={"fastapi-csrf-token": csrf_cookie},
@@ -536,16 +536,16 @@ def test_logout_with_valid_csrf_token(authenticated_client: TestClient):
     )
 
 
-def test_logout_failed_attempt_preserves_session(authenticated_client: TestClient):
+def test_logout_failed_attempt_preserves_session(authenticated_logout_client: TestClient):
     """Test that failed logout (no CSRF token) preserves user session."""
     # Attempt logout WITHOUT CSRF token (attack scenario)
-    response = authenticated_client.post("/logout")
+    response = authenticated_logout_client.post("/logout")
 
     # Should fail with 403
     assert response.status_code == 403
 
     # Verify user is STILL authenticated by accessing protected page
-    chat_response = authenticated_client.get("/chat/")
+    chat_response = authenticated_logout_client.get("/chat/")
 
     # Should succeed (200), not redirect to login
     assert chat_response.status_code == 200
@@ -555,10 +555,10 @@ def test_logout_failed_attempt_preserves_session(authenticated_client: TestClien
     assert "logout-button" in chat_response.text
 
 
-def test_logout_with_invalid_token(authenticated_client: TestClient):
+def test_logout_with_invalid_token(authenticated_logout_client: TestClient):
     """Test that POST /logout rejects invalid CSRF token."""
     # Get legitimate CSRF token first (to get cookie)
-    settings_response = authenticated_client.get("/settings")
+    settings_response = authenticated_logout_client.get("/settings")
     csrf_cookie = settings_response.cookies.get("fastapi-csrf-token")
     assert csrf_cookie is not None
 
@@ -566,7 +566,7 @@ def test_logout_with_invalid_token(authenticated_client: TestClient):
     tampered_token = "tampered_invalid_token_12345"  # noqa: S105
 
     # Attempt logout with tampered token
-    response = authenticated_client.post(
+    response = authenticated_logout_client.post(
         "/logout",
         data={"fastapi-csrf-token": tampered_token},
         cookies={"fastapi-csrf-token": csrf_cookie},
