@@ -9,9 +9,19 @@
         <div class="max-w-7xl mx-auto px-4 py-6">
             <div class="flex items-center justify-between">
                 <h1 class="text-2xl font-bold text-gray-800">Settings</h1>
-                <a href="/chat/" class="text-sm text-blue-600 hover:text-blue-800" data-testid="link-back-to-chat">
-                    ← Back to Chat
-                </a>
+                <div class="flex items-center gap-4">
+                    <a href="/chat/" class="text-sm text-blue-600 hover:text-blue-800" data-testid="link-back-to-chat">
+                        ← Back to Chat
+                    </a>
+                    <form hx-post="/logout" hx-swap="none" class="inline">
+                        <button type="submit"
+                                class="text-sm text-red-600 hover:text-red-800"
+                                data-testid="button-logout"
+                                aria-label="Logout">
+                            Logout
+                        </button>
+                    </form>
+                </div>
             </div>
         </div>
     </header>
