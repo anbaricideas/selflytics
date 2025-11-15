@@ -55,6 +55,13 @@ set +a
 # NOTE: firebase.json defines this, we just use it here for consistency
 FIRESTORE_PORT=8092
 
+# Kill any existing processes on emulator ports
+echo -e "${YELLOW}Checking for existing processes on emulator ports...${NC}"
+lsof -ti:${FIRESTORE_PORT} 2>/dev/null | xargs kill -9 2>/dev/null || true
+lsof -ti:4400 2>/dev/null | xargs kill -9 2>/dev/null || true  # Firebase hub
+lsof -ti:4500 2>/dev/null | xargs kill -9 2>/dev/null || true  # Firebase logging
+sleep 1
+
 # Start Firestore emulator in background (port configured in firebase.json)
 echo -e "${GREEN}Starting Firestore emulator on port ${FIRESTORE_PORT}...${NC}"
 "$FIREBASE_CMD" emulators:start --only firestore --project test-project &

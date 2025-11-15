@@ -11,6 +11,9 @@ from fastapi import FastAPI, Request, status
 from fastapi.exceptions import HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, RedirectResponse
+from fastapi_csrf_protect.exceptions import CsrfProtectError
+from fastapi_csrf_protect.flexible import CsrfProtect
+from pydantic import BaseModel
 
 from app.auth.jwt import verify_token
 from app.config import get_settings
@@ -18,6 +21,8 @@ from app.dependencies import templates
 from app.middleware.telemetry import TelemetryMiddleware
 from app.routes import auth, chat, dashboard, garmin
 from app.telemetry_config import setup_telemetry, teardown_telemetry
+from app.utils.redact import redact_for_logging
+from app.utils.request_helpers import is_browser_request
 
 
 # Load .env file at module import time (before FastAPI app initialization)
@@ -26,6 +31,40 @@ BACKEND_DIR = Path(__file__).parent.parent
 ENV_FILE = BACKEND_DIR / ".env"
 if ENV_FILE.exists():
     load_dotenv(ENV_FILE)
+
+
+# CSRF Settings
+class CsrfSettings(BaseModel):
+    """CSRF protection settings.
+
+    Uses fastapi_csrf_protect.flexible.CsrfProtect to support both:
+    - HTML forms submitting tokens in request body (POST forms)
+    - API/HTMX requests submitting tokens in X-CSRF-Token header (DELETE, etc.)
+
+    Priority: Header is checked first, then body. This allows DELETE requests
+    (which cannot have a body) to use headers while POST forms use body.
+    """
+
+    secret_key: str
+    token_key: str = "fastapi-csrf-token"  # noqa: S105  # Form field name for token, not a password
+    # NOTE: cookie_name is ignored by library - it hardcodes "fastapi-csrf-token"
+    cookie_samesite: str = "strict"  # Stricter than auth cookie
+    cookie_secure: bool = True  # HTTPS only in production
+    cookie_httponly: bool = False  # Must be readable by JavaScript (for HTMX)
+    cookie_domain: str | None = None
+    header_name: str = "X-CSRF-Token"
+    max_age: int = 3600  # 1 hour
+
+
+# Load CSRF configuration
+@CsrfProtect.load_config  # type: ignore[arg-type]
+def get_csrf_config() -> CsrfSettings:
+    """Load CSRF configuration from settings."""
+    settings = get_settings()
+    return CsrfSettings(
+        secret_key=settings.csrf_secret,
+        cookie_secure=settings.environment not in ("dev", "development"),
+    )
 
 
 logger = logging.getLogger(__name__)
@@ -112,12 +151,7 @@ async def http_exception_handler(request: Request, exc: HTTPException) -> Any:
     - 403/404/500: Show friendly error template
     For API requests (JSON Accept header), return JSON error response.
     """
-    # Check if request is from browser/HTMX (not API)
-    accept_header = request.headers.get("accept", "")
-    hx_request = request.headers.get("HX-Request", "") == "true"
-    is_browser = "text/html" in accept_header or hx_request
-
-    if is_browser:
+    if is_browser_request(request):
         # 401: Redirect to login
         if exc.status_code == status.HTTP_401_UNAUTHORIZED:
             return RedirectResponse(url="/login", status_code=303)
@@ -145,6 +179,47 @@ async def http_exception_handler(request: Request, exc: HTTPException) -> Any:
         status_code=exc.status_code,
         content={"detail": exc.detail},
         headers=exc.headers,
+    )
+
+
+@app.exception_handler(CsrfProtectError)
+async def csrf_protect_exception_handler(
+    request: Request, _exc: CsrfProtectError
+) -> JSONResponse | Any:
+    """Handle CSRF validation failures.
+
+    For browser/HTMX requests, return HTML error fragment or page.
+    For API requests, return JSON error response.
+    """
+    # Log CSRF validation failure for security monitoring
+    logger.warning(
+        "CSRF validation failed: path=%s, method=%s, client=%s",
+        request.url.path,
+        request.method,
+        redact_for_logging(request.client.host if request.client else "unknown"),
+    )
+
+    if is_browser_request(request):
+        # For HTMX requests, return error fragment
+        hx_request = request.headers.get("HX-Request", "") == "true"
+        if hx_request:
+            return templates.TemplateResponse(
+                request=request,
+                name="fragments/csrf_error.html",
+                status_code=403,
+            )
+        # For full page requests, show error page
+        return templates.TemplateResponse(
+            request=request,
+            name="error/403.html",
+            context={"detail": "CSRF validation failed. Please refresh and try again."},
+            status_code=403,
+        )
+
+    # For API requests, return JSON
+    return JSONResponse(
+        status_code=403,
+        content={"detail": "CSRF validation failed"},
     )
 
 
@@ -201,12 +276,7 @@ async def catch_all(request: Request, path: str) -> Any:  # noqa: ARG001
         request: FastAPI request object
         path: Captured path (unused but required by route pattern)
     """
-    # Check if request is from browser/HTMX
-    accept_header = request.headers.get("accept", "")
-    hx_request = request.headers.get("HX-Request", "") == "true"
-    is_browser = "text/html" in accept_header or hx_request
-
-    if is_browser:
+    if is_browser_request(request):
         return templates.TemplateResponse(request=request, name="error/404.html", status_code=404)
 
     # API request - return JSON

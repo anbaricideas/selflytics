@@ -4,6 +4,7 @@ version = "0.1.0"
 description = "AI-powered analysis for quantified self data"
 requires-python = ">=3.12"
 dependencies = [
+    "fastapi-csrf-protect>=1.0.7",
     "garth>=0.5.19",
     "google-cloud-kms>=3.7.0",
     "openai>=2.7.2",
@@ -16,4 +17,5 @@ members = ["spike"]
 [dependency-groups]
 dev = [
     "beautifulsoup4>=4.14.2",
+    "pytest-timeout>=2.4.0",
 ]
