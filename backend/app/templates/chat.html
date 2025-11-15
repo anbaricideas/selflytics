@@ -283,29 +283,28 @@ function chatInterface() {
 </script>
 
 <script>
-// Banner dismissal logic (runs after DOM loads)
+// Banner dismissal logic and logout handler (consolidated DOMContentLoaded listener)
 document.addEventListener('DOMContentLoaded', () => {
+    // Banner dismissal logic
     const banner = document.getElementById('garmin-banner');
-    if (!banner) return; // Banner not present (already linked)
-
-    // Check dismissed state from localStorage
-    const dismissed = localStorage.getItem('garmin-banner-dismissed');
-    if (dismissed === 'true') {
-        banner.style.display = 'none';
-    }
-
-    // Handle dismiss button click
-    const dismissBtn = document.getElementById('dismiss-banner');
-    if (dismissBtn) {
-        dismissBtn.addEventListener('click', () => {
+    if (banner) {
+        // Check dismissed state from localStorage
+        const dismissed = localStorage.getItem('garmin-banner-dismissed');
+        if (dismissed === 'true') {
             banner.style.display = 'none';
-            localStorage.setItem('garmin-banner-dismissed', 'true');
-        });
-    }
-});
+        }
 
-// Logout handler - clears banner state
-document.addEventListener('DOMContentLoaded', () => {
+        // Handle dismiss button click
+        const dismissBtn = document.getElementById('dismiss-banner');
+        if (dismissBtn) {
+            dismissBtn.addEventListener('click', () => {
+                banner.style.display = 'none';
+                localStorage.setItem('garmin-banner-dismissed', 'true');
+            });
+        }
+    }
+
+    // Logout handler - clears banner state
     const logoutForm = document.querySelector('form[action="/logout"]');
     if (logoutForm) {
         logoutForm.addEventListener('submit', () => {

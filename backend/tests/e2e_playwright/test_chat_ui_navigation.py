@@ -6,6 +6,7 @@ Tests the Garmin connection banner dismissal flow and navigation.
 import time
 
 from playwright.async_api import Page, expect
+from playwright.async_api import TimeoutError as PlaywrightTimeout
 
 
 class TestGarminBanner:
@@ -55,7 +56,7 @@ class TestGarminBanner:
         # Let's check for either and navigate to chat if needed
         try:
             await page.wait_for_url(f"{base_url}/chat/", timeout=5000)
-        except Exception:
+        except PlaywrightTimeout:
             # If not at /chat, might be at /dashboard - navigate to chat
             await page.goto(f"{base_url}/chat/")
 
@@ -80,7 +81,7 @@ class TestGarminBanner:
         # Check where we landed and navigate to chat if needed
         try:
             await page.wait_for_url(f"{base_url}/chat/", timeout=5000)
-        except Exception:
+        except PlaywrightTimeout:
             # If not at /chat, navigate there
             await page.goto(f"{base_url}/chat/")
 
