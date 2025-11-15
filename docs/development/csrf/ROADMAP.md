@@ -3,7 +3,7 @@
 **Feature**: Add CSRF protection to all POST forms
 **GitHub Issue**: [#8 - Add CSRF protection to all POST forms](https://github.com/anbaricidias/selflytics/issues/8)
 **Specification**: `/Users/bryn/repos/selflytics-csrf/docs/development/csrf/CSRF_SPECIFICATION.md`
-**Status**: Ready for Implementation
+**Status**: PR Submitted (awaiting review)
 **Started**: 2025-11-15
 **Branch**: `feat/csrf`
 
@@ -408,6 +408,7 @@ git log --oneline feat/csrf..HEAD --format="%ad" --date=format:"%Y-%m-%d %H:00" 
 | 2025-11-15 | Phase 1 completed | CSRF Infrastructure & Auth Routes (~5 hours, 8 commits, 341 tests passing) |
 | 2025-11-15 | Phase 2 completed | Garmin Routes CSRF Protection (~4 hours) |
 | 2025-11-15 | Phase 3 completed | E2E Tests & Security Validation (~4 hours, 5 E2E tests, manual runsheet) |
+| 2025-11-15 | PR #21 submitted | feat/csrf → main, comprehensive CSRF protection for all POST forms |
 
 ---
 
