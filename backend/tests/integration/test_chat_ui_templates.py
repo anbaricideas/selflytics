@@ -156,3 +156,28 @@ def test_profile_card_has_edit_link(client: TestClient, test_user_token: str) ->
     assert 'data-testid="link-edit-profile"' in response.text
     assert 'href="/profile/edit"' in response.text
     assert "Edit" in response.text
+
+
+# Phase 4: Chat Header Navigation Tests
+class TestChatHeaderNavigation:
+    """Tests for chat header navigation elements."""
+
+    def test_chat_header_has_settings_icon_link(self, client: TestClient, test_user_token: str):
+        """Chat header should include settings icon link to /settings."""
+        response = client.get("/chat/", cookies={"access_token": f"Bearer {test_user_token}"})
+        assert response.status_code == 200
+        assert 'data-testid="link-settings"' in response.text
+        assert 'href="/settings"' in response.text
+        # Check for aria-label for accessibility
+        assert 'aria-label="Settings"' in response.text
+
+    def test_chat_header_no_longer_has_dashboard_link(
+        self, client: TestClient, test_user_token: str
+    ):
+        """Chat header should NOT include 'Dashboard' text link."""
+        response = client.get("/chat/", cookies={"access_token": f"Bearer {test_user_token}"})
+        assert response.status_code == 200
+        # Should not have a link with text "Dashboard" in the header
+        # Note: We're checking the header doesn't contain a dashboard link
+        header_section = response.text.split('data-testid="chat-header"')[1].split("</header>")[0]
+        assert 'href="/dashboard"' not in header_section

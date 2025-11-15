@@ -107,11 +107,21 @@ get_remote_branches() {
     # Try GitHub CLI first (more reliable in CI, handles auth automatically)
     if command -v gh >/dev/null 2>&1; then
         log_info "Fetching branches via GitHub CLI..."
-        if gh api repos/:owner/:repo/branches --paginate --jq '.[].name' 2>/dev/null; then
-            return 0
-        else
-            log_info "GitHub CLI fetch failed, falling back to git ls-remote..."
+
+        # Use GITHUB_REPOSITORY if available (in CI), otherwise infer from git remote
+        local repo="${GITHUB_REPOSITORY:-}"
+        if [ -z "$repo" ] && command -v git >/dev/null 2>&1; then
+            # Extract owner/repo from git remote URL
+            repo=$(git remote get-url origin 2>/dev/null | sed -n 's|.*github.com[:/]\(.*\)\.git|\1|p')
         fi
+
+        if [ -n "$repo" ]; then
+            if gh api "repos/$repo/branches" --paginate --jq '.[].name' 2>/dev/null; then
+                return 0
+            fi
+        fi
+
+        log_info "GitHub CLI fetch failed, falling back to git ls-remote..."
     fi
 
     # Fallback to git ls-remote
@@ -146,12 +156,13 @@ cleanup_stale_previews() {
     fi
 
     # Get all preview services with their feature labels
+    # Use CSV format for reliable parsing (comma-separated)
     local services
     services=$(gcloud run services list \
         --region="$REGION" \
         --project="$PROJECT_ID" \
         --filter="metadata.name:selflytics-webapp-preview" \
-        --format="table[no-heading](metadata.name,metadata.labels.feature)" 2>/dev/null)
+        --format="csv[no-heading](metadata.name,metadata.labels.feature)" 2>/dev/null)
 
     if [ -z "$services" ]; then
         log_info "No preview deployments found."
@@ -160,8 +171,8 @@ cleanup_stale_previews() {
 
     local deleted_count=0
 
-    # Process each service
-    while IFS=$'\t' read -r service_name feature_label; do
+    # Process each service (CSV format: service_name,feature_label)
+    while IFS=, read -r service_name feature_label; do
         # Skip if no feature label (shouldn't happen, but be safe)
         if [ -z "$feature_label" ]; then
             log_info "⚠ Service $service_name has no feature label, skipping"
