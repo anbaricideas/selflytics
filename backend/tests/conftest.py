@@ -84,6 +84,71 @@ def test_user_token():
 
 
 @pytest.fixture
+def test_user_email(test_user):
+    """Test user's email address."""
+    return test_user["email"]
+
+
+@pytest.fixture
+def test_user_linked_garmin():
+    """Test user data with linked Garmin account."""
+    return {
+        "user_id": "test-user-linked-123",
+        "email": "linked@example.com",
+        "password": "TestPassword123!",
+        "profile": {"display_name": "Linked User"},
+        "garmin_linked": True,
+    }
+
+
+@pytest.fixture
+def mock_user_service_linked_garmin(test_user_linked_garmin):
+    """Mock UserService for user with linked Garmin."""
+    from app.auth.password import hash_password
+
+    mock_service = Mock(spec=UserService)
+
+    mock_user = User(
+        user_id=test_user_linked_garmin["user_id"],
+        email=test_user_linked_garmin["email"],
+        hashed_password=hash_password(test_user_linked_garmin["password"]),
+        created_at=datetime.now(UTC),
+        updated_at=datetime.now(UTC),
+        profile=UserProfile(**test_user_linked_garmin["profile"]),
+        garmin_linked=test_user_linked_garmin["garmin_linked"],
+    )
+    mock_service.get_user_by_id = AsyncMock(return_value=mock_user)
+
+    return mock_service
+
+
+@pytest.fixture
+def test_user_linked_garmin_token():
+    """Mock JWT token for user with linked Garmin."""
+    return "mock-jwt-token-linked"
+
+
+@pytest.fixture
+def client_linked_garmin(mock_user_service_linked_garmin, test_user_linked_garmin):
+    """Provide TestClient for user with linked Garmin account."""
+    # Mock JWT verification
+    with patch("app.auth.dependencies.verify_token") as mock_verify:
+        mock_verify.return_value = TokenData(
+            user_id=test_user_linked_garmin["user_id"], email=test_user_linked_garmin["email"]
+        )
+
+        # Override UserService dependency
+        app.dependency_overrides[get_user_service] = lambda: mock_user_service_linked_garmin
+
+        test_client = TestClient(app, raise_server_exceptions=False)
+        # Set the auth cookie to bypass authentication
+        test_client.cookies.set("access_token", "Bearer mock-jwt-token-linked")
+        yield test_client
+
+        app.dependency_overrides.clear()
+
+
+@pytest.fixture
 def create_mock_user():
     """Factory fixture for creating mock User instances with custom attributes."""
 
