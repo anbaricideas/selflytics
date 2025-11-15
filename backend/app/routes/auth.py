@@ -3,6 +3,7 @@
 from fastapi import APIRouter, Depends, Form, HTTPException, Request, Response, status
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.security import OAuth2PasswordRequestForm
+from fastapi_csrf_protect import CsrfProtect
 
 from app.auth.dependencies import get_current_user, get_user_service
 from app.auth.jwt import create_access_token
@@ -22,9 +23,20 @@ router = APIRouter(tags=["authentication"])
 
 
 @router.get("/register", response_class=HTMLResponse)
-async def register_form(request: Request, templates=Depends(get_templates)) -> HTMLResponse:
-    """Display registration form."""
-    return templates.TemplateResponse(request=request, name="register.html")
+async def register_form(
+    request: Request,
+    csrf_protect: CsrfProtect = Depends(),
+    templates=Depends(get_templates),
+) -> HTMLResponse:
+    """Display registration form with CSRF token."""
+    csrf_token, signed_token = csrf_protect.generate_csrf_tokens()
+    response = templates.TemplateResponse(
+        request=request,
+        name="register.html",
+        context={"csrf_token": csrf_token},
+    )
+    csrf_protect.set_csrf_cookie(signed_token, response)
+    return response
 
 
 @router.get("/login", response_class=HTMLResponse)
@@ -41,6 +53,7 @@ async def login_form(request: Request, templates=Depends(get_templates)) -> HTML
 @router.post("/auth/register")
 async def register(
     request: Request,
+    csrf_protect: CsrfProtect = Depends(),
     email: str = Form(...),
     password: str = Form(...),
     display_name: str = Form(...),
@@ -52,6 +65,7 @@ async def register(
 
     Args:
         request: FastAPI request object
+        csrf_protect: CSRF protection dependency
         email: User email
         password: User password
         display_name: User display name
@@ -67,20 +81,28 @@ async def register(
         HTTPException 400: If email already registered or passwords don't match
     """
 
+    # Validate CSRF token FIRST (before any business logic)
+    await csrf_protect.validate_csrf(request)
+
     # Validate password confirmation if provided
     if confirm_password and password != confirm_password:
         if request.headers.get("HX-Request"):
+            # Generate NEW token for form re-render
+            csrf_token, signed_token = csrf_protect.generate_csrf_tokens()
             # Return form fragment only (not full page) to avoid nesting with hx-swap="outerHTML"
-            return templates.TemplateResponse(
+            response = templates.TemplateResponse(
                 request=request,
                 name="fragments/register_form.html",
                 context={
+                    "csrf_token": csrf_token,  # NEW token
                     "errors": {"password": "Passwords do not match"},
                     "email": email,
                     "display_name": display_name,
                 },
                 status_code=status.HTTP_400_BAD_REQUEST,
             )
+            csrf_protect.set_csrf_cookie(signed_token, response)  # NEW cookie
+            return response
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Passwords do not match",
@@ -102,16 +124,21 @@ async def register(
 
         # For HTMX requests, return form fragment only (not full page)
         if request.headers.get("HX-Request"):
-            return templates.TemplateResponse(
+            # Generate NEW token for form re-render
+            csrf_token, signed_token = csrf_protect.generate_csrf_tokens()
+            response = templates.TemplateResponse(
                 request=request,
                 name="fragments/register_form.html",
                 context={
+                    "csrf_token": csrf_token,  # NEW token
                     "errors": {"general": generic_error},
                     "email": user_data.email,
                     "display_name": user_data.display_name,
                 },
                 status_code=status.HTTP_400_BAD_REQUEST,
             )
+            csrf_protect.set_csrf_cookie(signed_token, response)  # NEW cookie
+            return response
 
         # For API requests, raise HTTPException
         raise HTTPException(

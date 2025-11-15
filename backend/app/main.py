@@ -35,6 +35,7 @@ class CsrfSettings(BaseModel):
     """CSRF protection settings."""
 
     secret_key: str
+    token_key: str = "fastapi-csrf-token"  # noqa: S105  # Form field name for token, not a password
     cookie_name: str = "csrf_token"
     cookie_samesite: str = "strict"  # Stricter than auth cookie
     cookie_secure: bool = True  # HTTPS only in production

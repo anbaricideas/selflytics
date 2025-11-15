@@ -8,6 +8,9 @@
     class="space-y-5"
     data-testid="register-form"
 >
+    <!-- CSRF Token (MUST be first field) -->
+    <input type="hidden" name="fastapi-csrf-token" value="{{ csrf_token }}">
+
     <!-- General Error Message (for user enumeration prevention) -->
     {% if errors and errors.general %}
     <div class="bg-red-50 border border-red-200 rounded-lg p-4">
