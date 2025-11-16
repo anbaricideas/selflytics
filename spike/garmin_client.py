@@ -57,7 +57,7 @@ class GarminClient:
                 self.authenticated = True
                 await self._save_tokens()
                 return True
-            elif isinstance(result, tuple) and result[0] == "needs_mfa":
+            if isinstance(result, tuple) and result[0] == "needs_mfa":
                 # MFA required - for spike, use interactive prompt
                 print("\n⚠️  MFA code required")
                 mfa_code = input("Enter MFA code from your authenticator app: ").strip()
@@ -70,9 +70,8 @@ class GarminClient:
                 self.authenticated = True
                 await self._save_tokens()
                 return True
-            else:
-                print(f"✗ Unexpected login result: {result}")
-                return False
+            print(f"✗ Unexpected login result: {result}")
+            return False
 
         except Exception as e:
             print(f"✗ Authentication failed: {e}")

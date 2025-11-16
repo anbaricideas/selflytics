@@ -5,6 +5,7 @@ from pathlib import Path
 
 import matplotlib
 
+
 matplotlib.use("Agg")  # Non-interactive backend (server-safe)
 import matplotlib.pyplot as plt
 

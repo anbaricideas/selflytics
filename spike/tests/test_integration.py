@@ -6,6 +6,7 @@ from httpx import ASGITransport, AsyncClient
 
 from spike.main import app
 
+
 pytestmark = pytest.mark.asyncio
 
 

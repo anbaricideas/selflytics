@@ -2,7 +2,6 @@
 
 import os
 from datetime import date
-from typing import Optional
 
 from pydantic import BaseModel, Field
 from pydantic_ai import Agent, RunContext
@@ -18,7 +17,7 @@ class ChatResponse(BaseModel):
         default_factory=list, description="Data types queried"
     )
     confidence: float = Field(ge=0.0, le=1.0, description="Confidence in accuracy")
-    suggested_followup: Optional[str] = Field(
+    suggested_followup: str | None = Field(
         None, description="Suggested next question"
     )
 
@@ -138,11 +137,10 @@ def _get_model():
     """Get model based on environment configuration."""
     if os.getenv("OPENAI_API_KEY"):
         return "openai:gpt-4o-mini"
-    else:
-        # Use TestModel for development/testing without API key
-        from pydantic_ai.models.test import TestModel
+    # Use TestModel for development/testing without API key
+    from pydantic_ai.models.test import TestModel
 
-        return TestModel()
+    return TestModel()
 
 
 chat_agent = Agent(

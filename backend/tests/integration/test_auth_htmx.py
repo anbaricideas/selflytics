@@ -19,7 +19,7 @@ from tests.conftest import get_csrf_token
 def test_register_success_returns_hx_redirect_header(
     unauthenticated_client, create_mock_user, mock_user_service_override
 ):
-    """POST /auth/register success with HX-Request header should return HX-Redirect to /dashboard."""
+    """POST /auth/register success with HX-Request header should return HX-Redirect to /chat/."""
     # Mock user service without conflicting with fixture
     mock_svc = AsyncMock()
     mock_svc.get_user_by_email.return_value = None  # No existing user
@@ -48,7 +48,7 @@ def test_register_success_returns_hx_redirect_header(
         # HTMX redirects use status 200 with HX-Redirect header (not 302)
         assert response.status_code == status.HTTP_200_OK
         assert "HX-Redirect" in response.headers
-        assert response.headers["HX-Redirect"] == "/dashboard"
+        assert response.headers["HX-Redirect"] == "/chat/"
 
         # Should set authentication cookie
         assert "access_token" in response.cookies
@@ -157,7 +157,7 @@ def test_register_password_mismatch_returns_html_error(unauthenticated_client):
 
 
 def test_login_success_returns_hx_redirect_header(unauthenticated_client, create_mock_user):
-    """POST /auth/login success with HX-Request should return HX-Redirect to /dashboard."""
+    """POST /auth/login success with HX-Request should return HX-Redirect to /chat/."""
     mock_svc = AsyncMock()
     mock_user = create_mock_user(
         user_id="login-user-123",
@@ -185,7 +185,7 @@ def test_login_success_returns_hx_redirect_header(unauthenticated_client, create
     # Should return 200 with HX-Redirect header
     assert response.status_code == status.HTTP_200_OK
     assert "HX-Redirect" in response.headers
-    assert response.headers["HX-Redirect"] == "/dashboard"
+    assert response.headers["HX-Redirect"] == "/chat/"
 
     # Should set authentication cookie
     assert "access_token" in response.cookies

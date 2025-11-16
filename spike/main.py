@@ -11,6 +11,7 @@ from pydantic import BaseModel
 from spike.chat_agent import run_chat
 from spike.viz_generator import VizGenerator
 
+
 app = FastAPI(title="Selflytics Spike")
 viz_gen = VizGenerator()
 

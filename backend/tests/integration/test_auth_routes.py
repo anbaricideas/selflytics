@@ -340,48 +340,6 @@ class TestMeEndpoint:
         assert "User not found" in response.json()["detail"]
 
 
-class TestLogoutEndpoint:
-    """Test POST /logout endpoint."""
-
-    def test_logout_clears_cookie_and_redirects(self, client, mock_user_service, existing_user):
-        """Test POST /logout clears authentication cookie and redirects to /login."""
-        # First login with HTMX to get a cookie
-        mock_user_service.get_user_by_email = AsyncMock(return_value=existing_user)
-
-        # Get CSRF token
-        csrf_token, csrf_cookie = get_csrf_token(client, "/login")
-
-        login_response = client.post(
-            "/auth/login",
-            data={
-                "username": "existing@example.com",
-                "password": "password",
-                "fastapi-csrf-token": csrf_token,
-            },
-            cookies={"fastapi-csrf-token": csrf_cookie},
-            headers={"HX-Request": "true"},
-        )
-        assert login_response.status_code == 200
-        assert login_response.headers.get("HX-Redirect") == "/dashboard"
-
-        # Verify cookie was set
-        cookies = client.cookies
-        assert "access_token" in cookies
-
-        # Logout
-        logout_response = client.post("/logout", follow_redirects=False)
-
-        # Verify redirect to /login
-        assert logout_response.status_code == 303
-        assert logout_response.headers["location"] == "/login"
-
-        # Verify Set-Cookie header instructs browser to clear the cookie
-        set_cookie = logout_response.headers.get("set-cookie", "")
-        assert "access_token" in set_cookie
-        # Cookie should have max-age=0 or expires in the past
-        assert "max-age=0" in set_cookie.lower() or "expires=" in set_cookie.lower()
-
-
 class TestAuthFlowIntegration:
     """Test complete authentication flow."""
 

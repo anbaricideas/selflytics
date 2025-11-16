@@ -13,27 +13,6 @@ from app.models.user import UserResponse
 router = APIRouter()
 
 
-@router.get("/")
-async def root_redirect(request: Request) -> RedirectResponse:
-    """Redirect root URL to chat (authenticated) or login (unauthenticated).
-
-    Checks for authentication by looking for access_token cookie.
-    Returns 303 (See Other) as this is a conditional redirect based on state.
-
-    Args:
-        request: FastAPI request object
-
-    Returns:
-        RedirectResponse to /chat/ (authenticated) or /login (unauthenticated)
-    """
-    # Check if user has authentication cookie
-    has_auth_token = request.cookies.get("access_token") is not None
-
-    if has_auth_token:
-        return RedirectResponse("/chat/", status_code=303)
-    return RedirectResponse("/login", status_code=303)
-
-
 @router.get("/dashboard")
 async def dashboard_redirect() -> RedirectResponse:
     """Redirect old dashboard URL to new settings page.
