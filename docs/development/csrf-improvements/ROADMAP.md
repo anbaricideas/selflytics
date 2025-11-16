@@ -97,11 +97,11 @@ Each phase must pass:
 
 | Phase | Description | Status | Branch | Estimated | Actual |
 |-------|-------------|--------|--------|-----------|--------|
-| [1](./PHASE_1_plan.md) | Protect Logout Endpoint | ⏳ NEXT | `chore/csrf-improvements-phase-1` | 1.5h | - |
-| [2](./PHASE_2_plan.md) | Protect Chat Send Endpoint | NOT STARTED | `chore/csrf-improvements-phase-2` | 1.5h | - |
+| [1](./PHASE_1_plan.md) | Protect Logout Endpoint | ✅ DONE | `chore/csrf-improvements` (PR #22) | 1.5h | ~1.5h |
+| [2](./PHASE_2_plan.md) | Protect Chat Send Endpoint | ⏳ NEXT | `chore/csrf-improvements-phase-2` | 1.5h | - |
 | [3](./PHASE_3_plan.md) | Documentation & Validation | NOT STARTED | `chore/csrf-improvements-phase-3` | 0.5h | - |
 
-**Current Phase**: Phase 1 - Protect Logout Endpoint
+**Current Phase**: Phase 2 - Protect Chat Send Endpoint
 
 **Total Estimated Time**: 3.5 hours across 3 phases
 
@@ -312,6 +312,8 @@ git log --oneline chore/csrf-improvements..HEAD --format="%ad" --date=format:"%Y
 | | Phase 1 plan created | - | Logout endpoint protection |
 | | Phase 2 plan created | - | Chat send endpoint protection |
 | | Phase 3 plan created | - | Documentation & validation |
+| | Phase 1 completed (PR #22) | `chore/csrf-improvements` | Logout CSRF protection merged to main |
+| | Bug fix: root URL routing | `chore/csrf-improvements` | Fixed duplicate root handler, aligned tests with chat-first navigation |
 
 ---
 
