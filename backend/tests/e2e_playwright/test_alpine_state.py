@@ -6,6 +6,8 @@ in forms and interactive components.
 
 from playwright.async_api import Page, expect
 
+from tests.conftest import TEST_PASSWORD
+
 
 async def test_loading_state_toggles_button_text(page: Page, base_url: str):
     """Form submission should toggle loading state and button text."""
@@ -25,8 +27,8 @@ async def test_loading_state_toggles_button_text(page: Page, base_url: str):
     await page.fill(
         '[data-testid="input-email"]', f"test-{await page.evaluate('Date.now()')}@example.com"
     )
-    await page.fill('[data-testid="input-password"]', "TestPass123!")
-    await page.fill('[data-testid="input-confirm-password"]', "TestPass123!")
+    await page.fill('[data-testid="input-password"]', TEST_PASSWORD)
+    await page.fill('[data-testid="input-confirm-password"]', TEST_PASSWORD)
 
     # Click submit - loading state should appear briefly
     await submit_button.click()
@@ -42,7 +44,7 @@ async def test_loading_state_disables_submit_button(page: Page, base_url: str):
 
     # Fill form
     await page.fill('[data-testid="input-email"]', "test@example.com")
-    await page.fill('[data-testid="input-password"]', "TestPass123!")
+    await page.fill('[data-testid="input-password"]', TEST_PASSWORD)
 
     submit_button = page.locator('[data-testid="submit-login"]')
 
@@ -121,12 +123,12 @@ async def test_form_remains_editable_after_alpine_loads(page: Page, base_url: st
     # Should be able to type in all fields (proves Alpine didn't break interactivity)
     await display_name_input.fill("Test User")
     await email_input.fill("test@example.com")
-    await password_input.fill("TestPass123!")
+    await password_input.fill(TEST_PASSWORD)
 
     # Verify values were set
     assert await display_name_input.input_value() == "Test User"
     assert await email_input.input_value() == "test@example.com"
-    assert await password_input.input_value() == "TestPass123!"
+    assert await password_input.input_value() == TEST_PASSWORD
 
 
 async def test_multiple_forms_have_independent_alpine_state(page: Page, base_url: str):

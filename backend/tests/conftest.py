@@ -19,6 +19,11 @@ from app.services.user_service import UserService
 os.environ.setdefault("OPENAI_API_KEY", "sk-test-key-for-testing-only")
 
 
+# Shared test constants
+TEST_PASSWORD = "TestPassword123!"  # noqa: S105 - Standard password for all test fixtures
+TEST_GARMIN_PASSWORD = "password123"  # noqa: S105 - Mock Garmin API password for E2E tests
+
+
 @pytest.fixture(autouse=True)
 def reset_app_state():
     """Ensure dependency_overrides is clean before and after each test.

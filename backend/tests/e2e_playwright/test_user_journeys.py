@@ -10,6 +10,8 @@ from urllib.parse import urlparse
 import pytest
 from playwright.async_api import Page, expect
 
+from tests.conftest import TEST_GARMIN_PASSWORD, TEST_PASSWORD
+
 
 class TestChatPageNavigation:
     """Chat page should provide navigation to other parts of the application."""
@@ -79,7 +81,7 @@ class TestUserSessionManagement:
         import time
 
         timestamp = int(time.time())
-        password = "TestPass123!"  # noqa: S105
+        password = TEST_PASSWORD
 
         # Create first user
         user1_email = f"user1-{timestamp}@example.com"
@@ -164,7 +166,7 @@ class TestGarminErrorHandling:
 
         # Fill form with credentials that will trigger error from real Garmin API
         await authenticated_user.fill('[data-testid="input-garmin-username"]', "test@garmin.com")
-        await authenticated_user.fill('[data-testid="input-garmin-password"]', "password123")
+        await authenticated_user.fill('[data-testid="input-garmin-password"]', TEST_GARMIN_PASSWORD)
 
         # Submit form
         await authenticated_user.click('[data-testid="submit-link-garmin"]')
@@ -239,6 +241,9 @@ class TestAuthenticationTokenHandling:
         # Invalid tokens should cause silent redirect, not display an error
         error_alert = page.locator('[data-testid="error-message"]')
         await expect(error_alert).not_to_be_visible()
+
+        # Verify URL still contains /login (no client-side routing)
+        assert "/login" in page.url, "Should remain on login page"
 
         # Verify login still works (confirms route is functional, auth just failed)
         # This proves redirect was due to token validation, not broken routing

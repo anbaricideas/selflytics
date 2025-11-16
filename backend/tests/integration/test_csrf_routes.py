@@ -11,6 +11,7 @@ from app.auth.dependencies import get_current_user
 from app.main import app
 from app.models.user import User, UserProfile
 from app.services.garmin_service import GarminService
+from tests.conftest import TEST_GARMIN_PASSWORD, TEST_PASSWORD
 
 
 def test_register_requires_csrf_token(client: TestClient):
@@ -19,9 +20,9 @@ def test_register_requires_csrf_token(client: TestClient):
         "/auth/register",
         data={
             "email": "test@example.com",
-            "password": "TestPass123",
+            "password": TEST_PASSWORD,
             "display_name": "Test User",
-            "confirm_password": "TestPass123",
+            "confirm_password": TEST_PASSWORD,
             # csrf_token intentionally omitted
         },
     )
@@ -51,7 +52,7 @@ def test_register_with_valid_csrf_token(client: TestClient):
         "/auth/register",
         data={
             "email": "newuser@example.com",
-            "password": "TestPass123",
+            "password": TEST_PASSWORD,
             "display_name": "New User",
             "confirm_password": "TestPass123",
             "fastapi-csrf-token": csrf_token,  # form field name
@@ -111,7 +112,7 @@ def test_login_requires_csrf_token(client: TestClient):
         "/auth/login",
         data={
             "username": "test@example.com",
-            "password": "TestPass123",
+            "password": TEST_PASSWORD,
             # csrf_token intentionally omitted
         },
     )
@@ -245,7 +246,7 @@ def test_garmin_link_requires_csrf_token(authenticated_garmin_client: TestClient
         "/garmin/link",
         data={
             "username": "test@garmin.com",
-            "password": "GarminPass123",
+            "password": TEST_GARMIN_PASSWORD,
             # csrf_token intentionally omitted
         },
     )

@@ -22,7 +22,7 @@ from fastapi.testclient import TestClient
 
 # ===== Root Route Tests (Redirect to /chat) =====
 # Note: Authenticated redirect covered by E2E test:
-# test_authenticated_user_visiting_root_url_redirects_to_chat
+# test_user_journeys.py::test_authenticated_user_visiting_root_url_redirects_to_chat
 
 
 def test_root_redirects_to_login_when_unauthenticated(client: TestClient):
@@ -40,7 +40,7 @@ def test_root_redirects_to_login_when_unauthenticated(client: TestClient):
 
 # ===== Dashboard Redirect Tests =====
 # Note: Full redirect chain with auth covered by E2E test:
-# test_old_dashboard_url_redirects_to_settings
+# test_chat_ui_navigation.py::test_old_dashboard_url_redirects_to_settings
 
 
 def test_dashboard_redirect_does_not_require_authentication(client: TestClient):
@@ -59,9 +59,9 @@ def test_dashboard_redirect_does_not_require_authentication(client: TestClient):
 
 # ===== Settings Route Tests =====
 # Note: Settings rendering with auth covered by E2E test:
-# test_navigate_from_settings_to_chat
+# test_settings_navigation.py::test_navigate_from_settings_to_chat
 # Note: Invalid token handling covered by E2E test:
-# test_invalid_jwt_redirects_to_login
+# test_user_journeys.py::test_invalid_jwt_redirects_to_login_from_protected_routes
 
 
 def test_settings_route_requires_authentication(client: TestClient):
