@@ -8,6 +8,8 @@ from unittest.mock import AsyncMock, patch
 import pytest
 from fastapi.testclient import TestClient
 
+from tests.conftest import TEST_GARMIN_PASSWORD
+
 
 @pytest.fixture(autouse=True)
 def bypass_csrf_for_manual_testing_bug_tests(monkeypatch):
@@ -27,7 +29,6 @@ def bypass_csrf_for_manual_testing_bug_tests(monkeypatch):
 
 # Test data constants
 TEST_GARMIN_USERNAME = "test@garmin.com"
-TEST_GARMIN_PASSWORD = "password123"  # noqa: S105 - Test fixture, not a real password
 INVALID_GARMIN_USERNAME = "invalid@garmin.com"
 INVALID_GARMIN_PASSWORD = "wrongpassword"  # noqa: S105 - Test fixture
 

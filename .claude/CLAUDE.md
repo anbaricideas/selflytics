@@ -44,10 +44,12 @@ uv add <package>
 # Development
 ./scripts/dev-server.sh  # Loads backend/.env, uses PORT variable
 
-# Local E2E Testing (requires both emulator + server)
-./scripts/local-e2e-server.sh  # Start Firestore emulator + dev server
-# Then in another terminal:
-uv --directory backend run pytest tests/e2e_playwright -v --headed
+# Local E2E Testing (two-terminal process)
+# Terminal 1: Start infrastructure (loads backend/.env.local for PORT/BASE_URL)
+./scripts/local-e2e-server.sh  # Starts Firestore emulator + dev server, keep running
+# Terminal 2: Run tests (auto-discovers URL from backend/.env.local)
+uv --directory backend run pytest tests/e2e_playwright -v        # headless
+uv --directory backend run pytest tests/e2e_playwright -v --headed  # visible browser
 
 # Testing (TDD required, 80%+ coverage)
 uv --directory backend run pytest tests/ -v --cov=app

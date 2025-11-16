@@ -8,6 +8,8 @@ import time
 from playwright.async_api import Page, expect
 from playwright.async_api import TimeoutError as PlaywrightTimeout
 
+from tests.conftest import TEST_PASSWORD
+
 
 class TestGarminBanner:
     """Tests for Garmin connection banner on chat page."""
@@ -41,7 +43,7 @@ class TestGarminBanner:
         """Banner reappears after user logs out and logs back in."""
         timestamp = int(time.time())
         email = f"banner-test-{timestamp}@example.com"
-        password = "TestPass123!"  # noqa: S105 - test fixture, not a real credential
+        password = TEST_PASSWORD
 
         # Register new user
         await page.goto(f"{base_url}/register")
@@ -119,7 +121,7 @@ class TestChatFirstNavigation:
         """User logs in and lands on chat page, not dashboard."""
         timestamp = int(time.time())
         email = f"nav-test-{timestamp}@example.com"
-        password = "TestPass123!"  # noqa: S105 - test fixture, not a real credential
+        password = TEST_PASSWORD
 
         # Register
         await page.goto(f"{base_url}/register")

@@ -5,7 +5,12 @@ These tests verify critical user experience requirements found during
 manual testing runsheet execution in Session 8 (2025-11-14).
 """
 
+from urllib.parse import urlparse
+
+import pytest
 from playwright.async_api import Page, expect
+
+from tests.conftest import TEST_GARMIN_PASSWORD, TEST_PASSWORD
 
 
 class TestChatPageNavigation:
@@ -76,7 +81,7 @@ class TestUserSessionManagement:
         import time
 
         timestamp = int(time.time())
-        password = "TestPass123!"  # noqa: S105
+        password = TEST_PASSWORD
 
         # Create first user
         user1_email = f"user1-{timestamp}@example.com"
@@ -161,7 +166,7 @@ class TestGarminErrorHandling:
 
         # Fill form with credentials that will trigger error from real Garmin API
         await authenticated_user.fill('[data-testid="input-garmin-username"]', "test@garmin.com")
-        await authenticated_user.fill('[data-testid="input-garmin-password"]', "password123")
+        await authenticated_user.fill('[data-testid="input-garmin-password"]', TEST_GARMIN_PASSWORD)
 
         # Submit form
         await authenticated_user.click('[data-testid="submit-link-garmin"]')
@@ -182,3 +187,65 @@ class TestGarminErrorHandling:
             f"Expected 1 'Link Your Garmin Account' header after error, found {count_after}. "
             "HTMX fragment swap should not duplicate page structure."
         )
+
+
+class TestAuthenticationTokenHandling:
+    """Authentication tokens should be validated and invalid tokens should redirect to login."""
+
+    @pytest.mark.parametrize("protected_route", ["/settings", "/chat/"])
+    async def test_invalid_jwt_redirects_to_login_from_protected_routes(
+        self, page: Page, base_url: str, protected_route: str
+    ):
+        """
+        User with invalid JWT token should be redirected to login from any protected route.
+
+        Expected behavior:
+        1. User has an invalid JWT token in cookies
+        2. User attempts to access protected route (settings, chat, etc.)
+        3. Server validates token, finds it invalid
+        4. User is redirected to login page (silent redirect, no error message)
+        5. Login functionality still works (confirms auth validation caused redirect)
+
+        Context: Replaces skipped integration tests that tried to test this with mocked fixtures.
+        E2E test uses real authentication flow to verify token validation works end-to-end.
+        Verifies that chat-first navigation model still enforces authentication.
+        """
+        # Set an invalid JWT token cookie manually
+        await page.goto(base_url)
+
+        # Extract domain from base_url to avoid hard-coding localhost
+        domain = urlparse(base_url).hostname or "localhost"
+
+        # Add invalid token cookie (malformed JWT that will fail signature verification)
+        await page.context.add_cookies(
+            [
+                {
+                    "name": "access_token",
+                    "value": "invalid.jwt.token.here",
+                    "domain": domain,
+                    "path": "/",
+                }
+            ]
+        )
+
+        # Attempt to access protected route
+        await page.goto(f"{base_url}{protected_route}")
+
+        # Should be redirected to login page (token validation fails)
+        await page.wait_for_url(f"{base_url}/login", timeout=5000)
+
+        # Verify we're on login page
+        await expect(page.locator('[data-testid="login-form"]')).to_be_visible()
+
+        # Verify silent redirect (no error message from invalid token)
+        # Invalid tokens should cause silent redirect, not display an error
+        error_alert = page.locator('[data-testid="error-message"]')
+        await expect(error_alert).not_to_be_visible()
+
+        # Verify URL still contains /login (no client-side routing)
+        assert "/login" in page.url, "Should remain on login page"
+
+        # Verify login still works (confirms route is functional, auth just failed)
+        # This proves redirect was due to token validation, not broken routing
+        login_button = page.locator('[data-testid="submit-login"]')
+        await expect(login_button).to_be_visible()
